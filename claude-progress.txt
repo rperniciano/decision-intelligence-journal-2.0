@@ -211,3 +211,52 @@ The following features were skipped because they require Supabase to be configur
 
 ---
 Session 2 complete. Authentication foundation in place. Supabase configuration needed to continue.
+
+---
+# Session 4 Progress Report (Coding Agent)
+# ============================================
+
+## Session Summary
+Date: 2026-01-16
+Agent: Coding Agent
+Session: 4
+
+## Completed Tasks
+
+### 1. Regression Testing
+- Tested Feature #27 (History nav button) - PASSING
+  - Found and fixed JavaScript error in StatusBadge component
+  - Component crashed when status was undefined
+  - Added fallback for unknown status values
+- Tested Feature #7 (API 401 for unauthenticated profile) - PASSING
+
+### 2. API Implementation - Decision Creation
+- Implemented DecisionService.createDecision() method
+  - Auto-creates or finds existing categories
+  - Generates slugs for new categories (lowercase, hyphenated)
+  - Creates decision with all relations (options, pros/cons)
+  - Supports chosen option selection
+  - Returns complete decision object with all nested data
+
+### 3. Feature #31 Implementation
+- Feature: Decision list item click opens detail
+- Created test decision in database
+- Verified complete workflow
+- Marked as PASSING
+
+## Bugs Fixed
+1. StatusBadge Crash - Fixed undefined status handling
+2. API Server Crashes - Multiple EADDRINUSE errors during hot reload
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 14 (was 13)
+- Completion: 4.8%
+
+## Files Modified
+- apps/api/src/services/decisionServiceNew.ts - Implemented createDecision
+- apps/web/src/pages/HistoryPage.tsx - Fixed StatusBadge
+- apps/api/src/create-test-db.mjs - Test utility script
+
+---
+Session 4 complete. Decision creation and detail navigation working.

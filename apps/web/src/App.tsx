@@ -11,6 +11,7 @@ import { InsightsPage } from './pages/InsightsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { RecordPage } from './pages/RecordPage';
 import { DecisionDetailPage } from './pages/DecisionDetailPage';
+import { EditDecisionPage } from './pages/EditDecisionPage';
 
 // Landing Page Component
 function LandingPage() {
@@ -136,6 +137,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DecisionDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/decisions/:id/edit"
+            element={
+              <ProtectedRoute>
+                <EditDecisionPage />
               </ProtectedRoute>
             }
           />
