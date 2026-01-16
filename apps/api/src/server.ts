@@ -6,6 +6,7 @@ import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from './middleware/auth';
+import { DecisionService } from './services/decisionServiceNew';
 
 // Get directory paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -63,37 +64,110 @@ async function registerRoutes() {
 
     // Decisions endpoints
     api.get('/decisions', async (request, reply) => {
-      // User is available via request.user (set by auth middleware)
-      const userId = request.user?.id;
-      // TODO: Implement decision list with filters for this user
-      return { decisions: [], total: 0, page: 1, limit: 20, userId };
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const query = request.query as any;
+        const result = await DecisionService.getDecisions(userId, {
+          status: query.status,
+          category: query.category,
+          search: query.search,
+          limit: query.limit ? parseInt(query.limit) : 20,
+          offset: query.offset ? parseInt(query.offset) : 0,
+        });
+
+        return result;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     api.get('/decisions/:id', async (request, reply) => {
-      const { id } = request.params as { id: string };
-      const userId = request.user?.id;
-      // TODO: Implement single decision fetch (verify ownership)
-      return { id, userId, message: 'Decision endpoint - to be implemented' };
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const decision = await DecisionService.getDecisionById(id, userId);
+
+        if (!decision) {
+          return reply.code(404).send({ error: 'Decision not found' });
+        }
+
+        return decision;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     api.post('/decisions', async (request, reply) => {
-      const userId = request.user?.id;
-      // TODO: Implement decision creation
-      return { message: 'Create decision - to be implemented', userId };
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as any;
+        const decision = await DecisionService.createDecision(userId, body);
+
+        return reply.code(201).send(decision);
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     api.patch('/decisions/:id', async (request, reply) => {
-      const { id } = request.params as { id: string };
-      const userId = request.user?.id;
-      // TODO: Implement decision update (verify ownership)
-      return { message: 'Update decision - to be implemented', id, userId };
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as any;
+        const decision = await DecisionService.updateDecision(id, userId, body);
+
+        if (!decision) {
+          return reply.code(404).send({ error: 'Decision not found' });
+        }
+
+        return decision;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     api.delete('/decisions/:id', async (request, reply) => {
-      const { id } = request.params as { id: string };
-      const userId = request.user?.id;
-      // TODO: Implement soft delete (verify ownership)
-      return { message: 'Delete decision - to be implemented', id, userId };
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const decision = await DecisionService.deleteDecision(id, userId);
+
+        if (!decision) {
+          return reply.code(404).send({ error: 'Decision not found' });
+        }
+
+        return { message: 'Decision deleted', decision };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     // Recording endpoints

@@ -1,0 +1,214 @@
+import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get directory paths for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from monorepo root
+config({ path: path.resolve(__dirname, '../../../../.env') });
+
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing Supabase environment variables. Please check .env file.');
+}
+
+// Service role client for admin operations
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+export class DecisionService {
+  /**
+   * Get all decisions for a user with their options, pros/cons, and category
+   */
+  static async getDecisions(userId: string, filters?: {
+    status?: string;
+    categoryId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    try {
+      let query = supabase
+        .from('decisions')
+        .select(`
+          *,
+          category:categories(id, name, icon, color),
+          options:options!options_decision_id_fkey(
+            id,
+            title,
+            display_order,
+            pros_cons(id, type, content, display_order)
+          )
+        `)
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
+      }
+
+      if (filters?.categoryId) {
+        query = query.eq('category_id', filters.categoryId);
+      }
+
+      if (filters?.search) {
+        query = query.ilike('title', `%${filters.search}%`);
+      }
+
+      const limit = filters?.limit || 20;
+      const offset = filters?.offset || 0;
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      // Transform data to match expected format
+      const decisions = (data || []).map((d: any) => ({
+        id: d.id,
+        user_id: d.user_id,
+        title: d.title,
+        status: d.status,
+        category: d.category?.name || 'Uncategorized',
+        category_id: d.category_id,
+        emotional_state: d.detected_emotional_state,
+        created_at: d.created_at,
+        decided_at: d.decided_at,
+        options: (d.options || []).map((opt: any) => ({
+          id: opt.id,
+          text: opt.title,
+          pros: (opt.pros_cons || [])
+            .filter((pc: any) => pc.type === 'pro')
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+            .map((pc: any) => pc.content),
+          cons: (opt.pros_cons || [])
+            .filter((pc: any) => pc.type === 'con')
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+            .map((pc: any) => pc.content),
+          isChosen: d.chosen_option_id === opt.id
+        })).sort((a: any, b: any) => a.display_order - b.display_order),
+        notes: d.description,
+        transcription: d.raw_transcript,
+        deleted_at: d.deleted_at
+      }));
+
+      return {
+        decisions,
+        total: count || 0,
+        limit,
+        offset,
+      };
+    } catch (error) {
+      console.error('Error in getDecisions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single decision by ID
+   */
+  static async getDecisionById(decisionId: string, userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('decisions')
+        .select(`
+          *,
+          category:categories(id, name, icon, color),
+          options:options!options_decision_id_fkey(
+            id,
+            title,
+            display_order,
+            pros_cons(id, type, content, display_order)
+          )
+        `)
+        .eq('id', decisionId)
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw error;
+      }
+
+      // Transform to match expected format
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        title: data.title,
+        status: data.status,
+        category: data.category?.name || 'Uncategorized',
+        category_id: data.category_id,
+        emotional_state: data.detected_emotional_state,
+        created_at: data.created_at,
+        decided_at: data.decided_at,
+        options: (data.options || []).map((opt: any) => ({
+          id: opt.id,
+          text: opt.title,
+          pros: (opt.pros_cons || [])
+            .filter((pc: any) => pc.type === 'pro')
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+            .map((pc: any) => pc.content),
+          cons: (opt.pros_cons || [])
+            .filter((pc: any) => pc.type === 'con')
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+            .map((pc: any) => pc.content),
+          isChosen: data.chosen_option_id === opt.id
+        })).sort((a: any, b: any) => a.display_order - b.display_order),
+        notes: data.description,
+        transcription: data.raw_transcript,
+        deleted_at: data.deleted_at
+      };
+    } catch (error) {
+      console.error('Error in getDecisionById:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new decision (stub for now)
+   */
+  static async createDecision(userId: string, dto: any) {
+    throw new Error('Not implemented yet');
+  }
+
+  /**
+   * Update a decision (stub for now)
+   */
+  static async updateDecision(decisionId: string, userId: string, dto: any) {
+    throw new Error('Not implemented yet');
+  }
+
+  /**
+   * Soft delete a decision
+   */
+  static async deleteDecision(decisionId: string, userId: string) {
+    const { data, error } = await supabase
+      .from('decisions')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', decisionId)
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    return data;
+  }
+}

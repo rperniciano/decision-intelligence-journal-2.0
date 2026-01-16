@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { supabase } from '../lib/supabase';
 
 // Type definitions
 interface Decision {
@@ -128,7 +129,57 @@ const filterOptions = [
 export function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [decisions] = useState<Decision[]>([]); // Will be populated from API
+  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch decisions from API
+  useEffect(() => {
+    async function fetchDecisions() {
+      try {
+        setLoading(true);
+
+        const { data: session } = await supabase.auth.getSession();
+        const token = session.session?.access_token;
+
+        if (!token) {
+          setDecisions([]);
+          return;
+        }
+
+        const response = await fetch('http://localhost:3001/api/v1/decisions', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch decisions');
+        }
+
+        const data = await response.json();
+
+        // Transform API response to match component interface
+        const transformedDecisions = data.decisions.map((d: any) => ({
+          id: d.id,
+          title: d.title,
+          status: d.status,
+          category: d.category,
+          emotionalState: d.emotional_state,
+          createdAt: d.created_at,
+          decidedAt: d.decided_at,
+          chosenOption: d.options?.find((opt: any) => opt.isChosen)?.text,
+        }));
+
+        setDecisions(transformedDecisions);
+      } catch (error) {
+        console.error('Error fetching decisions:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDecisions();
+  }, []);
 
   // Filter decisions based on search and filter
   const filteredDecisions = decisions.filter((decision) => {

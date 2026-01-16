@@ -10,6 +10,7 @@ import { HistoryPage } from './pages/HistoryPage';
 import { InsightsPage } from './pages/InsightsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { RecordPage } from './pages/RecordPage';
+import { DecisionDetailPage } from './pages/DecisionDetailPage';
 
 // Landing Page Component
 function LandingPage() {
@@ -134,7 +135,7 @@ function App() {
             path="/decisions/:id"
             element={
               <ProtectedRoute>
-                <PlaceholderPage title="Decision Details" />
+                <DecisionDetailPage />
               </ProtectedRoute>
             }
           />
