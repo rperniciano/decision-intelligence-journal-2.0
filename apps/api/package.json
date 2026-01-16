@@ -19,6 +19,7 @@
     "dotenv": "^16.4.1",
     "fastify": "^4.26.0",
     "openai": "^4.26.0",
+    "pino-pretty": "^11.2.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
