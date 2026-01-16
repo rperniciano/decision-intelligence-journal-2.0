@@ -7,6 +7,9 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
+import { InsightsPage } from './pages/InsightsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { RecordPage } from './pages/RecordPage';
 
 // Landing Page Component
 function LandingPage() {
@@ -147,7 +150,7 @@ function App() {
             path="/insights"
             element={
               <ProtectedRoute>
-                <PlaceholderPage title="Insights" />
+                <InsightsPage />
               </ProtectedRoute>
             }
           />
@@ -155,7 +158,7 @@ function App() {
             path="/settings"
             element={
               <ProtectedRoute>
-                <PlaceholderPage title="Settings" />
+                <SettingsPage />
               </ProtectedRoute>
             }
           />
@@ -163,7 +166,7 @@ function App() {
             path="/record"
             element={
               <ProtectedRoute>
-                <PlaceholderPage title="Record Decision" />
+                <RecordPage />
               </ProtectedRoute>
             }
           />

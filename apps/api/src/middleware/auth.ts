@@ -1,22 +1,31 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+// Lazy-initialized Supabase admin client
+// This ensures environment variables are read AFTER dotenv loads them
+let supabaseAdmin: SupabaseClient | null = null;
+let isSupabaseConfigured: boolean | null = null;
 
-// Check if Supabase is configured
-const isSupabaseConfigured = Boolean(supabaseUrl && supabaseServiceKey);
+function getSupabaseAdmin(): SupabaseClient | null {
+  // Initialize only once, but lazily after dotenv has loaded
+  if (isSupabaseConfigured === null) {
+    const supabaseUrl = process.env.SUPABASE_URL || '';
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// Create Supabase admin client (for server-side verification)
-const supabaseAdmin = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    })
-  : null;
+    isSupabaseConfigured = Boolean(supabaseUrl && supabaseServiceKey);
+
+    if (isSupabaseConfigured) {
+      supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
+    }
+  }
+
+  return supabaseAdmin;
+}
 
 // Extend FastifyRequest to include user
 declare module 'fastify' {
@@ -49,8 +58,11 @@ export async function authMiddleware(
 
   const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
+  // Get the lazily-initialized Supabase admin client
+  const adminClient = getSupabaseAdmin();
+
   // If Supabase is not configured, reject all requests
-  if (!isSupabaseConfigured || !supabaseAdmin) {
+  if (!adminClient) {
     reply.status(401).send({
       error: 'Unauthorized',
       message: 'Authentication service not configured',
@@ -60,7 +72,7 @@ export async function authMiddleware(
 
   try {
     // Verify the JWT token with Supabase
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user }, error } = await adminClient.auth.getUser(token);
 
     if (error || !user) {
       reply.status(401).send({
@@ -93,14 +105,19 @@ export async function optionalAuthMiddleware(
 ): Promise<void> {
   const authHeader = request.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ') || !isSupabaseConfigured || !supabaseAdmin) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return;
+  }
+
+  const adminClient = getSupabaseAdmin();
+  if (!adminClient) {
     return;
   }
 
   const token = authHeader.substring(7);
 
   try {
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user }, error } = await adminClient.auth.getUser(token);
 
     if (!error && user) {
       request.user = {

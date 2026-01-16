@@ -69,6 +69,7 @@ export function DashboardPage() {
           {/* Record button hero */}
           <div className="flex flex-col items-center justify-center py-16">
             <motion.button
+              onClick={() => navigate('/record')}
               className="w-32 h-32 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent-strong flex items-center justify-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
