@@ -12,6 +12,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { RecordPage } from './pages/RecordPage';
 import { DecisionDetailPage } from './pages/DecisionDetailPage';
 import { EditDecisionPage } from './pages/EditDecisionPage';
+import { DecisionDetailPageTest } from './pages/DecisionDetailPageTest';
 
 // Landing Page Component
 function LandingPage() {
@@ -177,6 +178,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <RecordPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/test-modal"
+            element={
+              <ProtectedRoute>
+                <DecisionDetailPageTest />
               </ProtectedRoute>
             }
           />

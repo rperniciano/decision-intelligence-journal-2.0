@@ -1,33 +1,37 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+// Temporary test page with mock data to test modal functionality
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabase';
 import { ConfirmModal } from '../components/Modal';
 
-// Type definitions
-interface DecisionOption {
-  id: string;
-  text: string;
-  pros: string[];
-  cons: string[];
-  isChosen?: boolean;
-}
-
-interface Decision {
-  id: string;
-  title: string;
-  status: 'draft' | 'deliberating' | 'decided' | 'abandoned' | 'reviewed';
-  category: string;
-  emotionalState?: string;
-  createdAt: string;
-  decidedAt?: string;
-  options: DecisionOption[];
-  notes?: string;
-  transcription?: string;
-}
+// Mock decision data
+const mockDecision = {
+  id: 'test-123',
+  title: 'Test Decision for Modal',
+  status: 'decided' as const,
+  category: 'Testing',
+  emotionalState: 'Confident',
+  createdAt: new Date().toISOString(),
+  options: [
+    {
+      id: '1',
+      text: 'Option A',
+      pros: ['Pro 1', 'Pro 2'],
+      cons: ['Con 1'],
+      isChosen: true
+    },
+    {
+      id: '2',
+      text: 'Option B',
+      pros: ['Pro 1'],
+      cons: ['Con 1', 'Con 2']
+    }
+  ],
+  notes: 'This is a test decision to verify modal functionality.'
+};
 
 // Status badge component
-function StatusBadge({ status }: { status: Decision['status'] }) {
+function StatusBadge({ status }: { status: typeof mockDecision.status }) {
   const statusConfig = {
     draft: { label: 'Draft', className: 'bg-white/10 text-text-secondary' },
     deliberating: { label: 'Deliberating', className: 'bg-amber-500/20 text-amber-400' },
@@ -46,7 +50,7 @@ function StatusBadge({ status }: { status: Decision['status'] }) {
 }
 
 // Option card component
-function OptionCard({ option, index }: { option: DecisionOption; index: number }) {
+function OptionCard({ option, index }: { option: typeof mockDecision.options[0]; index: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -94,154 +98,26 @@ function OptionCard({ option, index }: { option: DecisionOption; index: number }
   );
 }
 
-// Loading skeleton
-function LoadingSkeleton() {
-  return (
-    <div className="min-h-screen pb-20">
-      <header className="sticky top-0 z-40 bg-bg-deep/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="h-8 bg-white/5 rounded-lg w-32 animate-pulse" />
-        </div>
-      </header>
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        <div className="space-y-4">
-          <div className="h-8 bg-white/5 rounded-lg w-3/4 animate-pulse" />
-          <div className="h-6 bg-white/5 rounded-lg w-1/2 animate-pulse" />
-          <div className="h-32 bg-white/5 rounded-xl animate-pulse" />
-        </div>
-      </main>
-    </div>
-  );
-}
-
-export function DecisionDetailPage() {
-  const { id } = useParams<{ id: string }>();
+export function DecisionDetailPageTest() {
   const navigate = useNavigate();
-  const [decision, setDecision] = useState<Decision | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    async function fetchDecision() {
-      if (!id) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch decision data
-        const { data: session } = await supabase.auth.getSession();
-        const token = session.session?.access_token;
-
-        if (!token) {
-          setError('Not authenticated');
-          navigate('/login');
-          return;
-        }
-
-        const response = await fetch(`http://localhost:3001/api/v1/decisions/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.status === 404) {
-          setError('Decision not found');
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch decision');
-        }
-
-        const data = await response.json();
-        setDecision(data);
-      } catch (err) {
-        console.error('Error fetching decision:', err);
-        setError('Failed to load decision');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchDecision();
-  }, [id, navigate]);
+  const decision = mockDecision;
 
   const handleDelete = async () => {
-    if (!id) return;
+    console.log('Delete confirmed - simulating deletion...');
+    setIsDeleting(true);
 
-    try {
-      setIsDeleting(true);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Get auth token
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token;
+    console.log('Deletion complete - redirecting to history');
+    setIsDeleting(false);
+    setShowDeleteModal(false);
 
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
-      // Delete decision
-      const response = await fetch(`http://localhost:3001/api/v1/decisions/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete decision');
-      }
-
-      // Navigate back to history after successful deletion
-      navigate('/history', { replace: true });
-    } catch (err) {
-      console.error('Error deleting decision:', err);
-      setError('Failed to delete decision');
-      setIsDeleting(false);
-      setShowDeleteModal(false);
-    }
+    // Navigate back to history after successful deletion
+    navigate('/history', { replace: true });
   };
-
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/10 flex items-center justify-center">
-            <svg className="w-8 h-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 className="text-lg font-medium mb-2">{error}</h2>
-          <Link to="/history">
-            <motion.button
-              className="px-6 py-2 glass glass-hover rounded-full text-sm font-medium mt-4"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Back to History
-            </motion.button>
-          </Link>
-        </motion.div>
-        <div className="grain-overlay" />
-      </div>
-    );
-  }
-
-  if (!decision) {
-    return null;
-  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -273,7 +149,7 @@ export function DecisionDetailPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              Decision Details
+              Decision Details (Test Mode)
             </motion.h1>
           </div>
         </div>
@@ -341,23 +217,6 @@ export function DecisionDetailPage() {
           </motion.div>
         )}
 
-        {/* Transcription */}
-        {decision.transcription && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.3 }}
-            className="mb-6"
-          >
-            <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">
-              Transcription
-            </h3>
-            <div className="glass p-4 rounded-xl rim-light">
-              <p className="text-text-secondary text-sm whitespace-pre-wrap italic">"{decision.transcription}"</p>
-            </div>
-          </motion.div>
-        )}
-
         {/* Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -365,7 +224,7 @@ export function DecisionDetailPage() {
           transition={{ delay: 0.4, duration: 0.3 }}
           className="flex gap-3"
         >
-          <Link to={`/decisions/${id}/edit`} className="flex-1">
+          <Link to={`/decisions/${decision.id}/edit`} className="flex-1">
             <button className="w-full px-4 py-2.5 glass glass-hover rounded-xl text-sm font-medium">
               Edit Decision
             </button>
@@ -398,4 +257,4 @@ export function DecisionDetailPage() {
   );
 }
 
-export default DecisionDetailPage;
+export default DecisionDetailPageTest;
