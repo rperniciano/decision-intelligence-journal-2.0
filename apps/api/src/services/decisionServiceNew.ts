@@ -176,10 +176,127 @@ export class DecisionService {
   }
 
   /**
-   * Create a new decision (stub for now)
+   * Create a new decision
    */
   static async createDecision(userId: string, dto: any) {
-    throw new Error('Not implemented yet');
+    try {
+      // First, get or create the category
+      let categoryId = dto.category_id;
+
+      if (!categoryId && dto.category) {
+        // Try to find existing category
+        const { data: existingCategory } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('name', dto.category)
+          .single();
+
+        if (existingCategory) {
+          categoryId = existingCategory.id;
+        } else {
+          // Create new category
+          const slug = dto.category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          const { data: newCategory, error: catError } = await supabase
+            .from('categories')
+            .insert({
+              user_id: userId,
+              name: dto.category,
+              slug: slug,
+              icon: '📁',
+              color: '#00d4aa'
+            })
+            .select()
+            .single();
+
+          if (catError) throw catError;
+          categoryId = newCategory.id;
+        }
+      }
+
+      // Create the decision
+      const { data: decision, error: decisionError } = await supabase
+        .from('decisions')
+        .insert({
+          user_id: userId,
+          title: dto.title,
+          status: dto.status || 'draft',
+          category_id: categoryId,
+          detected_emotional_state: dto.emotional_state,
+          description: dto.notes,
+          raw_transcript: dto.transcription,
+          decided_at: dto.decided_at,
+        })
+        .select()
+        .single();
+
+      if (decisionError) throw decisionError;
+
+      // Create options and their pros/cons if provided
+      if (dto.options && dto.options.length > 0) {
+        for (let i = 0; i < dto.options.length; i++) {
+          const opt = dto.options[i];
+
+          const { data: option, error: optError } = await supabase
+            .from('options')
+            .insert({
+              decision_id: decision.id,
+              title: opt.text || opt.title,
+              display_order: i,
+            })
+            .select()
+            .single();
+
+          if (optError) throw optError;
+
+          // Create pros
+          if (opt.pros && opt.pros.length > 0) {
+            const prosToInsert = opt.pros.map((pro: string, idx: number) => ({
+              option_id: option.id,
+              type: 'pro',
+              content: pro,
+              display_order: idx,
+            }));
+
+            const { error: prosError } = await supabase
+              .from('pros_cons')
+              .insert(prosToInsert);
+
+            if (prosError) throw prosError;
+          }
+
+          // Create cons
+          if (opt.cons && opt.cons.length > 0) {
+            const consToInsert = opt.cons.map((con: string, idx: number) => ({
+              option_id: option.id,
+              type: 'con',
+              content: con,
+              display_order: idx,
+            }));
+
+            const { error: consError } = await supabase
+              .from('pros_cons')
+              .insert(consToInsert);
+
+            if (consError) throw consError;
+          }
+
+          // If this option is chosen, update the decision
+          if (opt.isChosen) {
+            await supabase
+              .from('decisions')
+              .update({ chosen_option_id: option.id })
+              .eq('id', decision.id);
+          }
+        }
+      }
+
+      // Fetch the complete decision with all relations
+      return await this.getDecisionById(decision.id, userId);
+    } catch (error) {
+      console.error('Error in createDecision:', error);
+      throw error;
+    }
   }
 
   /**

@@ -26,7 +26,7 @@ function StatusBadge({ status }: { status: Decision['status'] }) {
     reviewed: { label: 'Reviewed', className: 'bg-emerald-500/20 text-emerald-400' },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || { label: status || 'Unknown', className: 'bg-white/10 text-text-secondary' };
 
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
