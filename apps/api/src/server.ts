@@ -3,10 +3,16 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { config } from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { authMiddleware } from './middleware/auth';
 
-// Load environment variables
-config();
+// Get directory paths for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from monorepo root
+config({ path: path.resolve(__dirname, '../../../.env') });
 
 const server = Fastify({
   logger: {

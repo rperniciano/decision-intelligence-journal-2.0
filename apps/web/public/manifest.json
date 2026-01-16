@@ -1,0 +1,17 @@
+{
+  "name": "Decisions - Decision Intelligence Journal",
+  "short_name": "Decisions",
+  "description": "A voice-first application that transforms how people make and track decisions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#00d4aa",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

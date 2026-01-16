@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { HistoryPage } from './pages/HistoryPage';
 
 // Landing Page Component
 function LandingPage() {
@@ -138,7 +139,7 @@ function App() {
             path="/history"
             element={
               <ProtectedRoute>
-                <PlaceholderPage title="History" />
+                <HistoryPage />
               </ProtectedRoute>
             }
           />
@@ -155,6 +156,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PlaceholderPage title="Settings" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/record"
+            element={
+              <ProtectedRoute>
+                <PlaceholderPage title="Record Decision" />
               </ProtectedRoute>
             }
           />

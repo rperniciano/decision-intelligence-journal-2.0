@@ -142,6 +142,26 @@ body {
     mask-composite: exclude;
     pointer-events: none;
   }
+
+  /* Safe area utilities for mobile devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Glow accent subtle for header */
+  .glow-accent-subtle {
+    box-shadow: 0 0 20px rgba(0, 212, 170, 0.15);
+  }
 }
 
 /* Reduced motion */

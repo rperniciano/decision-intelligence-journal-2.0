@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { BottomNav } from '../components/BottomNav';
 
 export function DashboardPage() {
   const { user, signOut } = useAuth();
@@ -23,7 +24,7 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20">
       {/* Header */}
       <header className="border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -134,6 +135,9 @@ export function DashboardPage() {
           </motion.div>
         </motion.div>
       </main>
+
+      {/* Bottom navigation */}
+      <BottomNav />
 
       {/* Grain overlay */}
       <div className="grain-overlay" />
