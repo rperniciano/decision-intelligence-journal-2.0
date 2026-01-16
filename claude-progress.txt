@@ -86,56 +86,128 @@ Created comprehensive TypeScript types:
 - Initialized Git repository
 - Created initial commit with all foundation files
 
-## Files Created
-- init.sh (environment setup)
-- README.md (comprehensive documentation)
-- package.json, pnpm-workspace.yaml, turbo.json
-- apps/web/* (React frontend structure)
-- apps/api/* (Fastify backend structure)
-- packages/shared/* (shared types and schemas)
-- .env.example, .gitignore
+---
+
+# Session 2 Progress Report (Coding Agent)
+# ============================================
+
+## Session Summary
+Date: Session 2
+Agent: Coding Agent
+
+## Completed Tasks
+
+### 1. Frontend Authentication System
+- Created Supabase client configuration (apps/web/src/lib/supabase.ts)
+  - Graceful fallback when Supabase not configured
+  - Exports isSupabaseConfigured flag for conditional behavior
+- Created AuthContext (apps/web/src/contexts/AuthContext.tsx)
+  - Session management with Supabase Auth
+  - Sign in/up with email, Google OAuth
+  - Password reset functionality
+  - Loading state handling
+- Created ProtectedRoute component (apps/web/src/components/ProtectedRoute.tsx)
+  - Redirects unauthenticated users to /login
+  - Preserves intended destination for post-login redirect
+  - Shows loading spinner during auth check
+
+### 2. Auth Pages
+- Login page (apps/web/src/pages/LoginPage.tsx)
+  - Email/password form
+  - Google OAuth button
+  - Forgot password link
+  - Cinematic dark UI with glassmorphism
+- Register page (apps/web/src/pages/RegisterPage.tsx)
+  - Email/password registration
+  - Google OAuth option
+  - Success confirmation screen
+- Forgot Password page (apps/web/src/pages/ForgotPasswordPage.tsx)
+  - Email input for reset instructions
+  - Success confirmation screen
+
+### 3. Dashboard Page
+- Created DashboardPage (apps/web/src/pages/DashboardPage.tsx)
+  - Time-based greeting
+  - Hero record button with glow effect
+  - Quick stats cards (Total Decisions, Positive Outcomes, Decision Score)
+  - Empty state message
+  - Sign out functionality
+
+### 4. API Authentication Middleware
+- Created auth middleware (apps/api/src/middleware/auth.ts)
+  - Validates Supabase JWT tokens
+  - Returns 401 for missing/invalid tokens
+  - Attaches user info to request
+  - Optional auth middleware variant
+- Updated server.ts to use auth middleware on all /api/v1 routes
+- Expanded API endpoints for full feature coverage
+
+### 5. Environment Configuration
+- Updated .env and .env.example with VITE_SUPABASE_* variables
+- Added pino-pretty dependency for API logging
+
+## Features Verified (9 passing)
+1. #1: Unauthenticated user redirected from /dashboard ✅
+2. #2: Unauthenticated user redirected from /decisions ✅
+3. #3: Unauthenticated user redirected from /insights ✅
+4. #4: Unauthenticated user redirected from /settings ✅
+5. #5: Unauthenticated user redirected from /history ✅
+6. #6: API returns 401 for unauthenticated decision list ✅
+7. #7: API returns 401 for unauthenticated profile access ✅
+8. #8: API returns 401 for unauthenticated insights access ✅
+9. #11: Invalid auth token rejected ✅
 
 ## Feature Statistics
 - Total Features: 291
-- Passing: 0
+- Passing: 9
 - In Progress: 0
-- Completion: 0%
+- Completion: 3.1%
+
+## Files Created/Modified
+- apps/web/src/lib/supabase.ts (NEW)
+- apps/web/src/contexts/AuthContext.tsx (NEW)
+- apps/web/src/components/ProtectedRoute.tsx (NEW)
+- apps/web/src/pages/LoginPage.tsx (NEW)
+- apps/web/src/pages/RegisterPage.tsx (NEW)
+- apps/web/src/pages/ForgotPasswordPage.tsx (NEW)
+- apps/web/src/pages/DashboardPage.tsx (NEW)
+- apps/web/src/App.tsx (MODIFIED)
+- apps/api/src/middleware/auth.ts (NEW)
+- apps/api/src/server.ts (MODIFIED)
+- apps/api/package.json (MODIFIED - added pino-pretty)
+- .env, .env.example (MODIFIED)
+
+## Blockers & Skipped Features
+The following features were skipped because they require Supabase to be configured with valid credentials:
+- #9: Session token expiration
+- #10: Logout clears session data
+- #12: Expired auth token rejected
+- #13-15: Cross-user data isolation tests
+- #16-25: Various auth-dependent security features
+- #26+: Navigation features (require login)
 
 ## Next Steps for Future Agents
-1. Run `./init.sh` to install dependencies
-2. Configure Supabase (create project, run migrations)
-3. Get API keys (AssemblyAI, OpenAI)
-4. Start implementing features using `feature_get_next`
-5. Focus on Foundation features first:
-   - Authentication (Supabase Auth integration)
-   - Basic Decision CRUD
-   - Database schema setup
+1. **CRITICAL: Configure Supabase**
+   - Create a Supabase project
+   - Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env
+   - Add SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+   - Run database migrations to create tables
 
-## Priority Implementation Order
-1. Supabase database schema and RLS policies
-2. Authentication (Google OAuth + Email/Password)
-3. Protected routes middleware
-4. Basic Decision CRUD API
-5. Decision list and detail UI
-6. Voice recording (Web Audio API)
-7. AI pipeline (AssemblyAI + GPT-4)
-8. Categories
-9. Outcomes and reminders
-10. Insights and patterns
-11. Polish and PWA
+2. **Database Setup**
+   - Create profiles, decisions, options, pros_cons tables
+   - Set up Row Level Security policies
+   - Create indexes for performance
+
+3. **Continue Feature Implementation**
+   - Once Supabase is configured, run skipped auth features
+   - Implement decision CRUD functionality
+   - Build out the recording and voice pipeline
 
 ## Notes
-- All features are stored in features.db SQLite database
-- Use feature_get_next to get highest priority pending feature
-- Use feature_mark_passing after implementing each feature
-- NEVER remove or edit features - only mark as passing
-
-## Environment Requirements
-- Node.js 18+
-- pnpm
-- Supabase project
-- AssemblyAI API key
-- OpenAI API key
+- Frontend runs on http://localhost:5173 (or 5174 if 5173 is busy)
+- API runs on http://localhost:3001
+- Both servers auto-reload on file changes
+- The app gracefully handles missing Supabase config (shows "not configured" errors)
 
 ---
-Session 1 complete. Ready for implementation in subsequent sessions.
+Session 2 complete. Authentication foundation in place. Supabase configuration needed to continue.
