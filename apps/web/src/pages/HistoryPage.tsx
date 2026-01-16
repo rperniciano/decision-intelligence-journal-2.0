@@ -131,11 +131,17 @@ const ITEMS_PER_PAGE = 10;
 export function HistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
+  const filterFromUrl = searchParams.get('filter') || 'all';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState(filterFromUrl);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Update activeFilter when URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    setActiveFilter(filterFromUrl);
+  }, [filterFromUrl]);
 
   // Fetch decisions from API
   useEffect(() => {
@@ -201,7 +207,9 @@ export function HistoryPage() {
 
   // Handle page change
   const goToPage = (page: number) => {
-    setSearchParams({ page: page.toString() });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('page', page.toString());
+    setSearchParams(newParams);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -256,7 +264,12 @@ export function HistoryPage() {
           {filterOptions.map((filter) => (
             <button
               key={filter.id}
-              onClick={() => setActiveFilter(filter.id)}
+              onClick={() => {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set('filter', filter.id);
+                newParams.set('page', '1'); // Reset to page 1 when filter changes
+                setSearchParams(newParams);
+              }}
               className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 activeFilter === filter.id
                   ? 'bg-accent text-bg-deep'
