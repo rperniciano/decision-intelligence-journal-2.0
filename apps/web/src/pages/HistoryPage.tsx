@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { supabase } from '../lib/supabase';
 
@@ -126,7 +126,12 @@ const filterOptions = [
   { id: 'reviewed', label: 'Reviewed' },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export function HistoryPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = parseInt(searchParams.get('page') || '1', 10);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [decisions, setDecisions] = useState<Decision[]>([]);
@@ -187,6 +192,18 @@ export function HistoryPage() {
     const matchesFilter = activeFilter === 'all' || decision.status === activeFilter;
     return matchesSearch && matchesFilter;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredDecisions.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedDecisions = filteredDecisions.slice(startIndex, endIndex);
+
+  // Handle page change
+  const goToPage = (page: number) => {
+    setSearchParams({ page: page.toString() });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen pb-20">
@@ -253,11 +270,59 @@ export function HistoryPage() {
 
         {/* Decisions list */}
         {filteredDecisions.length > 0 ? (
-          <div className="space-y-3">
-            {filteredDecisions.map((decision, index) => (
-              <DecisionCard key={decision.id} decision={decision} index={index} />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {paginatedDecisions.map((decision, index) => (
+                <DecisionCard key={decision.id} decision={decision} index={index} />
+              ))}
+            </div>
+
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <motion.div
+                className="flex items-center justify-center gap-2 mt-8"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`min-w-[40px] px-3 py-2 rounded-lg font-medium transition-all ${
+                        currentPage === page
+                          ? 'bg-accent text-bg-deep'
+                          : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </motion.div>
+            )}
+          </>
         ) : (
           <EmptyState />
         )}
