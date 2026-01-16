@@ -1,0 +1,758 @@
+<project_specification>
+  <project_name>Decisions - A Decision Intelligence Journal</project_name>
+
+  <overview>
+    A voice-first application that transforms how people make and track decisions. Users speak their decisions naturally, AI extracts structured data (options, pros/cons, emotional state), outcomes are tracked over time with smart reminders, and personal decision-making patterns are revealed through intelligent analysis. The app features a cinematic, atmospheric dark UI with premium animations and a "half-closed eyes" design philosophy for frictionless use.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>React 18 with TypeScript</framework>
+      <build_tool>Vite</build_tool>
+      <styling>Tailwind CSS</styling>
+      <animation>Framer Motion with spring physics (mass: 1, damping: 15)</animation>
+      <charts>Recharts for insights visualizations</charts>
+      <design_system>
+        - Atmospheric dark UI with animated grain overlay (opacity 0.03-0.05)
+        - Glassmorphism cards (backdrop-filter: blur(20px) + luminous borders)
+        - Deep gradient backgrounds (#0a0a0f to #1a1a2e)
+        - Luminous teal/cyan accent (#00d4aa)
+        - Off-white text (#f0f0f5)
+        - Spring physics for all interactions
+        - Staggered reveals (0.1s delay between elements)
+        - Easing: cubic-bezier(0.25, 1, 0.5, 1)
+      </design_system>
+    </frontend>
+    <backend>
+      <runtime>Node.js with Fastify</runtime>
+      <language>TypeScript</language>
+      <port>3001</port>
+      <database>Supabase PostgreSQL with Row Level Security</database>
+      <auth>Supabase Auth (Google OAuth + Email/Password)</auth>
+      <storage>Supabase Storage for audio files</storage>
+      <transcription>AssemblyAI</transcription>
+      <ai_extraction>OpenAI GPT-4</ai_extraction>
+    </backend>
+    <monorepo>
+      <tool>Turborepo with pnpm</tool>
+      <structure>
+        - /apps/web (React frontend)
+        - /apps/api (Fastify backend)
+        - /packages/shared (types, validation schemas)
+      </structure>
+    </monorepo>
+    <communication>
+      <api>RESTful with action-based endpoints for workflows</api>
+      <async_processing>Polling for voice processing pipeline (MVP), WebSockets planned for post-MVP</async_processing>
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 18+
+      - pnpm package manager
+      - Supabase project (Auth, Database, Storage configured)
+      - AssemblyAI API key
+      - OpenAI API key
+      - Environment variables configured for all services
+    </environment_setup>
+  </prerequisites>
+
+  <feature_count>280</feature_count>
+
+  <security_and_access_control>
+    <user_roles>
+      <role name="authenticated_user">
+        <permissions>
+          - Full CRUD on own decisions
+          - Full access to own insights and patterns
+          - Export own data (JSON, CSV, PDF)
+          - Manage own account settings
+          - Delete own account
+          - Cannot access other users' data
+        </permissions>
+        <protected_routes>
+          - /dashboard (authenticated users)
+          - /decisions/* (authenticated users)
+          - /insights (authenticated users)
+          - /settings (authenticated users)
+          - /history (authenticated users)
+        </protected_routes>
+      </role>
+    </user_roles>
+    <authentication>
+      <method>Supabase Auth with Google OAuth and Email/Password</method>
+      <session_timeout>30 days of inactivity</session_timeout>
+      <password_requirements>Supabase default (minimum 6 characters)</password_requirements>
+      <rate_limiting>5 failed login attempts = 15 minute lockout</rate_limiting>
+    </authentication>
+    <sensitive_operations>
+      - Account deletion requires password re-entry + type "DELETE" confirmation + 30-day grace period
+      - Bulk delete requires type "DELETE X" confirmation
+      - Single decision delete has 7-day soft delete recovery
+      - All audio files encrypted at rest in Supabase Storage
+      - Row Level Security ensures data isolation between users
+    </sensitive_operations>
+  </security_and_access_control>
+
+  <core_features>
+    <landing_page>
+      - Cinematic hero section with animated gradient and grain texture
+      - Glowing "orb" representing the record button with pulse animation
+      - "How it works" section with 3 cinematic cards (Speak, AI Extracts, Discover Patterns)
+      - Interactive demo allowing users to try recording without signup
+      - Minimal, scroll-driven design focused on value proposition
+      - Single CTA: "Begin Your Journal" with magnetic hover effect
+    </landing_page>
+
+    <authentication>
+      - Google OAuth login
+      - Email/Password registration and login
+      - Password reset flow
+      - Session persistence with secure token handling
+      - Protected route middleware
+      - Redirect to intended destination after login
+    </authentication>
+
+    <onboarding>
+      - Conversational, voice-encouraged name capture ("What should I call you?")
+      - First decision guided recording experience
+      - "Magic moment" reveal of AI extraction with staggered animations
+      - Inline editing tutorial ("Did I understand correctly? Tap anything to adjust")
+      - Subtle celebration on completion (tasteful particle burst)
+      - Under 2 minutes total, results in real data (not empty state)
+    </onboarding>
+
+    <voice_recording>
+      - Web Audio API for browser-based recording
+      - Real-time waveform visualizer around record button
+      - Luminous pulsation during recording (breathing heartbeat effect)
+      - Silence detection with 3-second auto-stop
+      - Screen dims with vignette effect during recording
+      - "Time suspended" feel with slowed ambient effects
+      - Audio upload to Supabase Storage
+      - Offline support with IndexedDB fallback
+      - Minimum 2-second recording requirement
+      - Maximum 5-minute recording length (MVP free tier)
+    </voice_recording>
+
+    <ai_processing_pipeline>
+      - Async processing with status polling
+      - AssemblyAI transcription with retry logic (3 attempts, exponential backoff)
+      - GPT-4 structured extraction with confidence scoring
+      - Extraction includes: title, options array, pros/cons per option, emotional state, category suggestion
+      - Processing states: uploaded, transcribing, extracting, completed, failed, retrying
+      - Cinematic "Exploring your decision..." loader with orbital animation
+      - Graceful error handling with re-record and manual entry fallbacks
+    </ai_processing_pipeline>
+
+    <decision_extraction_card>
+      - Displays AI-extracted decision with staggered reveal animation
+      - Fully editable: title, options, pros/cons, emotional state, category
+      - Inline edit mode with soft keyboard/voice input
+      - Long-press context menu: Edit, Delete, Move, Switch pro/con
+      - Drag and drop pros/cons between options
+      - Swipe left to delete with spring animation
+      - Emoji picker for emotional state
+      - Category dropdown with "Create new" option
+      - Glassmorphism card styling with rim lighting
+      - "Not quite right?" section with re-record and manual entry options
+    </decision_extraction_card>
+
+    <decision_lifecycle>
+      - Five states: Draft, Deliberating, Decided, Abandoned, Reviewed
+      - Draft: AI extraction complete but not saved
+      - Deliberating: Saved but still thinking, with optional "decide by" date
+      - Decided: User marked which option was chosen with confidence level
+      - Abandoned: User decided not to decide, with reason tracking
+      - Reviewed: Outcome recorded, contributes to pattern analysis
+      - Status badges and visual indicators throughout UI
+      - Soft delete with 7-day trash recovery
+    </decision_lifecycle>
+
+    <categories>
+      - AI-suggested categories based on decision content
+      - User-created custom categories
+      - Category management (create, rename, merge, delete)
+      - Per-category color and emoji icon
+      - Auto-learning: suggests patterns after 5-10 decisions
+      - Cached statistics: decision count, positive outcome rate
+      - System vs user-created distinction
+    </categories>
+
+    <outcome_tracking>
+      - Smart automatic reminders (2 weeks default, AI-adjusted by decision type)
+      - User custom reminder dates with "decide by" scheduling
+      - Quick outcome recording: Better/As Expected/Worse (one-tap)
+      - Optional satisfaction rating (1-5 stars)
+      - Optional voice reflection with AI insight extraction
+      - Multiple check-ins per decision (timeline view)
+      - Check-in numbering (1st, 2nd, 3rd check-in)
+      - "What I learned" AI extraction from reflections
+    </outcome_tracking>
+
+    <reminder_system>
+      - Background job for due reminder notifications
+      - Push notifications (PWA)
+      - Email digest option (weekly summary)
+      - Quiet hours respect (no notifications 10pm-8am)
+      - Smart frequency reduction if ignored 3 times
+      - Pending reviews section on dashboard
+      - Reminder management (reschedule, skip, complete)
+    </reminder_system>
+
+    <pattern_analysis>
+      - Timing patterns: best/worst hours for decisions, late-night penalty
+      - Emotional state correlations: positive rate per emotion, behavioral tendencies
+      - Category performance: success rate per category, decision count
+      - Decision velocity: quick vs slow decisions, optimal deliberation window
+      - Cross-pattern insights: multi-dimensional analysis ("anxious + late night + financial = 34% worse")
+      - Confidence vs outcome correlation
+      - Option position bias detection (primacy bias)
+      - Choice tendency analysis ("you choose cheaper option 70% of the time")
+    </pattern_analysis>
+
+    <decision_score>
+      - Decision Score (0-100) based on outcome rate, process quality, follow-through
+      - Trend tracking (+/- points this month)
+      - Gamification element to encourage engagement
+      - Optional social comparison (post-MVP)
+    </decision_score>
+
+    <insights_dashboard>
+      - Decision Score display with trend indicator
+      - Pattern cards (horizontal scroll): Timing Bias, Emotions Impact, Category Performance
+      - Interactive trend charts (Recharts)
+      - "This Month's Focus" actionable recommendation
+      - Pattern detail pages with full analysis
+      - Insights cache with 1-hour TTL
+    </insights_dashboard>
+
+    <contextual_hints>
+      - Time-of-day warning when recording late at night
+      - Emotional state awareness ("You're anxious. Take a breath?")
+      - Similar past decision suggestion
+      - Deliberation time warning ("Past your sweet spot")
+      - Dismissible, non-blocking UI
+      - Never preachy, user always in control
+    </contextual_hints>
+
+    <main_dashboard>
+      - Personalized greeting with time-of-day awareness
+      - Hero record button always prominent
+      - Pending reviews section with due dates
+      - Quick stats: total decisions, positive rate, decision score
+      - Recent decisions list with quick access
+      - Empty state with inspirational message
+      - Dark, calm, focused design
+    </main_dashboard>
+
+    <decision_history>
+      - List view (default), Timeline view, Calendar view (heatmap)
+      - Full-text search through titles, options, pros/cons, reflections
+      - Filter chips: category, outcome, status, emotion, time period
+      - Advanced filters panel with multi-select
+      - Sort by date, category, outcome
+      - Grouped by month/year
+      - Search results with highlighted matching text
+      - Recent searches saved
+      - Filter persistence after viewing detail
+    </decision_history>
+
+    <settings>
+      - Profile: name, email, avatar
+      - Notifications: outcome reminders, weekly digest, push, email, quiet hours
+      - Defaults: reminder timing, input preference, auto-categorize
+      - Appearance: theme variants (Dark, Darker, OLED Black, Midnight Blue), reduce motion
+      - Data & Privacy: export, download recordings, privacy settings, delete account
+      - About: version, terms, privacy policy, feedback
+    </settings>
+
+    <data_export>
+      - JSON export with complete structured data
+      - CSV export for spreadsheet analysis
+      - PDF report (beautiful formatted journal, async generation)
+      - Audio recordings ZIP download
+      - Decision data includes: full decision details, outcomes, patterns, statistics
+    </data_export>
+
+    <error_handling>
+      - Transcription failure: audio preserved, retry options, manual fallback
+      - AI extraction failure: partial results shown, confidence warning, editing available
+      - Network loss mid-recording: local IndexedDB storage, auto-sync on reconnect
+      - Audio too short/silent: clear feedback, mic check suggestion
+      - Microphone permission denied: clear explanation, text input alternative
+      - Rate limit reached: friendly message, timer, upgrade CTA
+    </error_handling>
+
+    <pwa_features>
+      - Service worker for offline support (read-only browsing)
+      - Manifest.json with custom icons
+      - Cinematic splash screen
+      - Install prompt
+      - Push notification support
+      - Offline indicator in UI
+    </pwa_features>
+
+    <performance_optimizations>
+      - Lazy loading for heavy components (dashboard, charts, patterns)
+      - Code splitting by route
+      - WebP/AVIF for images
+      - Audio compression before upload
+      - Optimistic UI updates
+      - Lighthouse 90+ target
+      - Skeleton loading states with premium shimmer
+    </performance_optimizations>
+  </core_features>
+
+  <database_schema>
+    <tables>
+      <profiles>
+        - id (UUID, PK, references auth.users)
+        - name (VARCHAR 100)
+        - avatar_url (TEXT)
+        - settings (JSONB)
+        - decision_score (INTEGER, default 50)
+        - total_decisions (INTEGER, default 0)
+        - positive_outcome_rate (DECIMAL 3,2)
+        - created_at, updated_at (TIMESTAMPTZ)
+      </profiles>
+
+      <categories>
+        - id (UUID, PK)
+        - user_id (UUID, FK to profiles)
+        - name (VARCHAR 50, unique per user)
+        - color (VARCHAR 7, hex)
+        - icon (VARCHAR 10, emoji)
+        - decision_count (INTEGER, denormalized)
+        - positive_rate (DECIMAL 3,2, cached)
+        - is_system (BOOLEAN)
+        - created_at (TIMESTAMPTZ)
+      </categories>
+
+      <decisions>
+        - id (UUID, PK)
+        - user_id (UUID, FK to profiles)
+        - category_id (UUID, FK to categories)
+        - title (VARCHAR 200)
+        - transcript (TEXT)
+        - status (VARCHAR 20: draft/deliberating/decided/abandoned/reviewed)
+        - emotional_state (VARCHAR 30)
+        - confidence_level (SMALLINT 1-5)
+        - chosen_option_id (UUID)
+        - recorded_at (TIMESTAMPTZ)
+        - decide_by_date (DATE)
+        - decided_at (TIMESTAMPTZ)
+        - audio_url (TEXT)
+        - audio_duration_seconds (INTEGER)
+        - ai_extraction (JSONB)
+        - ai_confidence (DECIMAL 3,2)
+        - abandon_reason (VARCHAR 50)
+        - abandon_note (TEXT)
+        - created_at, updated_at (TIMESTAMPTZ)
+        - deleted_at (TIMESTAMPTZ, soft delete)
+      </decisions>
+
+      <options>
+        - id (UUID, PK)
+        - decision_id (UUID, FK to decisions)
+        - name (VARCHAR 200)
+        - position (SMALLINT)
+        - is_chosen (BOOLEAN)
+        - created_at (TIMESTAMPTZ)
+      </options>
+
+      <pros_cons>
+        - id (UUID, PK)
+        - option_id (UUID, FK to options)
+        - type (VARCHAR 4: pro/con)
+        - content (VARCHAR 500)
+        - position (SMALLINT)
+        - ai_generated (BOOLEAN)
+        - created_at (TIMESTAMPTZ)
+      </pros_cons>
+
+      <outcomes>
+        - id (UUID, PK)
+        - decision_id (UUID, FK to decisions)
+        - result (VARCHAR 20: better/as_expected/worse)
+        - satisfaction (SMALLINT 1-5)
+        - reflection_audio_url (TEXT)
+        - reflection_transcript (TEXT)
+        - learned (TEXT)
+        - scheduled_for (DATE)
+        - recorded_at (TIMESTAMPTZ)
+        - check_in_number (SMALLINT)
+        - created_at (TIMESTAMPTZ)
+      </outcomes>
+
+      <outcome_reminders>
+        - id (UUID, PK)
+        - decision_id (UUID, FK to decisions)
+        - user_id (UUID, FK to profiles)
+        - remind_at (TIMESTAMPTZ)
+        - status (VARCHAR 20: pending/sent/completed/skipped)
+        - created_at (TIMESTAMPTZ)
+      </outcome_reminders>
+
+      <processing_jobs>
+        - id (UUID, PK)
+        - user_id (UUID, FK to profiles)
+        - status (VARCHAR 20: uploaded/transcribing/extracting/completed/failed/retrying)
+        - progress (DECIMAL 3,2)
+        - audio_url (TEXT)
+        - audio_duration_seconds (INTEGER)
+        - transcript (TEXT)
+        - extraction (JSONB)
+        - decision_id (UUID, FK to decisions)
+        - error_message (TEXT)
+        - error_code (VARCHAR 50)
+        - retry_count (SMALLINT)
+        - created_at, started_at, completed_at (TIMESTAMPTZ)
+      </processing_jobs>
+    </tables>
+
+    <indexes>
+      - idx_decisions_user_status ON decisions(user_id, status)
+      - idx_decisions_user_created ON decisions(user_id, created_at DESC)
+      - idx_decisions_category ON decisions(category_id)
+      - idx_outcomes_decision ON outcomes(decision_id)
+      - idx_reminders_pending ON outcome_reminders(remind_at) WHERE status = 'pending'
+    </indexes>
+
+    <row_level_security>
+      - All tables have RLS enabled
+      - Users can only SELECT/INSERT/UPDATE/DELETE their own records
+      - Policies based on auth.uid() = user_id
+    </row_level_security>
+  </database_schema>
+
+  <api_endpoints_summary>
+    <decisions>
+      - GET /api/v1/decisions (list with filters)
+      - GET /api/v1/decisions/:id (get single)
+      - POST /api/v1/decisions (create from manual input)
+      - PATCH /api/v1/decisions/:id (update fields)
+      - DELETE /api/v1/decisions/:id (soft delete)
+      - POST /api/v1/decisions/:id/start-deliberating
+      - POST /api/v1/decisions/:id/decide
+      - POST /api/v1/decisions/:id/abandon
+      - POST /api/v1/decisions/:id/restore
+      - DELETE /api/v1/decisions/:id/permanent
+    </decisions>
+
+    <recordings>
+      - POST /api/v1/recordings/upload (upload audio)
+      - POST /api/v1/recordings/:id/process (trigger pipeline)
+      - GET /api/v1/recordings/:id/status (poll for completion)
+      - POST /api/v1/recordings/:id/retry (retry failed)
+    </recordings>
+
+    <options_and_pros_cons>
+      - GET /api/v1/decisions/:id/options
+      - POST /api/v1/decisions/:id/options
+      - PATCH /api/v1/decisions/:id/options/:oid
+      - DELETE /api/v1/decisions/:id/options/:oid
+      - POST /api/v1/decisions/:id/options/:oid/pros
+      - POST /api/v1/decisions/:id/options/:oid/cons
+      - PATCH /api/v1/decisions/:id/pros-cons/:pcid
+      - DELETE /api/v1/decisions/:id/pros-cons/:pcid
+      - POST /api/v1/decisions/:id/pros-cons/:pcid/switch
+    </options_and_pros_cons>
+
+    <outcomes>
+      - GET /api/v1/decisions/:id/outcomes
+      - POST /api/v1/decisions/:id/outcomes
+      - PATCH /api/v1/decisions/:id/outcomes/:oid
+      - GET /api/v1/decisions/:id/reminders
+      - POST /api/v1/decisions/:id/reminders
+      - DELETE /api/v1/decisions/:id/reminders/:rid
+    </outcomes>
+
+    <categories>
+      - GET /api/v1/categories
+      - POST /api/v1/categories
+      - PATCH /api/v1/categories/:id
+      - DELETE /api/v1/categories/:id
+    </categories>
+
+    <insights>
+      - GET /api/v1/insights (full insights object)
+      - GET /api/v1/insights/score
+      - GET /api/v1/insights/patterns/timing
+      - GET /api/v1/insights/patterns/emotional
+      - GET /api/v1/insights/patterns/categories
+      - GET /api/v1/insights/summary
+    </insights>
+
+    <export>
+      - POST /api/v1/export/json
+      - POST /api/v1/export/csv
+      - POST /api/v1/export/pdf (async)
+      - GET /api/v1/export/:job_id/status
+      - GET /api/v1/export/:job_id/download
+    </export>
+
+    <profile>
+      - GET /api/v1/profile
+      - PATCH /api/v1/profile
+      - PATCH /api/v1/profile/settings
+      - DELETE /api/v1/profile
+    </profile>
+  </api_endpoints_summary>
+
+  <ui_layout>
+    <main_structure>
+      Mobile-first responsive design with bottom navigation on mobile, sidebar on desktop.
+
+      Bottom Navigation (Mobile):
+      - Record (center, prominent)
+      - History
+      - Insights
+      - Settings
+
+      Layout:
+      - Full-screen recording experience (hero button in dark void)
+      - Card-based content areas with glassmorphism
+      - Floating action button for quick record access
+      - Modal overlays for editing and confirmations
+    </main_structure>
+
+    <key_screens>
+      - Landing Page (public)
+      - Auth Pages (login, register, password reset)
+      - Onboarding Flow (3-4 conversational screens)
+      - Main Dashboard (home/record)
+      - Recording Experience (full-screen)
+      - Extraction Review (editable card)
+      - Decision Detail (timeline view)
+      - History List (filterable)
+      - Insights Dashboard
+      - Pattern Detail Pages
+      - Settings
+      - Export
+    </key_screens>
+
+    <recording_experience>
+      The hero experience - full-screen dark void with glowing record button.
+
+      States:
+      1. Ready: Pulsing button, "Tap to record a decision"
+      2. Recording: Expanded button, waveform visualizer, dimmed edges, breathing glow
+      3. Processing: Orbital animation, "Exploring your decision..."
+      4. Results: Staggered card reveal with extraction data
+    </recording_experience>
+  </ui_layout>
+
+  <design_system>
+    <color_palette>
+      Background: Deep gradient (#0a0a0f to #1a1a2e)
+      Surface: Glassmorphism with backdrop-blur(20px)
+      Primary Accent: Luminous teal (#00d4aa)
+      Text Primary: Off-white (#f0f0f5)
+      Text Secondary: Muted gray (#9ca3af)
+      Success: Soft green glow (#10b981)
+      Warning: Soft amber glow (#f59e0b)
+      Error: Soft red glow (#ef4444)
+      Card Border: Luminous rim lighting (thin glowing border)
+    </color_palette>
+
+    <typography>
+      Font: System font stack (SF Pro, Segoe UI, Roboto)
+      Headings: Semi-bold, tracking-tight
+      Body: Regular weight, comfortable line-height
+      Monospace: For any code or technical display
+    </typography>
+
+    <motion>
+      Spring Physics: mass 1, damping 15 for all interactions
+      Easing: cubic-bezier(0.25, 1, 0.5, 1)
+      Stagger: 0.1s delay between sequential reveals
+      Transitions: 200-300ms for micro-interactions
+      Grain Overlay: Animated noise at 0.03-0.05 opacity
+      Glow Effects: Radial gradients that follow/breathe with interactions
+    </motion>
+
+    <effects>
+      Glassmorphism: backdrop-filter: blur(20px), border with subtle luminosity
+      Rim Lighting: Thin glowing borders on cards
+      Layered Shadows: Stratified depth, not flat drop-shadows
+      Magnetic Hover: Cards tilt toward cursor on desktop
+      Ripple Feedback: Tap feedback with ripple + scale
+      Shimmer Loading: Premium skeleton states
+    </effects>
+
+    <responsive_strategy>
+      Desktop: Full atmospheric effects (particles, cursor glow, grain)
+      Tablet: Reduced particles, maintained glassmorphism
+      Mobile: Optimized effects (animated gradients, no particles)
+      Breakpoints: 375px (mobile), 768px (tablet), 1024px (desktop), 1920px (large)
+    </responsive_strategy>
+  </design_system>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Foundation (Week 1-2)</title>
+      <tasks>
+        - Monorepo setup with Turborepo + pnpm
+        - Frontend: React + Vite + TypeScript + Tailwind
+        - Backend: Node.js + Fastify + TypeScript
+        - Shared packages: types, validation schemas
+        - Supabase configuration (project, database schema, RLS, storage)
+        - Authentication (Supabase Auth, Google + Email/Password)
+        - Protected routes and auth middleware
+        - Basic decision CRUD (manual text input, no voice yet)
+      </tasks>
+    </step>
+
+    <step number="2">
+      <title>Voice Pipeline (Week 3-4)</title>
+      <tasks>
+        - Web Audio API recording implementation
+        - Recording UI (button, waveform visualizer, silence detection)
+        - Audio upload to Supabase Storage
+        - AssemblyAI transcription integration
+        - Async job processing with status polling
+        - GPT-4 extraction prompt engineering
+        - Extraction review UI with inline editing
+        - Error handling and retry logic
+      </tasks>
+    </step>
+
+    <step number="3">
+      <title>Decision Workflow (Week 5)</title>
+      <tasks>
+        - Status transitions (Draft, Deliberating, Decided, Abandoned)
+        - "Decide by" date and deliberation tracking
+        - Option selection and confidence recording
+        - Abandonment reason tracking
+        - Categories (AI-suggested + user-created)
+        - Category management UI
+        - Decision history list with filters and search
+        - Decision detail page with timeline
+      </tasks>
+    </step>
+
+    <step number="4">
+      <title>Outcomes & Reminders (Week 6)</title>
+      <tasks>
+        - Outcome recording UI (quick outcome + optional reflection)
+        - Voice reflection with AI insight extraction
+        - Multiple check-ins per decision
+        - Reminder scheduling on decide
+        - Background job for due reminders
+        - Push notification integration
+        - Pending reviews section on dashboard
+        - Reminder management UI
+      </tasks>
+    </step>
+
+    <step number="5">
+      <title>Insights & Patterns (Week 7-8)</title>
+      <tasks>
+        - Pattern computation algorithms (timing, emotional, velocity)
+        - Category performance analysis
+        - Cross-pattern insights
+        - Decision Score algorithm
+        - Insights dashboard with pattern cards
+        - Trend charts with Recharts
+        - Pattern detail pages
+        - Contextual hints during recording
+      </tasks>
+    </step>
+
+    <step number="6">
+      <title>Polish & Experience (Week 9-10)</title>
+      <tasks>
+        - Cinematic landing page
+        - Interactive demo (try without signup)
+        - Conversational onboarding flow
+        - Framer Motion animations everywhere
+        - Atmospheric effects (grain, glow, glassmorphism)
+        - Spring physics on all interactions
+        - Loading states and skeletons
+        - Settings page with all options
+        - Theme variants
+        - Account deletion flow
+      </tasks>
+    </step>
+
+    <step number="7">
+      <title>Export & Data (Week 11)</title>
+      <tasks>
+        - JSON export
+        - CSV export
+        - PDF report generation (async)
+        - Audio recordings download
+        - Trash and recovery
+        - Bulk operations
+        - Confirmation flows for destructive actions
+      </tasks>
+    </step>
+
+    <step number="8">
+      <title>PWA & Mobile (Week 12)</title>
+      <tasks>
+        - Service worker setup
+        - Manifest.json
+        - Offline support (read-only)
+        - Install prompt
+        - Push notifications
+        - Mobile touch optimization
+        - Responsive testing across devices
+      </tasks>
+    </step>
+
+    <step number="9">
+      <title>Launch Prep (Week 13)</title>
+      <tasks>
+        - Unit tests (Vitest)
+        - Integration tests
+        - E2E tests (Playwright)
+        - Manual QA pass
+        - Lighthouse audit (target 90+)
+        - Bundle optimization
+        - API performance checks
+        - README and documentation
+        - Deployment (Vercel for frontend, Railway/Render for backend)
+        - CI/CD pipeline
+      </tasks>
+    </step>
+  </implementation_steps>
+
+  <success_criteria>
+    <functionality>
+      - All 9 implementation phases complete
+      - Full decision lifecycle working end-to-end (record, extract, edit, track, review)
+      - Voice recording and AI extraction functioning reliably
+      - Outcome tracking with smart reminders
+      - Pattern analysis revealing meaningful insights
+      - Data export in all formats (JSON, CSV, PDF)
+      - PWA installable and functional
+    </functionality>
+    <user_experience>
+      - Cinematic, premium feel throughout the app
+      - Smooth animations on all interactions (spring physics)
+      - "Half-closed eyes" usability - large touch targets, high contrast
+      - Recording experience feels magical, not technical
+      - Insights feel personal and actionable
+      - Onboarding results in real data, not empty state
+    </user_experience>
+    <technical_quality>
+      - Lighthouse score 90+ (Performance, Accessibility, Best Practices, SEO)
+      - Comprehensive error handling with graceful fallbacks
+      - Row Level Security ensuring complete data isolation
+      - Async processing with proper status tracking
+      - No mock data - all data from real database
+      - Clean, maintainable codebase with TypeScript throughout
+    </technical_quality>
+    <design_polish>
+      - Atmospheric dark UI with grain overlay
+      - Glassmorphism cards with rim lighting
+      - Spring physics on all interactions
+      - Staggered reveals for AI extraction
+      - Contextual hints that are helpful, not preachy
+      - Mobile-optimized effects (no performance degradation)
+    </design_polish>
+  </success_criteria>
+</project_specification>

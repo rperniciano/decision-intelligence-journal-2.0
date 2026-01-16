@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="description" content="Decisions - A voice-first decision intelligence journal. Speak your decisions, let AI extract insights, track outcomes, discover patterns." />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <title>Decisions - Decision Intelligence Journal</title>
+
+    <style>
+      /* Critical CSS for first paint */
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 100%);
+        min-height: 100vh;
+      }
+      #root {
+        min-height: 100vh;
+      }
+      /* Splash loading state */
+      .splash-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 100%);
+        color: #f0f0f5;
+      }
+      .splash-loading .orb {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #00d4aa, #007d65);
+        animation: pulse-orb 2s ease-in-out infinite;
+        box-shadow: 0 0 40px rgba(0, 212, 170, 0.4);
+      }
+      @keyframes pulse-orb {
+        0%, 100% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Splash screen shown while JS loads -->
+      <div class="splash-loading">
+        <div class="orb"></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
