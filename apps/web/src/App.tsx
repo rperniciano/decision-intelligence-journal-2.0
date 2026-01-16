@@ -13,6 +13,7 @@ import { RecordPage } from './pages/RecordPage';
 import { DecisionDetailPage } from './pages/DecisionDetailPage';
 import { EditDecisionPage } from './pages/EditDecisionPage';
 import { DecisionDetailPageTest } from './pages/DecisionDetailPageTest';
+import { EditDecisionPageTest } from './pages/EditDecisionPageTest';
 
 // Landing Page Component
 function LandingPage() {
@@ -186,6 +187,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DecisionDetailPageTest />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/test-edit"
+            element={
+              <ProtectedRoute>
+                <EditDecisionPageTest />
               </ProtectedRoute>
             }
           />
