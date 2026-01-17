@@ -1,0 +1,202 @@
+# Session 29 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 29
+
+## Session Summary
+
+Successfully completed Feature #81 - Read/View decision detail page. Fixed critical bug in API data transformation where snake_case database fields weren't being properly converted to camelCase for the frontend, causing emotional state and dates to not display correctly.
+
+## Completed Tasks
+
+### 1. Server Startup
+- Both frontend (port 5180) and API (port 3001) servers running
+- Health check confirmed API operational
+
+### 2. Regression Testing
+- **Feature #59** (Filter by category) - PASSING
+  - Created decision in Relationships category to test filtering
+  - Verified "All Categories" shows 6 decisions
+  - Filtered by Career: shows exactly 5 Career decisions
+  - Filtered by Relationships: shows exactly 1 Relationships decision
+  - ✅ No cross-contamination between categories
+  - ✅ URL updates correctly with category ID parameter
+
+### 3. Feature #80 - Create decision via voice recording
+- **STATUS**: SKIPPED (moved to end of queue, priority 314)
+- **Reason**: External service dependency - requires:
+  - Real microphone hardware for recording
+  - AssemblyAI API for transcription (external service)
+  - OpenAI API for extraction (external service)
+  - Cannot be reliably tested in automated environment
+- Code infrastructure exists (RecordPage.tsx, /recordings/upload endpoint)
+- VoiceService.processVoiceRecording implemented
+- Valid reason for skipping per guidelines
+
+### 4. Feature #81 - Read/View decision detail page - PASSING
+
+**Bug Found and Fixed**:
+The API was returning snake_case field names (created_at, emotional_state, decided_at) but the frontend DecisionDetailPage component expected camelCase (createdAt, emotionalState, decidedAt). This caused:
+- Emotional state not displaying
+- "Invalid Date" showing instead of formatted dates
+
+**Implementation**:
+- Updated `apps/api/src/services/decisionServiceNew.ts` getDecisionById()
+- Changed API response transformation to return camelCase:
+  - `detected_emotional_state` → `emotionalState`
+  - `created_at` → `createdAt`
+  - `decided_at` → `decidedAt`
+  - `outcome_notes` → `outcomeNotes`
+  - `outcome_recorded_at` → `outcomeRecordedAt`
+  - `deleted_at` → `deletedAt`
+
+**Test Process**:
+
+**Step 1 - Navigate to History**:
+- Logged in as session24test@example.com
+- Navigated to /history page
+- Verified 6 decisions displayed
+
+**Step 2 - Click on MANUAL_DECISION_SESSION28_TEST**:
+- Clicked on decision in history list
+- Detail page loaded successfully
+
+**Step 3 - Verify all data displays correctly**:
+BEFORE fix:
+- ❌ Category: Career (showing)
+- ❌ Emotional state: NOT showing
+- ❌ Date: "Invalid Date"
+
+AFTER fix:
+- ✅ Title: "MANUAL_DECISION_SESSION28_TEST"
+- ✅ Status: "Decided" badge (green)
+- ✅ Category: "Career"
+- ✅ Emotional state: "confident"
+- ✅ Date: "January 17, 2026 at 05:17 AM"
+- ✅ Breadcrumb navigation working
+- ✅ Edit and Delete buttons present
+
+**Step 4 - Test decision with options (DECISION_WITH_ALPHA_BETA)**:
+- Navigated to decision with options
+- ✅ Title displayed
+- ✅ Status badge shown
+- ✅ Category displayed
+- ✅ Date properly formatted (no more "Invalid Date")
+- ✅ "Options (2)" section displayed
+- ✅ Option Alpha showing
+- ✅ Option Beta showing
+- ✅ Notes section with text
+- ✅ All metadata correct
+
+**Verification Complete**:
+- ✅ Decision detail page loads correctly from History
+- ✅ Title, status, category always displayed
+- ✅ Emotional state shows when present
+- ✅ Dates formatted correctly (fixed "Invalid Date" bug)
+- ✅ Options section renders when options exist
+- ✅ Notes section displays when notes exist
+- ✅ Breadcrumb navigation functional
+- ✅ Edit and Delete buttons present
+- ✅ Zero console errors
+
+Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 58 (was 57)
+- In Progress: 0
+- Completion: 19.9%
+- Features completed this session: 1 (#81)
+- Features skipped: 1 (#80 - external services)
+
+## Technical Notes
+
+**API Data Transformation Issue**:
+The backend uses PostgreSQL with snake_case column names (standard SQL convention), but JavaScript/TypeScript convention is camelCase. The DecisionServiceNew was correctly fetching data but wasn't transforming field names for the frontend.
+
+**Root Cause**:
+- Database: `detected_emotional_state`, `created_at`, `decided_at`
+- API was returning: `emotional_state`, `created_at`, `decided_at` (partial transformation)
+- Frontend expected: `emotionalState`, `createdAt`, `decidedAt` (full camelCase)
+- Mismatch caused undefined values in frontend components
+
+**Solution**:
+Updated the transformation object in `getDecisionById()` to consistently use camelCase for all date/multi-word properties. Single-word properties (id, title, status, category, notes, etc.) work fine in either case.
+
+**Why This Matters**:
+- Proper date display is critical for decision tracking
+- Emotional state is a key feature of the app
+- Consistent naming convention prevents confusion
+- TypeScript interfaces expect camelCase in frontend code
+
+**DecisionServiceNew vs decisionService**:
+- Two service files exist: `decisionService.ts` and `decisionServiceNew.ts`
+- Server imports `decisionServiceNew` (confirmed in server.ts line 11)
+- New service includes proper transformations and category joins
+- Old service returns raw database data without transformation
+
+## Files Created/Modified
+
+**Modified Files**:
+- apps/api/src/services/decisionServiceNew.ts - Fixed camelCase transformation
+- features.db - Marked #81 as passing, #80 as skipped
+
+**New Test Files**:
+- check-decisions-schema-full.js - Inspect decision table columns
+- check-manual-decision-data.js - Query specific decision data
+- create-personal-decision.js - Create decision in Relationships category
+- get-category-ids.js - List all category IDs
+- test-decision-api-detail.js - Test API response format
+
+**Screenshots**:
+- .playwright-mcp/regression-59-all-categories.png - All 6 decisions
+- .playwright-mcp/regression-59-career-filter.png - 5 Career decisions
+- .playwright-mcp/regression-59-relationships-filter.png - 1 Relationships decision
+- .playwright-mcp/feature-80-record-page.png - Record page UI
+- .playwright-mcp/feature-81-decision-detail-top.png - Before fix
+- .playwright-mcp/feature-81-decision-detail-fixed.png - After fix (with emotional state)
+- .playwright-mcp/feature-81-decision-with-options.png - Before fix
+- .playwright-mcp/feature-81-decision-with-options-fixed.png - After fix (proper date)
+
+## Bugs Found and Fixed
+
+1. **"Invalid Date" on decision detail pages**
+   - Cause: API returned `created_at` but frontend expected `createdAt`
+   - Fix: Transform to camelCase in API response
+   - Impact: All decision detail pages now show proper dates
+
+2. **Emotional state not displaying**
+   - Cause: API returned `emotional_state` but frontend expected `emotionalState`
+   - Fix: Transform to camelCase in API response
+   - Impact: Emotional state now visible when present
+
+3. **Inconsistent date field naming**
+   - Cause: `decided_at`, `outcome_recorded_at` in snake_case
+   - Fix: Transformed to `decidedAt`, `outcomeRecordedAt`
+   - Impact: Future-proofs for when these fields are used
+
+## Key Achievements
+
+1. **Data Consistency**: API now consistently returns camelCase for all fields
+2. **Bug Fixes**: Resolved "Invalid Date" and missing emotional state issues
+3. **Regression Testing**: Verified category filtering still works perfectly
+4. **Test-Driven Approach**: Found bug through actual UI testing, not just code review
+5. **Production Quality**: Decision detail page now displays all information correctly
+
+## Next Steps for Future Sessions
+
+1. **Continue Workflow Completeness features** (remaining ~233 features)
+2. **Test edit decision functionality**
+3. **Test delete decision functionality**
+4. **Test outcomes tracking**
+5. **Test insights/analytics features**
+6. **Consider returning to voice recording (#80) with manual testing**
+
+## Notes
+
+This session demonstrated the importance of end-to-end testing. The code existed and "looked correct" but a subtle naming mismatch between API and frontend caused two user-visible bugs (missing emotional state, invalid dates). Only by actually loading the page in a browser and visually inspecting it did these bugs become apparent.
+
+The fix was simple (adding camelCase transformation) but the impact was significant - decision detail pages went from showing "Invalid Date" and missing emotional state to displaying rich, complete information about each decision.
+
+Session 29 complete. Feature #81 passing. 58/291 features (19.9%).
