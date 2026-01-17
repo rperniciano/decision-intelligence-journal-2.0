@@ -7058,3 +7058,80 @@ Client-side validation before PATCH:
 Continue with Feature #124 and beyond.
 
 Session 63 complete. Feature #123 passing. 91/291 features (31.3%).
+
+# Session 64 - 2026-01-17
+Progress: 92/291 features (31.6%)
+
+## Summary
+Successfully completed Feature #124 (delete endpoint verification) and 2 regression tests (#82, #28). Verified complete end-to-end delete workflow with network monitoring and code analysis.
+
+## Completed
+- Feature #124: Delete calls correct endpoint ✅
+
+## Regression Tests Passed
+- Feature #82: Update decision title ✅
+- Feature #28: Insights nav button works correctly ✅
+
+## Feature #124 Implementation Verification
+
+### Test Workflow
+1. Created test decision: "REGRESSION_82_TITLE_TEST"
+2. Navigated to decision detail page
+3. Clicked Delete button
+4. Confirmed deletion in modal
+5. Verified redirect to History page
+6. Checked Trash view - decision appears there (soft delete)
+
+### Network Monitoring Evidence
+DELETE http://localhost:3001/api/v1/decisions/a085bd84-152a-454f-b602-63017d498c84 => [200] OK
+
+### Code Analysis (DecisionDetailPage.tsx lines 195-200)
+Request structure:
+- Method: DELETE
+- Endpoint: /api/v1/decisions/:id
+- Headers: Authorization Bearer token
+- Navigates to /history after success
+
+### Verification Checklist
+✅ Open Network tab
+✅ Delete a decision
+✅ Verify DELETE to /api/v1/decisions/:id
+✅ Verify success response (200 OK)
+✅ Verify UI removes decision from list
+✅ Verify decision appears in Trash (soft delete confirmed)
+
+## Regression Test #82: Update Decision Title ✅
+
+Test Steps:
+1. Created decision: "REGRESSION_82_TITLE_TEST"
+2. Navigated to decision detail page ✅
+3. Clicked Edit Decision ✅
+4. Changed title to: "REGRESSION_82_TITLE_TEST - EDITED" ✅
+5. Saved changes ✅
+6. Verified new title shown immediately ✅
+7. Refreshed page ✅
+8. Verified title persisted after refresh ✅
+
+Screenshot: regression-82-title-updated.png
+
+## Regression Test #28: Insights Navigation ✅
+
+Test Steps:
+1. Logged in to application ✅
+2. From dashboard, clicked Insights in navigation ✅
+3. Verified URL changed to /insights ✅
+4. Verified insights dashboard loaded ✅
+
+Screenshot: regression-28-insights-nav.png
+
+## Session Statistics
+- Features completed: 1 (#124)
+- Regression tests: 2 (#82, #28 both passing)
+- Test account: session64test@example.com
+- Screenshots: 3
+- Console errors: 0 related to feature testing
+
+## Next Steps
+Continue with Feature #125 and beyond.
+
+Session 64 complete. Feature #124 passing. 92/291 features (31.6%).
