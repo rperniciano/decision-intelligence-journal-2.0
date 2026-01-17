@@ -80,6 +80,12 @@ export function RecordPage() {
       // Create audio blob if not provided (initial recording)
       const blob = audioBlob || new Blob(audioChunksRef.current, { type: 'audio/webm' });
 
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (blob.size > maxSize) {
+        throw new Error(`Audio file is too large (${(blob.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 10MB. Try recording a shorter message.`);
+      }
+
       // Save the audio blob for retry
       setSavedAudioBlob(blob);
 
