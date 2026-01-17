@@ -8326,3 +8326,133 @@ Client → Display insights directly
 Continue with Feature #133 and beyond.
 
 Session 73 complete. Feature #132 passing. 100/291 features (34.4%).
+
+# Session 73 - 2026-01-17
+Progress: 100/291 features (34.4%)
+
+## Summary
+Successfully completed Feature #132 (Insights data fetched from API) and verified regression test #86 (Deliberating status). Added outcome field support to decision update API.
+
+## Completed
+- Feature #132: Insights data fetched from API ✅
+
+## Regression Tests Passed
+- Feature #86: Transition to Deliberating status ✅
+
+## Test Account
+- Email: session72test@example.com
+- Password: testpass123
+
+## Feature #132: Insights API Integration
+
+**Implementation:**
+1. Created InsightsService (apps/api/src/services/insightsService.ts)
+2. Updated /api/v1/insights endpoint to call InsightsService
+3. Updated InsightsPage to fetch from /api/v1/insights instead of calculating client-side
+
+**API Response Structure:**
+- totalDecisions: Number of user's decisions
+- decisionsWithOutcomes: Decisions with recorded outcomes
+- positiveOutcomes: Count of 'better' outcomes
+- negativeOutcomes: Count of 'worse' outcomes
+- neutralOutcomes: Count of 'as_expected' outcomes
+- emotionalPatterns: Success rate by emotional state
+- categoryDistribution: Decision count by category
+- decisionScore: Calculated score (0-100)
+- scoreTrend: Change vs last month
+- bestEmotionalState: Most successful emotion
+- topCategories: Top 5 categories with outcome stats
+
+**Verification:**
+- Created 5 test decisions with outcomes using script
+- API returns real data: totalDecisions=21, decisionsWithOutcomes=5
+- Outcome Rate: 60% positive (3 better, 1 worse, 1 as_expected)
+- Decision Score: 42
+- UI displays patterns correctly
+
+**Network Evidence:**
+GET /api/v1/insights => 200 OK
+
+**Screenshots:**
+- feature-132-insights-api-call.png
+- feature-132-insights-with-real-data.png
+
+## Additional Work: Outcome Field Support
+
+**Problem:** The PATCH /api/v1/decisions/:id endpoint didn't support updating outcome fields.
+
+**Solution:** Added outcome field support to decisionServiceNew.ts:
+- outcome: Can be set to 'better', 'worse', or 'as_expected'
+- outcome_notes: Optional notes about the outcome
+- outcome_recorded_at: Auto-set timestamp when outcome is recorded
+- Status auto-transitions to 'reviewed' when outcome is set
+
+## Regression Test #86: Deliberating Status ✅
+
+**Test Steps:**
+1. Navigate to /decisions/new ✅
+2. Enter title: REGRESSION_86_DELIBERATING_TEST ✅
+3. Set status to 'In Progress' (Deliberating) ✅
+4. Save decision ✅
+5. Verify status badge shows 'In Progress' ✅
+
+**Screenshot:** regression-86-deliberating-status.png
+
+## Files Created/Modified
+
+**Backend:**
+- apps/api/src/services/insightsService.ts (new) - Insights calculation
+- apps/api/src/services/decisionServiceNew.ts - Added outcome field support
+- apps/api/src/server.ts - Updated insights endpoint
+
+**Frontend:**
+- apps/web/src/pages/InsightsPage.tsx - Fetch from /api/v1/insights
+
+**Test Scripts:**
+- create-test-decisions-session73.js - Creates decisions with outcomes
+- confirm-user-session73.js - User confirmation helper
+
+**Screenshots:**
+- .playwright-mcp/feature-132-insights-api-call.png
+- .playwright-mcp/feature-132-insights-with-real-data.png
+- .playwright-mcp/regression-86-deliberating-status.png
+
+## Session Statistics
+- Session start: ~17:33 UTC
+- Features completed: 1 (#132)
+- Regression tests: 1 (#86 passing)
+- Test account: session72test@example.com
+- Frontend port: 5173
+- API port: 3001
+- Screenshots: 3
+- Commits: 2
+- Test decisions created: 5 (with outcomes)
+
+## Technical Notes
+
+### InsightsService Pattern
+- Fetches all non-deleted decisions for user
+- Calculates stats from real database data
+- No mock data - all calculations from actual records
+- Emotional patterns require 2+ decisions per emotion
+- Score trend compares this month vs last month
+
+### Outcome Recording
+- Outcomes stored directly on decisions table
+- Valid values: 'better', 'as_expected', 'worse'
+- Recording outcome auto-sets outcome_recorded_at
+- Status auto-transitions to 'reviewed'
+
+## Known Issues
+- /api/v1/pending-reviews returns 500 (feature not implemented)
+- React Router future flag warnings (cosmetic)
+- Favicon 404 (cosmetic)
+
+## Milestone
+🎉 Reached 100 passing features! (34.4% complete)
+
+## Next Steps
+Continue with Feature #133 and beyond.
+
+Session 73 complete. Feature #132 passing. 100/291 features (34.4%).
+
