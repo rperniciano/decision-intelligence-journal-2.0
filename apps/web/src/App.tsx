@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { InsightsPage } from './pages/InsightsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ExportPage } from './pages/ExportPage';
 import { RecordPage } from './pages/RecordPage';
 import { DecisionDetailPage } from './pages/DecisionDetailPage';
 import { EditDecisionPage } from './pages/EditDecisionPage';
@@ -173,6 +174,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/export"
+            element={
+              <ProtectedRoute>
+                <ExportPage />
               </ProtectedRoute>
             }
           />

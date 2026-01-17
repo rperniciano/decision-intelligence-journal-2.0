@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { BottomNav } from '../components/BottomNav';
 
@@ -227,12 +228,14 @@ export function SettingsPage() {
 
         {/* Data & Privacy Section */}
         <SettingSection title="Data & Privacy" delay={0.25}>
-          <SettingRow
-            icon={<DownloadIcon />}
-            label="Export Data"
-            description="Download your decisions"
-            action={<ChevronRightIcon />}
-          />
+          <Link to="/export">
+            <SettingRow
+              icon={<DownloadIcon />}
+              label="Export Data"
+              description="Download your decisions"
+              action={<ChevronRightIcon />}
+            />
+          </Link>
           <SettingRow
             icon={<ShieldIcon />}
             label="Privacy"

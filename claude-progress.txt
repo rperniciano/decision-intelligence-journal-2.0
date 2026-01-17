@@ -816,3 +816,96 @@ All features verified with browser automation, zero console errors, and proper v
 5. Build out insights and analytics features
 
 Session 9 complete. Clean codebase, all features verified passing, ready for next session.
+
+---
+# Session 10 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 10
+
+## Session Summary
+
+Successfully implemented trash view functionality for soft-deleted decisions.
+
+## Completed Tasks
+
+### 1. Regression Testing
+- Tested Feature #5 (Unauthenticated redirect from /history) - PASSING
+  - Cleared localStorage to remove authentication
+  - Navigated to /history without login
+  - Successfully redirected to /login page
+  - No history data exposed
+
+### 2. Feature #49 - Trash view accessible from History
+- **IMPLEMENTED** complete trash/soft-delete functionality
+- Backend changes:
+  - Added `getDeletedDecisions` method to DecisionService
+  - Queries decisions where `deleted_at IS NOT NULL`
+  - Orders by `deleted_at` descending (most recently deleted first)
+  - Supports search and pagination filters
+  - Added `/api/v1/decisions/trash` endpoint in server.ts
+  - Returns deleted decisions with full relations (options, pros/cons, category)
+- Frontend changes:
+  - Added "Trash" filter option to History page
+  - Updated `fetchDecisions` useEffect to use trash endpoint when filter is active
+  - Modified filter logic to show all deleted items regardless of status
+  - URL parameter support (?filter=trash)
+- Complete testing performed:
+  ✅ Deleted a decision (soft delete with modal confirmation)
+  ✅ Navigated to History page
+  ✅ Located Trash filter button in filter chips
+  ✅ Clicked Trash filter
+  ✅ URL updated to ?filter=trash&page=1
+  ✅ Deleted decision appeared in trash view
+  ✅ Clicked "All" filter
+  ✅ Only non-deleted decisions shown
+  ✅ Zero console errors
+  ✅ Proper separation between active and deleted decisions
+- Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 30 (was 29)
+- Completion: 10.3%
+- Features completed this session: 1 (#49)
+
+## Technical Notes
+- Frontend running on port 5173
+- API server running on port 3001
+- Database already had `deleted_at` column for soft deletes
+- `deleteDecision` method performs soft delete by setting timestamp
+- `getDecisions` filters out deleted items with `.is('deleted_at', null)`
+- New `getDeletedDecisions` uses `.not('deleted_at', 'is', null)`
+- Auto-reload working for API changes (tsx watch mode)
+
+## Files Created/Modified
+- apps/api/src/services/decisionServiceNew.ts (MODIFIED)
+  - Added getDeletedDecisions method (lines 310-388)
+  - Queries deleted decisions with full relations
+  - Supports search and pagination
+- apps/api/src/server.ts (MODIFIED)
+  - Added GET /api/v1/decisions/trash endpoint (lines 89-108)
+  - Authenticated endpoint with user ID validation
+- apps/web/src/pages/HistoryPage.tsx (MODIFIED)
+  - Added 'trash' to filterOptions array (line 128)
+  - Updated fetchDecisions to use trash endpoint conditionally (lines 162-165)
+  - Modified filter logic for trash view (line 207)
+  - Added activeFilter dependency to useEffect (line 200)
+
+## Screenshots
+- trash-filter-before-click.png - History page with Trash filter visible
+- trash-filter-active-showing-deleted.png - Trash filter active, showing deleted decision
+- all-filter-no-deleted-decisions.png - All filter showing only active decisions
+
+## Bugs/Issues Found
+None - all functionality working correctly
+
+## Next Steps for Future Sessions
+1. Continue with next navigation integrity features
+2. Implement restore functionality for trash (optional enhancement)
+3. Implement permanent delete from trash (optional enhancement)
+4. Build out remaining decision management features
+5. Implement voice recording functionality
+
+Session 10 complete. Trash view implemented and verified passing.
