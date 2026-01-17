@@ -1734,3 +1734,185 @@ Successfully completed 1 feature focused on verifying decision score calculation
 5. Implement insights and analytics features
 
 Session 15 complete. Decision score verified as dynamic and data-driven.
+
+---
+# Session 16 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 16
+
+## Session Summary
+
+Successfully completed 1 feature focused on implementing outcome display functionality and fixing technical debt with hardcoded API URLs.
+
+## Completed Tasks
+
+### 1. Server Setup and Port Configuration
+- Encountered port conflicts on 3001 and 3002 (already in use)
+- Changed API_PORT from 3001 to 3003 in .env
+- Successfully started frontend on port 5173 and API on port 3003
+- Created new test user: session16test@example.com for testing
+
+### 2. Regression Testing
+- Tested Feature #60 (Decision score reflects actual outcomes) - PASSING
+- Dashboard correctly shows: 1 Total Decision, 100% Positive Outcomes, Score 2
+- Statistics fetched from real database via API
+- Zero console errors
+
+### 3. Technical Debt Resolution - Hardcoded API URLs
+**Problem**: Frontend had hardcoded URLs (http://localhost:3001) instead of environment variables
+**Impact**: When API port changed, frontend couldn't connect
+**Solution**: Replaced all hardcoded URLs with ${import.meta.env.VITE_API_URL}
+
+Files Fixed:
+- apps/web/src/pages/DashboardPage.tsx
+  - Line 36: fetch stats endpoint
+- apps/web/src/pages/HistoryPage.tsx
+  - Line 169: fetch categories endpoint
+  - Lines 202-205: fetch decisions/trash endpoints
+- apps/web/src/pages/EditDecisionPage.tsx
+  - Line 59: fetch decision by ID
+  - Line 98: fetch categories (fixed template literal)
+  - Line 128: PATCH decision
+- apps/web/src/pages/DecisionDetailPage.tsx
+  - Line 145: fetch decision by ID
+  - Line 189: DELETE decision
+
+### 4. Feature #61 - Outcome attached to correct decision
+**Status**: IMPLEMENTED AND VERIFIED
+
+Implementation Details:
+
+**Frontend Changes**:
+- Updated Decision interface in DecisionDetailPage.tsx
+  - Added: outcome?: string
+  - Added: outcome_notes?: string
+  - Added: outcome_recorded_at?: string
+- Created outcome display section (lines 374-407)
+  - Conditional rendering: only shows if decision.outcome exists
+  - Color-coded badge: Better (green), Worse (red), Same (amber)
+  - Displays formatted timestamp
+  - Shows outcome notes if present
+  - Glass morphism styling with accent rim
+
+**Backend Changes**:
+- Updated DecisionService.getDecisionById() in decisionServiceNew.ts
+  - Added outcome, outcome_notes, outcome_recorded_at to return object (lines 170-172)
+  - Backend already queries all fields with `*`, just needed to include in response
+
+**Testing Process**:
+1. Created test decisions:
+   - DECISION_A (ID: b31eaccb-a1cc-4cc7-946b-0f461678a0dc)
+   - DECISION_B (ID: 475883d0-7146-4034-9327-57abe39e9df1)
+2. Added outcome to DECISION_A via database:
+   - outcome: 'better'
+   - outcome_notes: 'This outcome is for DECISION_A only'
+   - outcome_recorded_at: timestamp
+3. Navigated to DECISION_A detail page
+   ✅ Outcome section displayed with green "Better" badge
+   ✅ Timestamp shown: "Recorded January 17, 2026 at 02:38 AM"
+   ✅ Notes displayed: "This outcome is for DECISION_A only"
+4. Navigated to DECISION_B detail page
+   ✅ NO outcome section displayed (as expected)
+   ✅ Only shows Notes section
+5. Zero console errors throughout testing
+
+**Verification Complete**:
+- ✅ Created decision 'DECISION_A'
+- ✅ Created decision 'DECISION_B'
+- ✅ Recorded outcome for DECISION_A
+- ✅ Navigate to DECISION_A detail
+- ✅ Verify outcome appears on DECISION_A
+- ✅ Navigate to DECISION_B
+- ✅ Verify no outcome on DECISION_B
+
+Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 42 (was 41)
+- Completion: 14.4%
+- Features completed this session: 1 (#61)
+
+## Technical Notes
+- Frontend running on port 5174 (auto-incremented due to port conflicts)
+- API server running on port 3003
+- Server had hot-reload port conflict issue (tsx watch tried to rebind to port already in use)
+  - Resolved by killing and restarting entire init.sh process
+- Environment variables now properly used throughout frontend
+- No more hardcoded localhost:3001 URLs
+
+## Files Created/Modified
+
+**New Test Scripts**:
+- create-test-user-session16.js
+  - Creates session16test@example.com user for testing
+- create-decision-session16.js
+  - Creates REGRESSION_TEST_DECISION_1 for regression testing
+- create-decision-a-b.js
+  - Creates DECISION_A and DECISION_B for feature #61
+- add-outcome-to-decision-a.js
+  - Adds outcome data to DECISION_A
+
+**Modified Source Files**:
+- apps/web/src/pages/DecisionDetailPage.tsx
+  - Added outcome fields to Decision interface
+  - Added outcome display section with conditional rendering
+- apps/api/src/services/decisionServiceNew.ts
+  - Added outcome fields to getDecisionById return object
+- apps/web/src/pages/DashboardPage.tsx
+  - Replaced hardcoded URL with environment variable
+- apps/web/src/pages/HistoryPage.tsx
+  - Replaced hardcoded URLs with environment variables
+- apps/web/src/pages/EditDecisionPage.tsx
+  - Replaced hardcoded URLs with environment variables
+- apps/web/src/pages/DecisionDetailPage.tsx
+  - Replaced hardcoded URLs with environment variables
+- .env
+  - Changed API_PORT from 3001 to 3003
+  - Changed VITE_API_URL to http://localhost:3003/api/v1
+- features.db
+  - Updated feature #61 status to passing
+
+**Screenshots**:
+- regression-60-initial-dashboard.png: Fresh user with 0 decisions
+- regression-60-verified-passing.png: Dashboard showing real stats (1, 100%, 2)
+- feature-61-history-page.png: History showing all 3 decisions
+- feature-61-decision-a-detail.png: Initial load (before backend fix)
+- feature-61-decision-a-with-outcome.png: DECISION_A with outcome section
+- feature-61-decision-b-no-outcome.png: DECISION_B without outcome section
+
+## Bugs/Issues Found and Fixed
+
+1. **Hardcoded API URLs** (Technical Debt)
+   - Location: 4 frontend pages
+   - Impact: Frontend couldn't adapt to API port changes
+   - Fix: Replaced all instances with ${import.meta.env.VITE_API_URL}
+
+2. **Missing outcome fields in API response**
+   - Location: DecisionService.getDecisionById()
+   - Impact: Outcome data not sent to frontend despite being in database
+   - Fix: Added outcome, outcome_notes, outcome_recorded_at to return object
+
+3. **tsx watch port conflict**
+   - Location: API server hot reload
+   - Impact: Server crashed on file changes
+   - Fix: Full restart of init.sh process (no code fix needed)
+
+## Key Achievements
+
+1. **Technical Debt Elimination**: Removed all hardcoded API URLs from frontend
+2. **Outcome Feature Foundation**: Built complete outcome display system
+3. **Database Integration**: Verified outcome data flows correctly from DB to UI
+4. **Quality Assurance**: Zero console errors, clean verification screenshots
+
+## Next Steps for Future Sessions
+
+1. Continue with Real Data Verification features
+2. Build outcome RECORDING functionality (currently can only display)
+3. Implement voice recording functionality
+4. Implement insights and analytics features
+5. Continue improving UI/UX consistency
+
+Session 16 complete. Outcome display verified with real database data. 42/291 features passing (14.4%).
