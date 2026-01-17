@@ -6842,3 +6842,85 @@ The app implements a complete category management system:
 Continue with Feature #122 and beyond.
 
 Session 61 complete. Feature #121 passing. 89/291 features (30.6%).
+
+# Session 62 - 2026-01-17
+Progress: 90/291 features (30.9%)
+
+## Summary
+Completed Feature #122 (decision creation API endpoint verification) and 2 regression tests (#83, #87). Verified complete end-to-end API integration for decision creation and comprehensive option editing workflows.
+
+## Completed
+- Feature #122: Creating decision calls correct API endpoint ✅
+
+## Regression Tests Passed
+- Feature #83: Update decision options ✅
+- Feature #87: Transition to Decided status ✅
+
+## Feature #122 Implementation Verification
+
+### API Endpoint Testing
+Endpoint: POST /api/v1/decisions
+Status: 201 Created
+
+Request Body Fields:
+- title (string)
+- notes (string)
+- status (enum: draft, in_progress, decided, abandoned)
+- category (string - category name)
+- emotional_state (string, optional)
+
+Response:
+- Returns created decision object with ID
+- Redirects to decision detail page: /decisions/{id}
+
+### Evidence Chain
+1. Network Monitoring:
+   - POST http://localhost:3001/api/v1/decisions → 201 Created ✅
+   - GET http://localhost:3001/api/v1/decisions/{id} → 200 OK ✅
+
+2. Code Analysis:
+   - CreateDecisionPage.tsx lines 153-166
+   - Uses fetch() with Authorization: Bearer token
+   - Content-Type: application/json
+   - Properly structured request body
+
+3. End-to-End Test:
+   - Created decision with all fields populated
+   - Verified data persisted: title, status, category, emotional state, notes
+   - Screenshot: feature-122-decision-created.png
+
+## Regression Test #83: Update Decision Options ✅
+
+Test Steps:
+1. Created decision with 3 options
+2. Navigated to decision detail page ✅
+3. Clicked Edit Decision ✅
+4. Renamed Option A → Option A - EDITED ✅
+5. Added new option: Option D - NEW ✅
+6. Deleted Option C ✅
+7. Saved changes ✅
+8. Verified all changes persisted ✅
+
+Final State:
+- 3 options total
+- Option A - EDITED (renamed)
+- Option B - Original (unchanged)
+- Option D - NEW (added)
+
+Screenshot: regression-83-options-edited.png
+
+## Regression Test #87: Transition to Decided Status ✅
+
+Test Steps:
+1. Had decision with status In Progress ✅
+2. Clicked Edit Decision ✅
+3. Changed status to Decided ✅
+4. Selected chosen option: Option A - EDITED ✅
+5. Set confidence level: 5/5 ✅
+6. Saved changes ✅
+7. Verified status badge shows Decided ✅
+8. Verified chosen option has Chosen badge ✅
+
+Screenshot: regression-87-decided-status.png
+
+Session 62 complete. Feature #122 passing. 90/291 features (30.9%).
