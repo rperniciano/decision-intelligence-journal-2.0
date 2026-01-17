@@ -4793,3 +4793,23 @@ Session 32 complete. Feature #83 passing. 60/291 features (20.6%).
 - Next session should continue with Feature #84
 
 Progress: 60/291 features passing (20.6%)
+
+
+# Session 33 Progress - Backend Complete for Feature 84
+Date: 2026-01-17
+
+## Summary
+- Backend COMPLETE: 3 pros/cons API endpoints added (POST, PATCH, DELETE)
+- DecisionService updated to fetch pros/cons from database
+- Regression tests passed (Feature #29, #32)
+- Frontend editing UI still needed
+- API server needs restart to load new endpoints
+
+## Next Session
+1. Restart API server
+2. Add pros/cons editing UI to EditDecisionPage  
+3. Test Feature #84 end-to-end
+4. Mark as passing
+
+Progress: 60/291 features (20.6%)
+
