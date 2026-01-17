@@ -13,6 +13,7 @@ import { ExportPage } from './pages/ExportPage';
 import { RecordPage } from './pages/RecordPage';
 import { DecisionDetailPage } from './pages/DecisionDetailPage';
 import { EditDecisionPage } from './pages/EditDecisionPage';
+import { CreateDecisionPage } from './pages/CreateDecisionPage';
 import { DecisionDetailPageTest } from './pages/DecisionDetailPageTest';
 import { EditDecisionPageTest } from './pages/EditDecisionPageTest';
 import { OnboardingPage } from './pages/OnboardingPage';
@@ -150,6 +151,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditDecisionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/decisions/new"
+            element={
+              <ProtectedRoute>
+                <CreateDecisionPage />
               </ProtectedRoute>
             }
           />
