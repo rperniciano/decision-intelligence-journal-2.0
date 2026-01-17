@@ -167,6 +167,9 @@ export class DecisionService {
         })).sort((a: any, b: any) => a.display_order - b.display_order),
         notes: data.description,
         transcription: data.raw_transcript,
+        outcome: data.outcome,
+        outcome_notes: data.outcome_notes,
+        outcome_recorded_at: data.outcome_recorded_at,
         deleted_at: data.deleted_at
       };
     } catch (error) {

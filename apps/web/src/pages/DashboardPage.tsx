@@ -33,7 +33,7 @@ export function DashboardPage() {
         const authData = JSON.parse(token);
         const accessToken = authData.access_token;
 
-        const response = await fetch('http://localhost:3001/api/v1/decisions/stats', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/stats`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
           },

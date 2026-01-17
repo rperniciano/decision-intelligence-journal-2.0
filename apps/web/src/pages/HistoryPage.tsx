@@ -166,7 +166,7 @@ export function HistoryPage() {
 
         if (!token) return;
 
-        const response = await fetch('http://localhost:3001/api/v1/categories', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -199,9 +199,10 @@ export function HistoryPage() {
         }
 
         // Use trash endpoint if trash filter is active, otherwise regular endpoint
+        const baseUrl = import.meta.env.VITE_API_URL;
         const endpoint = activeFilter === 'trash'
-          ? 'http://localhost:3001/api/v1/decisions/trash'
-          : 'http://localhost:3001/api/v1/decisions';
+          ? `${baseUrl}/decisions/trash`
+          : `${baseUrl}/decisions`;
 
         const response = await fetch(endpoint, {
           headers: {

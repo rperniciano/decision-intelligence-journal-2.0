@@ -56,7 +56,7 @@ export function EditDecisionPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:3001/api/v1/decisions/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -95,7 +95,7 @@ export function EditDecisionPage() {
           return;
         }
 
-        const response = await fetch('http://localhost:3001/api/v1/categories', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -125,7 +125,7 @@ export function EditDecisionPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:3001/api/v1/decisions/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

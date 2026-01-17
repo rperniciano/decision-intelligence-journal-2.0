@@ -25,6 +25,9 @@ interface Decision {
   options: DecisionOption[];
   notes?: string;
   transcription?: string;
+  outcome?: string;
+  outcome_notes?: string;
+  outcome_recorded_at?: string;
 }
 
 // Status badge component
@@ -142,7 +145,7 @@ export function DecisionDetailPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:3001/api/v1/decisions/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -186,7 +189,7 @@ export function DecisionDetailPage() {
       }
 
       // Delete decision
-      const response = await fetch(`http://localhost:3001/api/v1/decisions/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -364,6 +367,41 @@ export function DecisionDetailPage() {
             </h3>
             <div className="glass p-4 rounded-xl rim-light">
               <p className="text-text-secondary text-sm whitespace-pre-wrap italic">"{decision.transcription}"</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Outcome */}
+        {decision.outcome && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.3 }}
+            className="mb-6"
+          >
+            <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">
+              Outcome
+            </h3>
+            <div className="glass p-4 rounded-xl rim-light-accent">
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  decision.outcome === 'better' ? 'bg-emerald-500/20 text-emerald-400' :
+                  decision.outcome === 'worse' ? 'bg-rose-500/20 text-rose-400' :
+                  'bg-amber-500/20 text-amber-400'
+                }`}>
+                  {decision.outcome.charAt(0).toUpperCase() + decision.outcome.slice(1)}
+                </span>
+                {decision.outcome_recorded_at && (
+                  <span className="text-xs text-text-secondary">
+                    Recorded {formatDate(decision.outcome_recorded_at)}
+                  </span>
+                )}
+              </div>
+              {decision.outcome_notes && (
+                <p className="text-text-secondary text-sm whitespace-pre-wrap mt-2">
+                  {decision.outcome_notes}
+                </p>
+              )}
             </div>
           </motion.div>
         )}
