@@ -175,6 +175,7 @@ interface InsightsData {
   negativeOutcomes: number;
   neutralOutcomes: number;
   emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }>;
+  categoryDistribution: Record<string, number>;
   decisionScore: number;
 }
 
@@ -220,6 +221,13 @@ export function InsightsPage() {
           else if (d.outcome === 'as_expected') emotionalPatterns[emotion].as_expected++;
         });
 
+        // Category distribution analysis
+        const categoryDistribution: Record<string, number> = {};
+        decisions.forEach((d: any) => {
+          const category = d.category || 'Uncategorized';
+          categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
+        });
+
         // Calculate decision score (simple formula: total decisions * 2, max 100)
         const decisionScore = Math.min(100, decisions.length * 2);
 
@@ -230,6 +238,7 @@ export function InsightsPage() {
           negativeOutcomes,
           neutralOutcomes,
           emotionalPatterns,
+          categoryDistribution,
           decisionScore,
         });
       } catch (error) {
@@ -264,6 +273,19 @@ export function InsightsPage() {
     ? `${Math.round((insightsData.positiveOutcomes / insightsData.decisionsWithOutcomes) * 100)}% positive`
     : 'Not enough data';
 
+  // Category Performance - find category with most decisions
+  const categoryPerformance = insightsData ? (() => {
+    const catCounts = insightsData.categoryDistribution || {};
+    const categories = Object.entries(catCounts);
+    if (categories.length === 0) return 'Not enough data';
+
+    const topCategory = categories.reduce((top, [cat, count]) => {
+      return count > top.count ? { name: cat, count } : top;
+    }, { name: '', count: 0 });
+
+    return topCategory.count > 0 ? `${topCategory.name}: ${topCategory.count} decisions` : 'Not enough data';
+  })() : 'Not enough data';
+
   const patterns = [
     {
       title: 'Outcome Rate',
@@ -282,6 +304,16 @@ export function InsightsPage() {
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
+        </svg>
+      ),
+    },
+    {
+      title: 'Category Performance',
+      description: 'Your most-used category',
+      value: categoryPerformance,
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
         </svg>
       ),
     },
