@@ -6395,3 +6395,43 @@ The CreateDecisionPage demonstrates best practice for form error handling:
 None discovered during this session.
 
 Session 57 complete. Feature #116 passing. 84/291 features (28.9%).
+
+# Session 57 (Continued) - Feature #117
+
+## Additional Feature Completed
+- Feature #117: File upload size error shows clear message ✅
+
+## Implementation
+Added client-side file size validation to RecordPage.tsx:
+- Checks blob size before API upload
+- 10MB limit matches backend configuration  
+- Clear error message with actual file size
+- Maximum size clearly stated
+- Suggestion to record shorter message
+
+### Code Added
+Validation checks blob size before upload and throws descriptive error if over limit.
+
+### Error Message Example
+"Audio file is too large (12.5MB). Maximum size is 10MB. Try recording a shorter message."
+
+### User Experience
+1. User records long audio (>10MB)
+2. Stops recording
+3. File size checked immediately
+4. Error displayed with specific size and limit
+5. User can:
+   - Record new shorter audio
+   - Enter decision manually (existing UI)
+
+## Files Modified
+- apps/web/src/pages/RecordPage.tsx - Added file size validation
+
+## Final Session Statistics
+- Features completed: 2 (#116, #117)
+- Regression tests: 2 (#27, #84)
+- Files modified: 1
+- Screenshots: 5  
+- Commits: 2
+
+Session 57 complete. 85/291 features (29.2%) passing.
