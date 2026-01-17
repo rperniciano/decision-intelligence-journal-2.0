@@ -1295,3 +1295,69 @@ None - all deletion functionality working correctly
 5. Continue improving UI/UX consistency
 
 Session 12 complete. Deletion verification completed successfully.
+
+### 3. Feature #56 - Category dropdown shows real user categories
+- **IMPLEMENTED AND VERIFIED** category dropdown with real database data
+- Backend implementation:
+  - Added GET /api/v1/categories endpoint in server.ts
+  - Imports createClient from @supabase/supabase-js
+  - Initializes Supabase client with service role key
+  - Endpoint fetches categories with: `.or('user_id.eq.${userId},user_id.is.null')`
+  - Returns both system categories and user-specific categories
+  - Proper error handling and authorization checks
+- Frontend implementation:
+  - Added Category interface type (id, name, icon, color, user_id)
+  - Added state: categoryId, categories array
+  - Added useEffect to fetch categories from API
+  - Converted read-only category display to select dropdown
+  - Dropdown shows: "Uncategorized" + all categories with icons
+  - Options format: "{icon} {name}"
+- Database preparation:
+  - Created custom category: MY_CUSTOM_CAT_123
+  - User: mobiletest (94bd67cb-b094-4387-a9c8-26b0c65904cd)
+  - Slug: my-custom-cat-123, Icon: 📁, Color: #00d4aa
+- Complete testing workflow:
+  ✅ Created custom category MY_CUSTOM_CAT_123 in database
+  ✅ Logged into application
+  ✅ Created test decision (TEST_CATEGORY_DROPDOWN)
+  ✅ Navigated to Edit Decision page
+  ✅ Category dropdown visible and functional
+  ✅ Dropdown includes 10 categories total:
+     - 9 system categories (Business, Career, Education, Financial, Health, Lifestyle, Other, Relationships, Technology)
+     - 1 custom category (MY_CUSTOM_CAT_123)
+  ✅ Selected MY_CUSTOM_CAT_123 from dropdown
+  ✅ Custom category displayed with folder icon
+  ✅ Verified not hardcoded - fetched from database via API
+  ✅ Zero console errors
+- Status: PASSING
+
+## Updated Feature Statistics
+- Total Features: 291
+- Passing: 37 (was 36)
+- Completion: 12.7%
+- Features completed this session: 2 (#55, #56)
+
+## Session 12 Summary
+
+Highly productive session with 2 features completed:
+
+1. **Feature #55**: Deleted decision removed from list
+   - Verified soft-delete functionality
+   - Confirmed deleted decisions excluded from active list
+   - Search properly excludes deleted items
+   - Trash view shows deleted decisions
+
+2. **Feature #56**: Category dropdown shows real user categories  
+   - Implemented GET /categories API endpoint
+   - Built category dropdown in Edit Decision page
+   - Fetches real data from database
+   - Not hardcoded - includes user-created categories
+
+### Key Technical Achievements:
+- Real data verification across deletion and category systems
+- API endpoint development (categories)
+- UI component enhancement (dropdown implementation)
+- Database integration verified working correctly
+- Zero console errors throughout testing
+
+Session 12 complete. 37/291 features passing (12.7%).
