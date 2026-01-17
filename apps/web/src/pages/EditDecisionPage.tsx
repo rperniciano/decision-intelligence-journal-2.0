@@ -55,6 +55,8 @@ export function EditDecisionPage() {
   const [newConInputs, setNewConInputs] = useState<Record<string, string>>({});
   const [chosenOptionId, setChosenOptionId] = useState<string>('');
   const [confidenceLevel, setConfidenceLevel] = useState<number>(3);
+  const [abandonReason, setAbandonReason] = useState<string>('');
+  const [abandonNote, setAbandonNote] = useState<string>('');
 
   // Fetch decision data
   useEffect(() => {
@@ -85,6 +87,8 @@ export function EditDecisionPage() {
         setNotes(data.notes || '');
         setStatus(data.status);
         setOptions(data.options || []);
+        setAbandonReason(data.abandon_reason || '');
+        setAbandonNote(data.abandon_note || '');
       } catch (error) {
         console.error('Error fetching decision:', error);
       } finally {
@@ -425,6 +429,12 @@ export function EditDecisionPage() {
         updatePayload.chosen_option_id = chosenOptionId;
       }
 
+      // If status is "abandoned", include abandon_reason and abandon_note
+      if (status === 'abandoned') {
+        updatePayload.abandon_reason = abandonReason;
+        updatePayload.abandon_note = abandonNote;
+      }
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}`, {
         method: 'PATCH',
         headers: {
@@ -572,6 +582,51 @@ export function EditDecisionPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Conditional UI for Abandoned status */}
+          {status === 'abandoned' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-4 glass p-4 rounded-xl border border-red-500/20"
+            >
+              <div>
+                <label className="block text-sm font-medium mb-2 text-red-400">
+                  Why are you abandoning this decision? *
+                </label>
+                <select
+                  value={abandonReason}
+                  onChange={(e) => setAbandonReason(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all"
+                  required
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="No longer relevant">No longer relevant</option>
+                  <option value="Too risky">Too risky</option>
+                  <option value="Better alternative found">Better alternative found</option>
+                  <option value="Insufficient information">Insufficient information</option>
+                  <option value="Changed priorities">Changed priorities</option>
+                  <option value="External factors">External factors</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-red-400">
+                  Additional notes (optional)
+                </label>
+                <textarea
+                  value={abandonNote}
+                  onChange={(e) => setAbandonNote(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all resize-none"
+                  placeholder="Explain why you're abandoning this decision..."
+                />
               </div>
             </motion.div>
           )}
