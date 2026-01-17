@@ -53,6 +53,8 @@ export function EditDecisionPage() {
   const [newOptionText, setNewOptionText] = useState('');
   const [newProInputs, setNewProInputs] = useState<Record<string, string>>({});
   const [newConInputs, setNewConInputs] = useState<Record<string, string>>({});
+  const [chosenOptionId, setChosenOptionId] = useState<string>('');
+  const [confidenceLevel, setConfidenceLevel] = useState<number>(3);
 
   // Fetch decision data
   useEffect(() => {
@@ -412,17 +414,24 @@ export function EditDecisionPage() {
         return;
       }
 
+      const updatePayload: any = {
+        title,
+        description: notes,
+        status,
+      };
+
+      // If status is "decided", include chosen_option_id
+      if (status === 'decided' && chosenOptionId) {
+        updatePayload.chosen_option_id = chosenOptionId;
+      }
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title,
-          description: notes,
-          status,
-        }),
+        body: JSON.stringify(updatePayload),
       });
 
       if (!response.ok) {
@@ -512,6 +521,60 @@ export function EditDecisionPage() {
               <option value="abandoned">Abandoned</option>
             </select>
           </div>
+
+          {/* Conditional UI for Decided status */}
+          {status === 'decided' && options.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-4 glass p-4 rounded-xl border border-accent/20"
+            >
+              <div>
+                <label className="block text-sm font-medium mb-2 text-accent">
+                  Which option did you choose? *
+                </label>
+                <select
+                  value={chosenOptionId}
+                  onChange={(e) => setChosenOptionId(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+                  required
+                >
+                  <option value="">Select an option...</option>
+                  {options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.text}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-accent">
+                  Confidence Level: {confidenceLevel}/5
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => setConfidenceLevel(level)}
+                      className={`p-2 rounded-lg transition-all ${
+                        level <= confidenceLevel
+                          ? 'text-accent scale-110'
+                          : 'text-white/20 hover:text-white/40'
+                      }`}
+                    >
+                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Notes */}
           <div>

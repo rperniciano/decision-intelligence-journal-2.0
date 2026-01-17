@@ -315,7 +315,7 @@ export class DecisionService {
       // First verify the decision belongs to the user
       const { data: existing, error: fetchError } = await supabase
         .from('decisions')
-        .select('id')
+        .select('id, decided_at')
         .eq('id', decisionId)
         .eq('user_id', userId)
         .is('deleted_at', null)
@@ -333,6 +333,12 @@ export class DecisionService {
       if (dto.status !== undefined) updateData.status = dto.status;
       if (dto.detected_emotional_state !== undefined) updateData.detected_emotional_state = dto.detected_emotional_state;
       if (dto.category_id !== undefined) updateData.category_id = dto.category_id;
+      if (dto.chosen_option_id !== undefined) updateData.chosen_option_id = dto.chosen_option_id;
+
+      // If transitioning to "decided" status, set decided_at timestamp
+      if (dto.status === 'decided' && !existing.decided_at) {
+        updateData.decided_at = new Date().toISOString();
+      }
 
       // Update the decision
       const { data: updated, error: updateError } = await supabase
