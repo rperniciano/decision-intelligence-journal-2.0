@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from '../components/Modal';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 
 // Type definitions
 interface DecisionOption {
@@ -281,6 +282,15 @@ export function DecisionDetailPage() {
 
       {/* Main content */}
       <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', path: '/dashboard' },
+            { label: 'History', path: '/history' },
+            { label: decision.title }
+          ]}
+        />
+
         {/* Title and status */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
