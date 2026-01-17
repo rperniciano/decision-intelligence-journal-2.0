@@ -1916,3 +1916,140 @@ Status: PASSING
 5. Continue improving UI/UX consistency
 
 Session 16 complete. Outcome display verified with real database data. 42/291 features passing (14.4%).
+
+---
+# Session 17 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 17
+
+## Session Summary
+
+Successfully completed 1 feature focused on implementing and verifying JSON export functionality with real database data.
+
+## Completed Tasks
+
+### 1. Server Setup
+- Frontend running on port 5175
+- API server running on port 3003
+- Encountered previous session user (mobiletest@example.com) still logged in
+- Created user confirmation script for session17test user
+
+### 2. Feature #62 - Export contains actual user data
+- **IMPLEMENTED AND VERIFIED** complete JSON export functionality
+- **Problem Identified**: Export feature was TODO with placeholder alert
+- **Solution**: Built complete export implementation from scratch
+
+**Implementation Details**:
+
+**Frontend Changes (ExportPage.tsx)**:
+- Added Supabase import for authentication
+- Implemented handleExport async function
+- Gets user session token from Supabase
+- Fetches all decisions from API endpoint with limit=1000
+- Creates JSON export with metadata:
+  - exportDate: ISO timestamp
+  - totalDecisions: count
+  - decisions: full array of decision objects
+- Generates and downloads JSON file with date in filename
+- Proper error handling with try/catch
+- Loading states with spinner animation
+- CSV and PDF marked as "Coming soon"
+
+**Testing Process**:
+1. Created test data script: create-export-test-decisions.js
+   - Encountered schema issues with emotional_state and options columns
+   - Fixed by using detected_emotional_state and removing options field
+   - Encountered invalid category IDs - updated to real IDs from database
+   - Encountered invalid status 'deliberating' - changed to 'decided'
+   - Successfully created 3 unique test decisions with timestamp 1768614613348
+2. Navigated to /export page
+3. Clicked "JSON Format" button
+4. File downloaded: decisions-export-2026-01-17.json
+5. Verified export contents:
+   ✅ Contains all 3 unique test decisions:
+      - EXPORT_TEST_UNIQUE_1768614613348_ALPHA (Business)
+      - EXPORT_TEST_UNIQUE_1768614613348_BETA (Health)
+      - EXPORT_TEST_UNIQUE_1768614613348_GAMMA (Relationships)
+   ✅ Contains 18 total decisions from database
+   ✅ All decisions belong to user 94bd67cb-b094-4387-a9c8-26b0c65904cd
+   ✅ Includes all previous test decisions (STATS_TEST, OUTCOME_TEST, etc.)
+   ✅ NOT sample/demo data - all real user data
+   ✅ Proper JSON structure with metadata
+   ✅ All fields present: id, title, status, category, notes, timestamps, etc.
+6. Zero console errors throughout testing
+
+**Verification Complete**:
+- ✅ Created decisions with unique identifiable content
+- ✅ Used JSON export feature
+- ✅ Downloaded and opened export file
+- ✅ Verified unique decision titles/content present
+- ✅ Verified not sample/demo data
+
+Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 43 (was 42)
+- Completion: 14.8%
+- Features completed this session: 1 (#62)
+
+## Technical Notes
+- Frontend running on port 5175 (auto-incremented)
+- API server running on port 3003
+- Export uses existing GET /api/v1/decisions endpoint
+- File download uses Blob and createObjectURL APIs
+- Filename includes date: decisions-export-YYYY-MM-DD.json
+- No pagination limits enforced (fetches all with limit=1000)
+
+## Files Created/Modified
+
+**New Files**:
+- confirm-existing-user.js - Script to confirm email for existing Supabase Auth users
+- create-confirmed-user.js - Script to create confirmed user (encountered "already exists" error)
+- create-export-test-decisions.js - Creates 3 unique test decisions for export verification
+- .playwright-mcp/decisions-export-2026-01-17.json - Downloaded export file (saved for verification)
+- .playwright-mcp/.playwright-mcp/feature-62-export-page.png - Screenshot of export page
+
+**Modified Files**:
+- apps/web/src/pages/ExportPage.tsx
+  - Added supabase import
+  - Implemented handleExport function (lines 10-64)
+  - Fetches real data from API
+  - Creates and downloads JSON file
+  - Error handling and loading states
+- features.db - Updated feature #62 status to passing
+
+## Bugs/Issues Found and Fixed
+
+1. **Export functionality missing** (TODO placeholder)
+   - Location: ExportPage.tsx handleExport function
+   - Impact: Users couldn't export their data
+   - Fix: Implemented complete JSON export functionality
+
+2. **Schema mismatches in test script**
+   - Issue: Used emotional_state instead of detected_emotional_state
+   - Issue: Tried to add options field (doesn't exist)
+   - Issue: Invalid category IDs
+   - Issue: Invalid status value 'deliberating'
+   - Fix: Updated script to match actual database schema
+
+## Key Achievements
+
+1. **Export Feature Implementation**: Built complete JSON export from scratch
+2. **Real Data Verification**: Confirmed export contains actual user data, not mocks
+3. **Database Integration**: Successfully fetches all user decisions via API
+4. **File Download**: Proper browser file download with metadata
+5. **Quality Assurance**: Zero console errors, clean export format
+
+## Next Steps for Future Sessions
+
+1. Continue with Real Data Verification features
+2. Implement CSV export format
+3. Implement PDF export format
+4. Build out voice recording functionality
+5. Implement insights and analytics features
+6. Consider pagination for users with many decisions (1000+ limit may not scale)
+
+Session 17 complete. JSON export verified with real database data. 43/291 features passing (14.8%).
