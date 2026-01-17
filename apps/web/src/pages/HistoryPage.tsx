@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { supabase } from '../lib/supabase';
+import { showErrorAlert } from '../utils/errorHandling';
 
 // Type definitions
 interface Decision {
@@ -203,6 +204,7 @@ export function HistoryPage() {
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
+        // Silently fail for categories as it's not critical for viewing decisions
       }
     }
 
@@ -257,6 +259,7 @@ export function HistoryPage() {
         setDecisions(transformedDecisions);
       } catch (error) {
         console.error('Error fetching decisions:', error);
+        showErrorAlert(error, 'Failed to load decisions');
       } finally {
         setLoading(false);
       }

@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useState, useEffect } from 'react';
+import { showErrorAlert } from '../utils/errorHandling';
 
 interface Statistics {
   totalDecisions: number;
@@ -63,6 +64,7 @@ export function DashboardPage() {
         setStatistics(stats);
       } catch (error) {
         console.error('Error fetching statistics:', error);
+        showErrorAlert(error, 'Failed to load statistics');
       } finally {
         setLoading(false);
       }
@@ -98,6 +100,9 @@ export function DashboardPage() {
         setPendingReviews(data.pendingReviews || []);
       } catch (error) {
         console.error('Error fetching pending reviews:', error);
+        // Silently fail for pending reviews as it's not critical
+        // Only show alert for network errors to avoid spamming user
+        // (pending-reviews endpoint has known issues)
       } finally {
         setReviewsLoading(false);
       }

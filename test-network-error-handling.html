@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Error Test</title>
+</head>
+<body>
+    <h1>Network Error Handling Test</h1>
+    <button id="testBtn">Test Network Error</button>
+    <div id="result"></div>
+
+    <script type="module">
+        // Import error handling utilities
+        import { showErrorAlert, getFriendlyErrorMessage, isNetworkError } from './apps/web/src/utils/errorHandling.ts';
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            try {
+                // Try to fetch from a non-existent server to simulate network error
+                const response = await fetch('http://localhost:9999/fake-endpoint');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch');
+                }
+            } catch (error) {
+                console.log('Caught error:', error);
+                console.log('Is network error:', isNetworkError(error));
+                console.log('Friendly message:', getFriendlyErrorMessage(error));
+
+                // Show alert to user
+                showErrorAlert(error, 'Test failed');
+
+                document.getElementById('result').innerHTML = `
+                    <p>Error caught: ${error.message}</p>
+                    <p>Is network error: ${isNetworkError(error)}</p>
+                    <p>Friendly message: ${getFriendlyErrorMessage(error)}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
