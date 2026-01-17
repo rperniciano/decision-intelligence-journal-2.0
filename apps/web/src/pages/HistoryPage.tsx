@@ -239,13 +239,34 @@ export function HistoryPage() {
           return;
         }
 
+        // Build query parameters
+        const params = new URLSearchParams();
+
+        // Add status filter (but not for trash - trash is a separate endpoint)
+        if (activeFilter !== 'all' && activeFilter !== 'trash') {
+          params.append('status', activeFilter);
+        }
+
+        // Add category filter
+        if (selectedCategory !== 'all') {
+          params.append('category', selectedCategory);
+        }
+
+        // Add search query
+        if (searchQuery.trim()) {
+          params.append('search', searchQuery.trim());
+        }
+
         // Use trash endpoint if trash filter is active, otherwise regular endpoint
         const baseUrl = import.meta.env.VITE_API_URL;
         const endpoint = activeFilter === 'trash'
           ? `${baseUrl}/decisions/trash`
           : `${baseUrl}/decisions`;
 
-        const response = await fetch(endpoint, {
+        // Append query parameters to URL
+        const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
+
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -280,18 +301,11 @@ export function HistoryPage() {
     }
 
     fetchDecisions();
-  }, [activeFilter]);
+  }, [activeFilter, selectedCategory, searchQuery]);
 
-  // Filter decisions based on search, status filter, and category
-  const filteredDecisions = decisions.filter((decision) => {
-    const matchesSearch = decision.title.toLowerCase().includes(searchQuery.toLowerCase());
-    // When viewing trash, show all deleted items regardless of status
-    // Otherwise, apply status filter
-    const matchesFilter = activeFilter === 'trash' || activeFilter === 'all' || decision.status === activeFilter;
-    // Category filter
-    const matchesCategory = selectedCategory === 'all' || decision.categoryId === selectedCategory;
-    return matchesSearch && matchesFilter && matchesCategory;
-  });
+  // API now handles filtering, so we just use the decisions directly
+  // (No need for client-side filtering since server does it)
+  const filteredDecisions = decisions;
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredDecisions.length / ITEMS_PER_PAGE);
