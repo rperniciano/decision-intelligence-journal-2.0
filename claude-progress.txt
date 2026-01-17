@@ -6438,3 +6438,136 @@ Session 57 complete. 85/291 features (29.2%) passing.
 
 # Session 58 - Feature 118 complete - Duplicate email registration error handling with login suggestion
 Progress: 86/291 features (29.6%)
+
+# Session 59 - 2026-01-17
+Progress: 87/291 features (29.9%)
+
+## Summary
+Completed Feature #119 (session expiry handling) and 2 regression tests. Implemented robust 401 error handling with clear messaging and automatic redirect.
+
+## Completed
+- Feature #119: Session expiry during action handled gracefully ✅
+
+## Regression Tests Passed
+- Feature #63: Timestamps are real and accurate ✅
+- Feature #92: Create new category ✅
+
+## Feature #119 Implementation
+
+### Problem
+When a user's session expires mid-action (e.g., while editing a decision), the app would fail silently or show a generic error without guiding the user on what to do next.
+
+### Solution
+Added comprehensive 401 error handling to EditDecisionPage:
+
+**New authUtils.ts utility:**
+- `isUnauthorizedError()` - Checks if response is 401
+- `handleUnauthorizedError()` - Handles session expiry automatically
+- `fetchWithAuthCheck()` - Wrapper for fetch with auto-401 handling
+
+**EditDecisionPage changes:**
+- Check response.status === 401 before processing save response
+- Clear Supabase session on 401 (prevents stale auth state)
+- Show clear alert: "Your session has expired. Please log in again to save your changes."
+- Redirect to login with returnTo parameter: `/login?returnTo=/decisions/{id}/edit`
+- User can log back in and return to editing (though form data is not persisted)
+
+### Testing Method
+Used browser automation with fetch interception to simulate 401 responses:
+1. Logged in and navigated to edit page
+2. Injected code to override fetch() and return 401 for PATCH /decisions/*
+3. Made changes to decision title
+4. Clicked "Save Changes"
+5. Verified alert appeared with session expiry message ✅
+6. Verified redirect to login page ✅
+7. Verified returnTo parameter in URL ✅
+
+### User Experience
+- Clear error message (no technical jargon)
+- Automatic session cleanup
+- Automatic redirect (user doesn't get stuck)
+- Return URL preserved (user can continue after login)
+
+## Regression Test #63: Timestamps are real and accurate ✅
+
+**Test Steps:**
+1. Noted current time: 12:33 PM UTC
+2. Created decision via database script
+3. Decision created at: 12:35 PM UTC (2 minutes later - accurate!)
+4. Checked History page: Shows "Today" ✅
+5. Checked detail page: Shows "January 17, 2026 at 01:35 PM" (local time) ✅
+
+**Verification:**
+- Timestamps are real, not fake/hardcoded ✅
+- Timestamps accurate (within minutes of actual time) ✅
+- Relative timestamps work ("Today") ✅
+- Full timestamps show correct local time ✅
+
+## Regression Test #92: Create new category ✅
+
+**Test Steps:**
+1. Navigated to Settings → Manage Categories
+2. Clicked "Create New Category"
+3. Filled form:
+   - Name: REGRESSION_92_TEST_CATEGORY
+   - Emoji: 🚀 (rocket)
+   - Color: Purple
+4. Clicked "Create"
+5. Category appeared in list with "Custom" label ✅
+6. Navigated to Create Decision page
+7. Opened Category dropdown
+8. Verified new category appears: "🚀 REGRESSION_92_TEST_CATEGORY" ✅
+
+**Verification:**
+- Category creation workflow works end-to-end ✅
+- Category appears in management list ✅
+- Category appears in decision dropdowns ✅
+- Emoji and color displayed correctly ✅
+
+## Files Created/Modified
+
+**New Files:**
+- apps/web/src/utils/authUtils.ts - Session expiry utilities
+- create-regression63-decision.js - Test data script
+- check-decisions-schema-session59.js - Schema verification
+- 7 screenshot files documenting tests
+
+**Modified Files:**
+- apps/web/src/pages/EditDecisionPage.tsx - Added 401 error handling
+
+## Screenshots
+- regression-63-timestamp-today.png - Shows "Today" in history
+- regression-63-full-timestamp.png - Shows full timestamp on detail page
+- regression-92-create-category-form.png - Category creation form
+- regression-92-category-created.png - Category in management list
+- regression-92-category-in-list.png - Category visible in scrolled view
+- regression-92-category-in-dropdown.png - Category in decision dropdown
+- feature-119-redirected-to-login.png - Login redirect after session expiry
+
+## Session Statistics
+- Session duration: ~2 hours
+- Features completed: 1 (#119)
+- Regression tests: 2 (#63, #92 both passing)
+- New utility module: authUtils.ts
+- Screenshots: 7
+- Commits: 1
+- Console errors: 0 related to features
+
+## Code Quality Notes
+
+**Error Handling Pattern:**
+- Explicit status code checking (not just !response.ok)
+- User-friendly error messages
+- Automatic cleanup (session cleared)
+- Graceful degradation (redirect to login)
+- Preserve context (returnTo parameter)
+
+**Testing Pattern:**
+- Used fetch interception for controlled 401 simulation
+- Verified all user-facing behavior (alert + redirect)
+- Confirmed console logging for debugging
+
+## Next Steps
+Continue with Feature #120 and beyond.
+
+Session 59 complete. Feature #119 passing. 87/291 features (29.9%).
