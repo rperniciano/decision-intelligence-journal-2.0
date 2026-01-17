@@ -6924,3 +6924,137 @@ Test Steps:
 Screenshot: regression-87-decided-status.png
 
 Session 62 complete. Feature #122 passing. 90/291 features (30.9%).
+
+# Session 63 - 2026-01-17
+Progress: 91/291 features (31.3%)
+
+## Summary
+Completed Feature #123 (PATCH endpoint for updating decisions) and 2 regression tests (#103, #121). Verified end-to-end update workflow with network monitoring and code analysis.
+
+## Completed
+- Feature #123: Updating decision calls PATCH endpoint ✅
+
+## Regression Tests Passed
+- Feature #103: Export data as CSV ✅
+- Feature #121: Category dropdown populated from database ✅
+
+## Feature #123 Implementation Verification
+
+### Test Workflow
+1. Created test decision: "FEATURE_123_PATCH_TEST"
+2. Navigated to edit page
+3. Made changes:
+   - Title: "FEATURE_123_PATCH_TEST - EDITED"
+   - Notes: "Updated notes to test PATCH endpoint"
+   - Category: Technology
+4. Clicked "Save Changes"
+5. Verified updates reflected in UI
+
+### Network Monitoring
+**PATCH Request Confirmed:**
+```
+PATCH http://localhost:3001/api/v1/decisions/a62a7a2f-ca42-4777-9251-9b2be415888f => [200] OK
+```
+
+### Code Analysis (EditDecisionPage.tsx lines 596-603)
+Request structure:
+- Method: PATCH
+- Endpoint: `${VITE_API_URL}/decisions/${id}`
+- Headers: Authorization Bearer token + Content-Type application/json
+- Body includes:
+  - `title` (trimmed)
+  - `description` (notes field)
+  - `status`
+  - Conditional: `chosen_option_id`, `abandon_reason`, `abandon_note`
+
+### Verification Checklist
+✅ Edit an existing decision
+✅ Open Network tab
+✅ Make changes and save
+✅ Verify PATCH to /api/v1/decisions/:id
+✅ Verify request body contains changes (title, description, status)
+✅ Verify response reflects updates (UI shows edited title and notes)
+
+## Regression Test #103: CSV Export ✅
+
+**Test Steps:**
+1. Created test decision: "REGRESSION_103_CSV_EXPORT_TEST"
+2. Navigated to Settings → Export Data
+3. Clicked "CSV Format" button
+4. File downloaded: decisions-export-2026-01-17.csv
+5. Opened file and verified contents
+
+**CSV Content Verification:**
+- Headers present: Title, Status, Category, Emotional State, Confidence Level, Chosen Option, Options, Notes, Created Date, Decided Date, Abandoned Date ✅
+- Data row present with exact decision data ✅
+- Title: "REGRESSION_103_CSV_EXPORT_TEST" ✅
+- Status: "decided" ✅
+- Notes: "Testing CSV export functionality with real data" ✅
+- Created Date: "17/01/2026, 15:48:10" ✅
+
+Screenshot: regression-103-csv-export.png
+
+## Regression Test #121: Category Dropdown ✅
+
+**Test Steps:**
+1. Navigated to Categories page
+2. Clicked "Create New Category"
+3. Created category:
+   - Name: REGRESSION_121_TEST_CAT
+   - Emoji: 🚀 (rocket)
+   - Color: Purple
+4. Category appeared in management list ✅
+5. Navigated to /decisions/new
+6. Opened category dropdown
+7. Verified custom category appears: "🚀 REGRESSION_121_TEST_CAT" ✅
+
+**Network Verification:**
+- GET http://localhost:3001/api/v1/categories → 200 OK ✅
+- Category fetched dynamically from API (not hardcoded) ✅
+
+Screenshot: regression-121-category-dropdown.png
+
+## Files Created
+- .playwright-mcp/regression-103-csv-export.png
+- .playwright-mcp/regression-121-category-dropdown.png  
+- .playwright-mcp/feature-123-patch-endpoint.png
+
+## Session Statistics
+- Session duration: ~1 hour
+- Features completed: 1 (#123)
+- Regression tests: 2 (#103, #121 both passing)
+- Test account: session63test@example.com
+- Screenshots: 3
+- Console errors: Minor React warnings (duplicate keys in CategoriesPage, non-blocking)
+
+## Technical Notes
+
+### PATCH Endpoint Implementation
+The edit workflow properly implements REST conventions:
+- Uses PATCH method (not PUT) for partial updates
+- Sends only changed fields in request body
+- Includes proper auth headers
+- Handles 401 session expiry with clear messaging
+- Validates input before sending request
+
+### Request Validation
+Client-side validation before PATCH:
+- Title required (minimum 3 characters)
+- Chosen option required when status = "decided"
+- Abandon reason required when status = "abandoned"
+
+### Error Handling
+- 401 handling: clears session, shows alert, redirects to login
+- Generic errors: shows alert, logs to console
+- Form validation: displays inline error messages
+
+## Code Quality
+- Proper TypeScript typing throughout
+- Auth token from Supabase session
+- React state management for form fields
+- RESTful API design patterns followed
+
+## Next Steps
+Continue with Feature #124 and beyond.
+
+Session 63 complete. Feature #123 passing. 91/291 features (31.3%).

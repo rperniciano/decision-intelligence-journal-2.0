@@ -1,11 +1,2 @@
 Title,Status,Category,Emotional State,Confidence Level,Chosen Option,Options,Notes,Created Date,Decided Date,Abandoned Date
-FEATURE_98_SWITCH_PRO_CON_TEST,in_progress,Uncategorized,confident,,,; ,,"17/01/2026, 10:17:55",,
-FEATURE_98_SWITCH_PRO_CON_TEST,in_progress,Uncategorized,confident,,,,,"17/01/2026, 10:17:45",,
-REGRESSION_TEST_82_TITLE_UPDATED,decided,Uncategorized,confident,,,,,"17/01/2026, 10:07:10","17/01/2026, 10:08:24",
-REGRESSION_TEST_79_SESSION45,decided,Uncategorized,confident,,,; ,,"17/01/2026, 09:57:46",,
-DECISION_B_REGRESSION_61,decided,Uncategorized,neutral,,,,,"17/01/2026, 08:30:14",,
-DECISION_A_REGRESSION_61,decided,Uncategorized,confident,,,,,"17/01/2026, 08:30:14",,
-MANUAL_TEST_SESSION43_REGRESSION79,decided,Uncategorized,confident,,,; ,,"17/01/2026, 08:25:39",,
-Test Decision for Abandon - Session 37,abandoned,Uncategorized,,,,,This decision will be abandoned during testing,"17/01/2026, 07:12:02",,
-TEST_MANUAL_REGRESSION_79_SESSION37,decided,Uncategorized,confident,,,,,"17/01/2026, 07:05:21",,
-Test Decision for Deliberating Status - Session 35,decided,Uncategorized,,,,; ; ,This decision will transition to deliberating status,"17/01/2026, 06:40:23","17/01/2026, 06:56:55",
+REGRESSION_103_CSV_EXPORT_TEST,decided,Uncategorized,,,,,Testing CSV export functionality with real data,"17/01/2026, 15:48:10",,
