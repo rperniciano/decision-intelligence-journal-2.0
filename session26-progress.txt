@@ -198,3 +198,121 @@ The successful verification proves that:
 This is a fundamental building block for features like pros/cons lists, outcomes, and reminders which all use similar foreign key relationships to decisions.
 
 Session 26 complete. Regression test #40 passing. Feature #73 passing. 53/291 features passing (18.2%).
+
+---
+
+## Additional Feature Completed
+
+### Feature #75 - Profile shows actual user info
+- **STATUS**: FULLY IMPLEMENTED AND PASSING
+
+**Implementation**:
+
+**Backend API Endpoint**:
+- Implemented PATCH /api/v1/profile in apps/api/src/server.ts
+- Uses Supabase Admin API updateUserById() to modify user_metadata
+- Accepts { name: string } in request body
+- Validates name is not empty
+- Returns updated profile with name and email
+- Proper error handling with 400/401/500 status codes
+
+**Frontend Components**:
+- Created EditProfileModal.tsx component
+- Glassmorphism modal with backdrop blur
+- Form with name input field
+- Cancel and Save buttons
+- Loading state during API call
+- Error message display
+- Framer Motion animations (fade in/scale)
+
+**Settings Page Integration**:
+- Made profile row clickable (wrapped in button)
+- Opens EditProfileModal on click
+- Pre-fills current name in modal
+- Updates display after successful save
+- Profile key-based re-rendering
+
+**Test Process**:
+
+**Step 1 - Navigate to Settings > Profile**:
+- Logged in as session24test@example.com
+- Navigated to /settings page
+- Profile section shows initial name: "session24test" (email prefix fallback)
+
+**Step 2 - Update profile to specific name**:
+- Clicked on profile row to open edit modal
+- Modal appeared with name field pre-filled
+- Changed name to "Test User Session26"
+- Clicked Save button
+- API call successful (checked with database query)
+
+**Step 3 - Verify name persists (re-login)**:
+- Signed out of application
+- Signed back in with same credentials
+- Profile now shows "Test User Session26" ✅
+- Database confirmed user_metadata.name = "Test User Session26"
+
+**Step 4 - Update to different unique name**:
+- Clicked profile row again
+- Changed name to "Updated Name 2026"
+- Clicked Save
+- Database updated successfully
+
+**Step 5 - Verify second update persists**:
+- Signed out and signed back in
+- Profile now shows "Updated Name 2026" ✅
+- Database confirmed user_metadata.name = "Updated Name 2026"
+- Update persisted across sessions
+
+**Database Verification**:
+```javascript
+// User metadata before any changes
+{
+  "email_verified": true
+}
+
+// After first update
+{
+  "email_verified": true,
+  "name": "Test User Session26"
+}
+
+// After second update
+{
+  "email_verified": true,
+  "name": "Updated Name 2026"
+}
+```
+
+**Verification Complete**:
+- ✅ Profile editing UI implemented and functional
+- ✅ API endpoint correctly updates user metadata
+- ✅ Name displays in profile from real user_metadata
+- ✅ Updates persist in database across sessions
+- ✅ Fresh login shows updated name
+- ✅ Multiple updates work correctly
+- ✅ Zero console errors during testing
+
+Status: PASSING
+
+## Updated Feature Statistics
+- Total Features: 291
+- Passing: 54 (was 53)
+- Completion: 18.6%
+- Features completed this session: 2 (#73, #75)
+- Features skipped: 1 (#74 - awaiting outcomes tables migration)
+
+## Session 26 Final Summary
+
+This session successfully completed 2 features:
+1. **Feature #73**: Verified options are correctly attached to their parent decisions via foreign keys
+2. **Feature #75**: Implemented profile editing and verified user data is real and persistent
+
+Key achievements:
+- Built complete profile editing feature from scratch (API + UI)
+- Verified data relationships with foreign keys
+- All data stored in real database (Supabase)
+- Production-ready implementation with proper error handling
+- Beautiful UI with glassmorphism and animations
+
+Session 26 complete. Features #73 and #75 passing. 54/291 features (18.6%).
