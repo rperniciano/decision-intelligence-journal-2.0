@@ -72,6 +72,48 @@ export function RecordPage() {
     }
   };
 
+  const pollJobStatus = async (jobId: string, token: string): Promise<string> => {
+    const maxAttempts = 60; // 60 attempts * 2 seconds = 2 minutes max
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      // Poll for status
+      const statusResponse = await fetch(
+        `${import.meta.env.VITE_API_URL}/recordings/${jobId}/status`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!statusResponse.ok) {
+        throw new Error('Failed to check processing status');
+      }
+
+      const statusData = await statusResponse.json();
+
+      // Check if completed
+      if (statusData.status === 'completed') {
+        if (!statusData.decisionId) {
+          throw new Error('Processing completed but no decision was created');
+        }
+        return statusData.decisionId;
+      }
+
+      // Check if failed
+      if (statusData.status === 'failed') {
+        throw new Error(statusData.errorMessage || 'Processing failed');
+      }
+
+      // Wait before next poll
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Poll every 2 seconds
+      attempts++;
+    }
+
+    throw new Error('Processing timed out. Please try again.');
+  };
+
   const processRecording = async (audioBlob?: Blob) => {
     try {
       setIsProcessing(true);
@@ -110,13 +152,16 @@ export function RecordPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Transcription failed. Please try again or enter manually.');
+        throw new Error(errorData.message || 'Upload failed. Please try again or enter manually.');
       }
 
       const result = await response.json();
 
+      // Start polling for job completion
+      const decisionId = await pollJobStatus(result.jobId, session.access_token);
+
       // Navigate to the created decision
-      navigate(`/decisions/${result.decision.id}`);
+      navigate(`/decisions/${decisionId}`);
     } catch (err) {
       console.error('Error processing recording:', err);
       setError((err as Error).message || 'Transcription failed. Please try again or enter manually.');

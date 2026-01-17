@@ -10,6 +10,8 @@ import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from './middleware/auth';
 import { DecisionService } from './services/decisionServiceNew';
 import { VoiceService } from './services/voiceService';
+import { AsyncVoiceService } from './services/asyncVoiceService';
+import { jobManager } from './services/jobManager';
 
 // Get directory paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -742,34 +744,27 @@ async function registerRoutes() {
         // Read file buffer
         const buffer = await data.toBuffer();
 
-        // Process the voice recording through the pipeline
-        const result = await VoiceService.processVoiceRecording(
+        // Create a processing job
+        const job = jobManager.createJob(userId, '', null);
+
+        // Start async processing in the background
+        AsyncVoiceService.startBackgroundProcessing(
+          job.id,
           userId,
           buffer,
           data.filename
         );
 
-        // Create decision from extracted data
-        const decision = await DecisionService.createDecision(userId, {
-          title: result.extraction.title,
-          status: 'draft',
-          category: result.extraction.suggestedCategory || 'Personal',
-          emotional_state: result.extraction.emotionalState,
-          options: result.extraction.options,
-          transcription: result.transcript,
-          audio_url: result.audioUrl,
-          audio_duration_seconds: result.duration,
-        });
-
-        return reply.code(201).send({
-          decision,
-          transcript: result.transcript,
-          extraction: result.extraction,
+        // Return job ID immediately for polling
+        return reply.code(202).send({
+          jobId: job.id,
+          status: job.status,
+          message: 'Processing started. Poll /recordings/:id/status for updates.',
         });
       } catch (error) {
         server.log.error(error);
         return reply.code(500).send({
-          error: 'Voice processing failed',
+          error: 'Failed to start processing',
           message: (error as Error).message,
         });
       }
@@ -785,8 +780,32 @@ async function registerRoutes() {
     api.get('/recordings/:id/status', async (request, reply) => {
       const { id } = request.params as { id: string };
       const userId = request.user?.id;
-      // TODO: Implement status polling (verify ownership)
-      return { status: 'pending', progress: 0, id, userId };
+
+      if (!userId) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+      }
+
+      // Get job from manager
+      const job = jobManager.getJob(id);
+
+      if (!job) {
+        return reply.code(404).send({ error: 'Job not found' });
+      }
+
+      // Verify ownership
+      if (job.userId !== userId) {
+        return reply.code(403).send({ error: 'Forbidden' });
+      }
+
+      // Return job status
+      return {
+        jobId: job.id,
+        status: job.status,
+        progress: job.progress,
+        decisionId: job.decisionId,
+        errorMessage: job.errorMessage,
+        errorCode: job.errorCode,
+      };
     });
 
     // Categories
