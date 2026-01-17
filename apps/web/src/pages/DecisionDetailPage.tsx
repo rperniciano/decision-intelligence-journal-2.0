@@ -28,6 +28,8 @@ interface Decision {
   outcome?: string;
   outcome_notes?: string;
   outcome_recorded_at?: string;
+  abandon_reason?: string;
+  abandon_note?: string;
 }
 
 // Status badge component
@@ -403,6 +405,39 @@ export function DecisionDetailPage() {
                   {decision.outcome_notes}
                 </p>
               )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Abandon Reason */}
+        {decision.status === 'abandoned' && decision.abandon_reason && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.3 }}
+            className="mb-6"
+          >
+            <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">
+              Why Abandoned
+            </h3>
+            <div className="glass p-4 rounded-xl border border-red-500/20">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-red-400 font-medium text-sm mb-1">
+                    {decision.abandon_reason}
+                  </p>
+                  {decision.abandon_note && (
+                    <p className="text-text-secondary text-sm whitespace-pre-wrap mt-2 pt-2 border-t border-white/5">
+                      {decision.abandon_note}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
