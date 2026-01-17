@@ -469,6 +469,29 @@ export class DecisionService {
   }
 
   /**
+   * Restore a soft-deleted decision
+   */
+  static async restoreDecision(decisionId: string, userId: string) {
+    const { data, error } = await supabase
+      .from('decisions')
+      .update({ deleted_at: null })
+      .eq('id', decisionId)
+      .eq('user_id', userId)
+      .not('deleted_at', 'is', null)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    return data;
+  }
+
+  /**
    * Get dashboard statistics for a user
    */
   static async getStatistics(userId: string) {

@@ -173,6 +173,7 @@ export function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDecisions, setSelectedDecisions] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   // Update activeFilter and selectedCategory when URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -367,6 +368,57 @@ export function HistoryPage() {
     }
   };
 
+  // Bulk restore handler
+  const handleBulkRestore = async () => {
+    if (selectedDecisions.size === 0) return;
+
+    const confirmMessage = `Are you sure you want to restore ${selectedDecisions.size} decision${selectedDecisions.size > 1 ? 's' : ''}?`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setIsRestoring(true);
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        alert('Not authenticated');
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/bulk-restore`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          decisionIds: Array.from(selectedDecisions)
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to restore decisions');
+      }
+
+      const result = await response.json();
+
+      // Remove restored decisions from trash list
+      setDecisions(prev => prev.filter(d => !selectedDecisions.has(d.id)));
+      setSelectedDecisions(new Set());
+
+      alert(`Successfully restored ${result.restoredCount} decision${result.restoredCount > 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Error restoring decisions:', error);
+      alert('Failed to restore decisions. Please try again.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
@@ -481,13 +533,23 @@ export function HistoryPage() {
               >
                 Clear
               </button>
-              <button
-                onClick={handleBulkDelete}
-                disabled={isDeleting}
-                className="px-4 py-2 text-sm bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDeleting ? 'Deleting...' : 'Delete Selected'}
-              </button>
+              {activeFilter === 'trash' ? (
+                <button
+                  onClick={handleBulkRestore}
+                  disabled={isRestoring}
+                  className="px-4 py-2 text-sm bg-accent/20 text-accent hover:bg-accent/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRestoring ? 'Restoring...' : 'Restore Selected'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-sm bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Selected'}
+                </button>
+              )}
             </div>
           </motion.div>
         )}
