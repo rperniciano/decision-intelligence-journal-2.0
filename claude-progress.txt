@@ -6017,3 +6017,79 @@ The app already had graceful 404 handling in place for missing decisions:
 - regression-64-insights-empty-state.png - Insights empty state
 
 Session complete. Zero console errors related to features.
+
+# Session 53 - 2026-01-17
+Progress: 80/291 features (27.5%)
+
+## Summary
+Successfully completed regression tests and implemented Feature #109. Fixed critical cascade deletion bug discovered during regression testing.
+
+## Regression Tests
+- Feature #27: History nav button works correctly ✅
+- Feature #68: Related decisions cleared on delete (CASCADE) ✅
+  - **CRITICAL BUG FOUND AND FIXED**: Cascade deletion was broken
+  - Options and pros/cons were not being deleted when decision was soft-deleted
+  - Fixed by manually deleting related data in deleteDecision method
+
+## Feature #109 - Empty search results show message ✅
+
+### Implementation
+- Updated EmptyState component to accept searchQuery prop
+- Conditional rendering based on whether search is active
+- Different icons: search icon for no results, clock for truly empty
+- Different messages:
+  - No search: "No decisions yet" + "Start recording..."
+  - With search: "No results found" + "Try adjusting your search terms..."
+- Hide "Record First Decision" button when search active
+
+### Test Steps Completed
+1. ✅ Navigate to History
+2. ✅ Search for 'ZZZZNONEXISTENT'
+3. ✅ "No results found" message shown
+4. ✅ Not an error (friendly informational message)
+5. ✅ Suggestion shown: "Try adjusting your search terms or filters to find what you're looking for."
+
+## Bug Fix: Cascade Deletion
+
+### Problem
+When deleting a decision, the decision was soft-deleted (deleted_at set) but related options and pros/cons remained in the database as orphaned records.
+
+### Root Cause
+The deleteDecision method only updated the decision's deleted_at field. Since we use soft delete for decisions, the database CASCADE DELETE constraints don't trigger (they only work for hard deletes).
+
+### Solution
+Updated DecisionServiceNew.deleteDecision to:
+1. Get all options for the decision
+2. Delete all pros/cons for those options (hard delete)
+3. Delete all options (hard delete)
+4. Soft delete the decision (set deleted_at)
+
+This maintains data integrity while still allowing decision recovery from trash.
+
+### Verification
+- Created decision with 2 options and 2 pros/cons
+- Deleted decision via UI
+- Verified decision soft-deleted (deleted_at set)
+- Verified options hard-deleted (0 options remain)
+- Verified cascade works correctly
+
+## Files Modified
+- apps/api/src/services/decisionServiceNew.ts - Fixed cascade deletion
+- apps/web/src/pages/HistoryPage.tsx - Empty search state
+
+## Files Created
+- 9 test/verification scripts
+- 7 screenshots documenting tests
+
+## Statistics
+- Session duration: ~2 hours
+- Features completed: 1 (#109)
+- Bugs fixed: 1 (cascade deletion)
+- Regression tests: 2 (both passing)
+- Console errors: 0
+- Commits: 2
+
+## Next Steps
+Continue with Feature #110 and beyond.
+
+Session 53 complete. Feature #109 passing. 80/291 features (27.5%).
