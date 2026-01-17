@@ -144,7 +144,7 @@ export class DecisionService {
         throw error;
       }
 
-      // Transform to match expected format
+      // Transform to match expected format (camelCase for frontend)
       return {
         id: data.id,
         user_id: data.user_id,
@@ -152,9 +152,9 @@ export class DecisionService {
         status: data.status,
         category: data.category?.name || 'Uncategorized',
         category_id: data.category_id,
-        emotional_state: data.detected_emotional_state,
-        created_at: data.created_at,
-        decided_at: data.decided_at,
+        emotionalState: data.detected_emotional_state,
+        createdAt: data.created_at,
+        decidedAt: data.decided_at,
         options: (data.options || []).map((opt: any) => ({
           id: opt.id,
           text: opt.title,
@@ -171,9 +171,9 @@ export class DecisionService {
         notes: data.description,
         transcription: data.raw_transcript,
         outcome: data.outcome,
-        outcome_notes: data.outcome_notes,
-        outcome_recorded_at: data.outcome_recorded_at,
-        deleted_at: data.deleted_at
+        outcomeNotes: data.outcome_notes,
+        outcomeRecordedAt: data.outcome_recorded_at,
+        deletedAt: data.deleted_at
       };
     } catch (error) {
       console.error('Error in getDecisionById:', error);
