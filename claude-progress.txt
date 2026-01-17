@@ -565,3 +565,116 @@ Both features verified with browser automation testing:
 - Cancel button returns to previous page without saving changes
 
 All code committed with zero console errors and proper documentation.
+
+---
+# Session 8 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 8
+
+## Session Summary
+
+Successfully completed 3 features focused on navigation integrity and implemented breadcrumb navigation system.
+
+## Completed Tasks
+
+### 1. Regression Testing
+- Tested Feature #1 (Unauthenticated redirect from /dashboard) - PASSING
+- Tested Feature #11 (Invalid auth token rejected) - PASSING
+- Both regression tests passed successfully
+
+### 2. Feature #42 - Mobile Bottom Navigation Works
+- Resized browser to mobile viewport (375x667)
+- Verified bottom navigation visible on all pages
+- Tested all navigation links:
+  * History - navigated correctly
+  * Record (center button) - opened recording page
+  * Insights - navigated correctly
+- All navigation working perfectly
+- Active state indication working
+- Zero console errors
+- Status: PASSING
+
+### 3. Feature #43 - Landing Page CTA Leads to Signup/Login
+- Tested "Begin Your Journal" CTA on landing page
+- Verified navigation to register page (/register)
+- Confirmed signup/login options displayed:
+  * Email/password registration form
+  * Google OAuth button
+  * "Already have an account? Sign in" link
+- Zero console errors
+- Status: PASSING
+
+### 4. Feature #44 - Breadcrumbs Reflect Navigation Path
+- **IMPLEMENTED** breadcrumb navigation system
+- Created reusable Breadcrumbs component (apps/web/src/components/Breadcrumbs.tsx)
+  * Accepts array of breadcrumb items with label and optional path
+  * Renders navigation chevrons (>) between items
+  * Current page shown in bold, not clickable
+  * Previous pages are clickable links
+  * Smooth animations with Framer Motion
+  * Consistent with design system
+- Added breadcrumbs to DecisionDetailPage
+  * Path: Dashboard > History > Decision Title
+  * Dashboard and History are clickable
+  * Decision title is current page (not clickable)
+- Tested complete navigation flow:
+  * Breadcrumbs display correctly
+  * Clicking "History" returns to History page
+  * All navigation working
+- Zero console errors
+- Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 27 (was 24)
+- Completion: 9.3%
+- Features completed this session: 3 (#42, #43, #44)
+
+## Technical Notes
+- Created test user: mobiletest@example.com (confirmed via admin API)
+- Created test decisions for verification
+- Database schema uses:
+  * `category_id` (FK to categories table) not `category` text field
+  * `description` field for notes
+  * `is_pro` field in pros_cons table (not `type` or `text`)
+- API properly transforms data with category.name or "Uncategorized" fallback
+- Mobile viewport testing at 375x667px (iPhone SE size)
+
+## Files Created/Modified
+- apps/web/src/components/Breadcrumbs.tsx (NEW)
+  * Reusable breadcrumb component with navigation support
+  * Framer Motion animations
+  * Design system styling
+- apps/web/src/pages/DecisionDetailPage.tsx (MODIFIED)
+  * Added breadcrumb import and implementation
+  * Breadcrumbs render before main content
+- confirm-user.js (NEW) - Auto-confirm email verification for test users
+- list-users.js (NEW) - List Supabase users for debugging
+- check-mobiletest-decisions.js (NEW) - Verify decisions in database
+- create-decision-for-mobiletest.js (NEW) - Create test decision data
+
+## Screenshots
+- mobile-nav-test-1-dashboard.png - Mobile view of dashboard with bottom nav
+- mobile-nav-test-2-history.png - Mobile view of history page
+- mobile-nav-test-3-record.png - Mobile view of record page
+- mobile-nav-test-4-insights.png - Mobile view of insights page
+- landing-cta-test-1-landing.png - Landing page with CTA
+- landing-cta-test-2-register.png - Register page after CTA click
+- breadcrumb-test-1-history.png - History page before breadcrumb implementation
+- breadcrumb-test-2-detail.png - Decision detail before breadcrumbs
+- breadcrumb-test-3-with-breadcrumbs.png - Decision detail with breadcrumbs
+- breadcrumb-test-4-back-to-history.png - After clicking History in breadcrumb
+
+## Bugs/Issues Found
+None - all features working correctly
+
+## Next Steps for Future Sessions
+1. Continue with next navigation integrity features
+2. Implement more decision management features
+3. Build out voice recording functionality
+4. Implement insights and analytics pages
+
+Session 8 complete. Navigation features verified and breadcrumb system implemented.
+
