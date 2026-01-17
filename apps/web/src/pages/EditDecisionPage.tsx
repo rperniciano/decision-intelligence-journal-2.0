@@ -58,6 +58,7 @@ export function EditDecisionPage() {
   const [abandonReason, setAbandonReason] = useState<string>('');
   const [abandonNote, setAbandonNote] = useState<string>('');
   const [draggedProCon, setDraggedProCon] = useState<{id: string; type: 'pro' | 'con'; sourceOptionId: string} | null>(null);
+  const [errors, setErrors] = useState<{title?: string; chosenOption?: string; abandonReason?: string}>({});
 
   // Fetch decision data
   useEffect(() => {
@@ -538,9 +539,31 @@ export function EditDecisionPage() {
   };
 
   const handleSave = async () => {
-    // Validation: Title is required
+    // Reset errors
+    setErrors({});
+
+    // Validation: Title is required and minimum length
+    const newErrors: {title?: string; chosenOption?: string; abandonReason?: string} = {};
+
     if (!title.trim()) {
-      alert('Please enter a title for your decision');
+      newErrors.title = 'Title is required';
+    } else if (title.trim().length < 3) {
+      newErrors.title = 'Title must be at least 3 characters long';
+    }
+
+    // Validation: Chosen option is required when status is "decided"
+    if (status === 'decided' && !chosenOptionId && options.length > 0) {
+      newErrors.chosenOption = 'Please select which option you chose';
+    }
+
+    // Validation: Abandon reason is required when status is "abandoned"
+    if (status === 'abandoned' && !abandonReason) {
+      newErrors.abandonReason = 'Please select a reason for abandoning this decision';
+    }
+
+    // If there are validation errors, set them and return
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -646,10 +669,23 @@ export function EditDecisionPage() {
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+              onChange={(e) => {
+                setTitle(e.target.value);
+                // Clear error when user starts typing
+                if (errors.title) {
+                  setErrors({...errors, title: undefined});
+                }
+              }}
+              className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-text-primary focus:outline-none transition-all ${
+                errors.title
+                  ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                  : 'border-white/10 focus:border-accent/50 focus:ring-1 focus:ring-accent/50'
+              }`}
               placeholder="Enter decision title"
             />
+            {errors.title && (
+              <p className="mt-1 text-sm text-red-400">{errors.title}</p>
+            )}
           </div>
 
           {/* Status */}
@@ -682,8 +718,18 @@ export function EditDecisionPage() {
                 </label>
                 <select
                   value={chosenOptionId}
-                  onChange={(e) => setChosenOptionId(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+                  onChange={(e) => {
+                    setChosenOptionId(e.target.value);
+                    // Clear error when user selects
+                    if (errors.chosenOption) {
+                      setErrors({...errors, chosenOption: undefined});
+                    }
+                  }}
+                  className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-text-primary focus:outline-none transition-all ${
+                    errors.chosenOption
+                      ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                      : 'border-white/10 focus:border-accent/50 focus:ring-1 focus:ring-accent/50'
+                  }`}
                   required
                 >
                   <option value="">Select an option...</option>
@@ -693,6 +739,9 @@ export function EditDecisionPage() {
                     </option>
                   ))}
                 </select>
+                {errors.chosenOption && (
+                  <p className="mt-1 text-sm text-red-400">{errors.chosenOption}</p>
+                )}
               </div>
 
               <div>
@@ -736,8 +785,18 @@ export function EditDecisionPage() {
                 </label>
                 <select
                   value={abandonReason}
-                  onChange={(e) => setAbandonReason(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all"
+                  onChange={(e) => {
+                    setAbandonReason(e.target.value);
+                    // Clear error when user selects
+                    if (errors.abandonReason) {
+                      setErrors({...errors, abandonReason: undefined});
+                    }
+                  }}
+                  className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-text-primary focus:outline-none transition-all ${
+                    errors.abandonReason
+                      ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                      : 'border-white/10 focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50'
+                  }`}
                   required
                 >
                   <option value="">Select a reason...</option>
@@ -749,6 +808,9 @@ export function EditDecisionPage() {
                   <option value="External factors">External factors</option>
                   <option value="Other">Other</option>
                 </select>
+                {errors.abandonReason && (
+                  <p className="mt-1 text-sm text-red-400">{errors.abandonReason}</p>
+                )}
               </div>
 
               <div>
