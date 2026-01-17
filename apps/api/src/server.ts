@@ -388,6 +388,199 @@ async function registerRoutes() {
       }
     });
 
+    // Pros/Cons management endpoints
+    api.post('/options/:optionId/pros-cons', async (request, reply) => {
+      try {
+        const { optionId } = request.params as { optionId: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Verify option belongs to user's decision
+        const { data: option } = await supabaseAdmin
+          .from('options')
+          .select('decision_id')
+          .eq('id', optionId)
+          .single();
+
+        if (!option) {
+          return reply.code(404).send({ error: 'Option not found' });
+        }
+
+        const { data: decision } = await supabaseAdmin
+          .from('decisions')
+          .select('id')
+          .eq('id', option.decision_id)
+          .eq('user_id', userId)
+          .single();
+
+        if (!decision) {
+          return reply.code(403).send({ error: 'Forbidden' });
+        }
+
+        const body = request.body as { type: 'pro' | 'con'; content: string; weight?: number };
+
+        if (!body.content || !body.content.trim()) {
+          return reply.code(400).send({ error: 'Content is required' });
+        }
+
+        if (!body.type || !['pro', 'con'].includes(body.type)) {
+          return reply.code(400).send({ error: 'Type must be "pro" or "con"' });
+        }
+
+        // Create new pro/con
+        const { data: proCon, error: proConError } = await supabaseAdmin
+          .from('pros_cons')
+          .insert({
+            option_id: optionId,
+            type: body.type,
+            content: body.content,
+            weight: body.weight || 5,
+            ai_extracted: false,
+            display_order: 0
+          })
+          .select()
+          .single();
+
+        if (proConError) {
+          server.log.error(proConError);
+          return reply.code(500).send({ error: 'Failed to create pro/con' });
+        }
+
+        return reply.code(201).send(proCon);
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
+    api.patch('/pros-cons/:proConId', async (request, reply) => {
+      try {
+        const { proConId } = request.params as { proConId: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Verify pro/con belongs to user's decision
+        const { data: proCon } = await supabaseAdmin
+          .from('pros_cons')
+          .select('option_id')
+          .eq('id', proConId)
+          .single();
+
+        if (!proCon) {
+          return reply.code(404).send({ error: 'Pro/Con not found' });
+        }
+
+        const { data: option } = await supabaseAdmin
+          .from('options')
+          .select('decision_id')
+          .eq('id', proCon.option_id)
+          .single();
+
+        if (!option) {
+          return reply.code(404).send({ error: 'Option not found' });
+        }
+
+        const { data: decision } = await supabaseAdmin
+          .from('decisions')
+          .select('id')
+          .eq('id', option.decision_id)
+          .eq('user_id', userId)
+          .single();
+
+        if (!decision) {
+          return reply.code(403).send({ error: 'Forbidden' });
+        }
+
+        const body = request.body as { content?: string; weight?: number };
+
+        // Update pro/con
+        const { data: updated, error: updateError } = await supabaseAdmin
+          .from('pros_cons')
+          .update({
+            ...(body.content !== undefined && { content: body.content }),
+            ...(body.weight !== undefined && { weight: body.weight })
+          })
+          .eq('id', proConId)
+          .select()
+          .single();
+
+        if (updateError) {
+          server.log.error(updateError);
+          return reply.code(500).send({ error: 'Failed to update pro/con' });
+        }
+
+        return updated;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
+    api.delete('/pros-cons/:proConId', async (request, reply) => {
+      try {
+        const { proConId } = request.params as { proConId: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Verify pro/con belongs to user's decision
+        const { data: proCon } = await supabaseAdmin
+          .from('pros_cons')
+          .select('option_id')
+          .eq('id', proConId)
+          .single();
+
+        if (!proCon) {
+          return reply.code(404).send({ error: 'Pro/Con not found' });
+        }
+
+        const { data: option } = await supabaseAdmin
+          .from('options')
+          .select('decision_id')
+          .eq('id', proCon.option_id)
+          .single();
+
+        if (!option) {
+          return reply.code(404).send({ error: 'Option not found' });
+        }
+
+        const { data: decision } = await supabaseAdmin
+          .from('decisions')
+          .select('id')
+          .eq('id', option.decision_id)
+          .eq('user_id', userId)
+          .single();
+
+        if (!decision) {
+          return reply.code(403).send({ error: 'Forbidden' });
+        }
+
+        // Delete pro/con
+        const { error: deleteError } = await supabaseAdmin
+          .from('pros_cons')
+          .delete()
+          .eq('id', proConId);
+
+        if (deleteError) {
+          server.log.error(deleteError);
+          return reply.code(500).send({ error: 'Failed to delete pro/con' });
+        }
+
+        return { message: 'Pro/Con deleted successfully' };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
     // Recording endpoints
     api.post('/recordings/upload', async (request, reply) => {
       try {

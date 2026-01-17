@@ -128,7 +128,52 @@ export class DecisionService {
       throw error;
     }
 
-    return data;
+    // Fetch options with pros/cons
+    const { data: options, error: optionsError } = await supabase
+      .from('options')
+      .select('*')
+      .eq('decision_id', decisionId)
+      .order('created_at', { ascending: true });
+
+    if (optionsError) {
+      console.error('Error fetching options:', optionsError);
+    }
+
+    // For each option, fetch pros and cons
+    const optionsWithProsCons = await Promise.all(
+      (options || []).map(async (option) => {
+        const { data: prosCons, error: prosConsError } = await supabase
+          .from('pros_cons')
+          .select('*')
+          .eq('option_id', option.id)
+          .order('display_order', { ascending: true });
+
+        if (prosConsError) {
+          console.error('Error fetching pros/cons:', prosConsError);
+        }
+
+        const pros = (prosCons || [])
+          .filter(pc => pc.type === 'pro')
+          .map(pc => pc.content);
+
+        const cons = (prosCons || [])
+          .filter(pc => pc.type === 'con')
+          .map(pc => pc.content);
+
+        return {
+          id: option.id,
+          text: option.title,
+          pros,
+          cons,
+          isChosen: option.is_chosen || false,
+        };
+      })
+    );
+
+    return {
+      ...data,
+      options: optionsWithProsCons,
+    };
   }
 
   /**
