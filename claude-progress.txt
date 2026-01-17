@@ -5892,3 +5892,34 @@ Created comprehensive error handling system:
 - apps/web/src/pages/HistoryPage.tsx
 
 Session complete. Zero console errors related to feature.
+
+# Session 50 - 2026-01-17
+Progress: 77/291 features (26.5%)
+
+## Completed
+- Feature #106: Invalid form input shows field errors ✅
+
+## Regression Tests
+- Feature #36: After login redirect to intended destination ✅
+- Feature #98: Switch pro to con and vice versa ✅
+
+## Implementation
+Implemented comprehensive field-level validation for decision forms:
+- Added error state management with clear/set pattern
+- Validation rules for title (required, min 3 chars)
+- Validation for conditional fields (chosen option, abandon reason)
+- Visual indicators: red borders + error messages
+- Errors auto-clear when user starts typing
+- Clean, helpful error messages
+
+## Files Modified
+- apps/web/src/pages/EditDecisionPage.tsx
+
+## Testing
+- Empty title → "Title is required"
+- 2-char title → "Title must be at least 3 characters long"
+- Valid title → saves successfully
+- Error clears when typing
+- Zero console errors
+
+Session complete.
