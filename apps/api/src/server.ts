@@ -626,7 +626,20 @@ async function registerRoutes() {
           return reply.code(403).send({ error: 'Forbidden' });
         }
 
-        const body = request.body as { content?: string; weight?: number; type?: 'pro' | 'con' };
+        const body = request.body as { content?: string; weight?: number; type?: 'pro' | 'con'; option_id?: string };
+
+        // If option_id is being changed, verify the new option belongs to the same decision
+        if (body.option_id && body.option_id !== proCon.option_id) {
+          const { data: newOption } = await supabase
+            .from('options')
+            .select('decision_id')
+            .eq('id', body.option_id)
+            .single();
+
+          if (!newOption || newOption.decision_id !== option.decision_id) {
+            return reply.code(400).send({ error: 'Cannot move pro/con to an option in a different decision' });
+          }
+        }
 
         // Update pro/con
         const { data: updated, error: updateError } = await supabase
@@ -634,7 +647,8 @@ async function registerRoutes() {
           .update({
             ...(body.content !== undefined && { content: body.content }),
             ...(body.weight !== undefined && { weight: body.weight }),
-            ...(body.type !== undefined && { type: body.type })
+            ...(body.type !== undefined && { type: body.type }),
+            ...(body.option_id !== undefined && { option_id: body.option_id })
           })
           .eq('id', proConId)
           .select()

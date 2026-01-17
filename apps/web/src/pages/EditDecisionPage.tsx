@@ -57,6 +57,7 @@ export function EditDecisionPage() {
   const [confidenceLevel, setConfidenceLevel] = useState<number>(3);
   const [abandonReason, setAbandonReason] = useState<string>('');
   const [abandonNote, setAbandonNote] = useState<string>('');
+  const [draggedProCon, setDraggedProCon] = useState<{id: string; type: 'pro' | 'con'; sourceOptionId: string} | null>(null);
 
   // Fetch decision data
   useEffect(() => {
@@ -457,6 +458,85 @@ export function EditDecisionPage() {
     }
   };
 
+  // Drag and Drop handlers
+  const handleDragStart = (proConId: string, type: 'pro' | 'con', sourceOptionId: string) => {
+    setDraggedProCon({ id: proConId, type, sourceOptionId });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Allow drop
+  };
+
+  const handleDrop = async (targetOptionId: string, e: React.DragEvent) => {
+    e.preventDefault();
+
+    if (!draggedProCon || draggedProCon.sourceOptionId === targetOptionId) {
+      setDraggedProCon(null);
+      return; // Can't drop on same option
+    }
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // Call API to move pro/con to new option
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/pros-cons/${draggedProCon.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          option_id: targetOptionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to move pro/con');
+      }
+
+      // Update local state: remove from source option and add to target option
+      const sourceOption = options.find(opt => opt.id === draggedProCon.sourceOptionId);
+      if (!sourceOption) return;
+
+      const proConToMove = draggedProCon.type === 'pro'
+        ? sourceOption.pros.find(p => p.id === draggedProCon.id)
+        : sourceOption.cons.find(c => c.id === draggedProCon.id);
+
+      if (!proConToMove) return;
+
+      setOptions(options.map(opt => {
+        if (opt.id === draggedProCon.sourceOptionId) {
+          // Remove from source
+          if (draggedProCon.type === 'pro') {
+            return { ...opt, pros: opt.pros.filter(p => p.id !== draggedProCon.id) };
+          } else {
+            return { ...opt, cons: opt.cons.filter(c => c.id !== draggedProCon.id) };
+          }
+        } else if (opt.id === targetOptionId) {
+          // Add to target
+          if (draggedProCon.type === 'pro') {
+            return { ...opt, pros: [...opt.pros, proConToMove] };
+          } else {
+            return { ...opt, cons: [...opt.cons, proConToMove] };
+          }
+        }
+        return opt;
+      }));
+
+      setDraggedProCon(null);
+    } catch (error) {
+      console.error('Error moving pro/con:', error);
+      alert('Failed to move pro/con');
+      setDraggedProCon(null);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -714,7 +794,12 @@ export function EditDecisionPage() {
             <label className="block text-sm font-medium mb-2">Options ({options.length})</label>
             <div className="space-y-4">
               {options.map((option) => (
-                <div key={option.id} className="glass p-4 rounded-xl border border-white/10">
+                <div
+                  key={option.id}
+                  className="glass p-4 rounded-xl border border-white/10"
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(option.id, e)}
+                >
                   {/* Option name */}
                   <div className="flex gap-2 items-center mb-3">
                     <input
@@ -740,12 +825,17 @@ export function EditDecisionPage() {
                     <div className="text-xs text-green-400 font-medium mb-2">Pros ({option.pros.length})</div>
                     <div className="space-y-1">
                       {option.pros.map((pro, index) => (
-                        <div key={pro.id} className="flex gap-2 items-center">
+                        <div
+                          key={pro.id}
+                          className="flex gap-2 items-center"
+                          draggable
+                          onDragStart={() => handleDragStart(pro.id, 'pro', option.id)}
+                        >
                           <input
                             type="text"
                             value={pro.content}
                             onChange={(e) => handleUpdateProCon(pro.id, e.target.value, option.id, 'pro', index)}
-                            className="flex-1 px-3 py-1.5 text-sm bg-green-500/10 border border-green-500/20 rounded-lg text-text-primary focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all"
+                            className="flex-1 px-3 py-1.5 text-sm bg-green-500/10 border border-green-500/20 rounded-lg text-text-primary focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all cursor-move"
                             placeholder="Pro"
                           />
                           <button
@@ -796,12 +886,17 @@ export function EditDecisionPage() {
                     <div className="text-xs text-red-400 font-medium mb-2">Cons ({option.cons.length})</div>
                     <div className="space-y-1">
                       {option.cons.map((con, index) => (
-                        <div key={con.id} className="flex gap-2 items-center">
+                        <div
+                          key={con.id}
+                          className="flex gap-2 items-center"
+                          draggable
+                          onDragStart={() => handleDragStart(con.id, 'con', option.id)}
+                        >
                           <input
                             type="text"
                             value={con.content}
                             onChange={(e) => handleUpdateProCon(con.id, e.target.value, option.id, 'con', index)}
-                            className="flex-1 px-3 py-1.5 text-sm bg-red-500/10 border border-red-500/20 rounded-lg text-text-primary focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all"
+                            className="flex-1 px-3 py-1.5 text-sm bg-red-500/10 border border-red-500/20 rounded-lg text-text-primary focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all cursor-move"
                             placeholder="Con"
                           />
                           <button
