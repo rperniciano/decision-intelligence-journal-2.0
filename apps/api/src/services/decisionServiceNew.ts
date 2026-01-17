@@ -300,10 +300,51 @@ export class DecisionService {
   }
 
   /**
-   * Update a decision (stub for now)
+   * Update a decision
    */
   static async updateDecision(decisionId: string, userId: string, dto: any) {
-    throw new Error('Not implemented yet');
+    try {
+      // First verify the decision belongs to the user
+      const { data: existing, error: fetchError } = await supabase
+        .from('decisions')
+        .select('id')
+        .eq('id', decisionId)
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .single();
+
+      if (fetchError || !existing) {
+        return null;
+      }
+
+      // Prepare update data
+      const updateData: any = {};
+
+      if (dto.title !== undefined) updateData.title = dto.title;
+      if (dto.description !== undefined) updateData.description = dto.description;
+      if (dto.status !== undefined) updateData.status = dto.status;
+      if (dto.detected_emotional_state !== undefined) updateData.detected_emotional_state = dto.detected_emotional_state;
+      if (dto.category_id !== undefined) updateData.category_id = dto.category_id;
+
+      // Update the decision
+      const { data: updated, error: updateError } = await supabase
+        .from('decisions')
+        .update(updateData)
+        .eq('id', decisionId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Return the complete decision with all relations
+      return await this.getDecisionById(decisionId, userId);
+    } catch (error) {
+      console.error('Error in updateDecision:', error);
+      throw error;
+    }
   }
 
   /**
