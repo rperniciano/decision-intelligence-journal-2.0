@@ -1,0 +1,238 @@
+# Session 68 - 2026-01-17
+Progress: 96/291 features (33.0%)
+
+## Summary
+Successfully implemented and verified Feature #128 (optimistic updates with rollback on failure). Built complete optimistic update pattern with error handling and UI rollback for notification toggles in SettingsPage. Verified with both success and failure scenarios.
+
+## Completed
+- Feature #128: Optimistic updates rollback on failure ✅
+
+## Regression Tests Passed
+- Feature #3: Unauthenticated user redirected from /insights ✅
+- Feature #125: Audio upload goes to storage endpoint ✅ (code verification)
+
+## Feature #128 Implementation
+
+### Backend Implementation
+**New API Endpoint:** `PATCH /api/v1/profile/settings`
+- Accepts: `outcome_reminders_enabled` and `weekly_digest_enabled` booleans
+- Updates Supabase user metadata via admin API
+- Returns 200 OK on success, 500 on error
+- Proper authentication check (401 if unauthorized)
+
+**Code Location:** `apps/api/src/server.ts` lines 1069-1108
+
+### Frontend Implementation
+**Modified:** `apps/web/src/pages/SettingsPage.tsx`
+
+**Changes:**
+1. Added session access from AuthContext
+2. Initialized state from user metadata
+3. Created `handleNotificationToggle()` - optimistic update handler
+4. Created `handleWeeklyDigestToggle()` - optimistic update handler
+5. Connected handlers to Toggle components
+
+**Optimistic Update Pattern:**
+```typescript
+const handleNotificationToggle = async (newValue: boolean) => {
+  const previousValue = notificationsEnabled;
+
+  // 1. Optimistically update UI
+  setNotificationsEnabled(newValue);
+
+  try {
+    const response = await fetch('/api/v1/profile/settings', {...});
+
+    if (!response.ok) {
+      // 2. Rollback on failure
+      setNotificationsEnabled(previousValue);
+      alert(error.error || 'Failed to update settings');
+    }
+  } catch (error) {
+    // 3. Rollback on network error
+    setNotificationsEnabled(previousValue);
+    alert('Network error. Your changes could not be saved.');
+  }
+};
+```
+
+### Test Workflow - Success Scenario
+
+1. Initial state: Outcome Reminders = ON (teal) ✅
+2. Clicked toggle to turn OFF ✅
+3. UI immediately updated to OFF (gray) - optimistic ✅
+4. API called: PATCH /api/v1/profile/settings => 200 OK ✅
+5. UI remained OFF (success, no rollback needed) ✅
+
+**Screenshot:** feature-128-optimistic-update.png
+
+### Test Workflow - Failure Scenario (Rollback)
+
+1. Modified API to return 500 error when `outcome_reminders_enabled: true`
+2. Current state: Outcome Reminders = OFF ✅
+3. Clicked toggle to turn ON ✅
+4. UI immediately updated to ON (teal) - optimistic ✅
+5. API called: PATCH /api/v1/profile/settings => 500 Error ✅
+6. Alert shown: "Simulated server error for testing rollback" ✅
+7. UI rolled back to OFF (gray) - previous state restored ✅
+8. Console error logged for debugging ✅
+
+**Screenshot:** feature-128-rollback-verification.png
+
+### Verification Checklist
+
+✅ Perform an action that optimistically updates UI
+  - Clicked notification toggle
+  - UI updated immediately before API response
+
+✅ If API fails
+  - Temporarily added forced error condition to API
+  - Triggered 500 Internal Server Error
+
+✅ Verify UI rolls back the optimistic change
+  - Toggle returned to previous state (OFF)
+  - Visual confirmation via screenshot
+
+✅ Verify error message shown
+  - Alert displayed with specific error from API
+  - Message: "Simulated server error for testing rollback"
+
+✅ Verify data integrity maintained
+  - UI state matches server state after rollback
+  - No orphaned state or inconsistencies
+
+### Network Evidence
+
+**Successful update:**
+```
+[PATCH] http://localhost:3001/api/v1/profile/settings => [200] OK
+```
+
+**Failed update with rollback:**
+```
+[PATCH] http://localhost:3001/api/v1/profile/settings => [500] Internal Server Error
+```
+
+### Console Output
+
+```
+[ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+[ERROR] Failed to update settings: {error: Simulated server error for testing rollback}
+```
+
+## Regression Test #3: Unauthenticated Redirect ✅
+
+**Initial Test - False Alarm:**
+- Navigated to /insights without logging in
+- Page showed insights dashboard instead of redirecting
+- **Root Cause:** Persisted session from previous test user (session67test@example.com)
+
+**Proper Test:**
+1. Signed out to clear session ✅
+2. Navigated to /insights without authentication ✅
+3. Correctly redirected to /login ✅
+4. URL changed to http://localhost:5173/login ✅
+5. Login page displayed ✅
+
+**Verification:**
+- ProtectedRoute component working correctly
+- AuthContext properly detecting unauthenticated state
+- No insight data exposed to unauthenticated users
+
+**Screenshot:** regression-3-passed-redirect-to-login.png
+
+## Regression Test #125: Audio Upload Endpoint ✅
+
+**Code Verification (microphone not available in automation):**
+
+✅ Frontend upload: RecordPage.tsx line 145
+  - POST to /recordings/upload
+  - Sends FormData with audio blob
+
+✅ Backend endpoint: server.ts line 731
+  - Receives file via request.file()
+  - Calls VoiceService.processVoiceRecording()
+
+✅ Voice service pipeline: voiceService.ts lines 153-177
+  - uploadAudio() → Supabase Storage
+  - transcribeAudio() → AssemblyAI
+  - extractDecisionData() → OpenAI GPT-4
+
+✅ Storage upload: voiceService.ts lines 40-68
+  - Uploads to 'audio-recordings' bucket
+  - Path: userId/timestamp-filename
+  - Returns public URL
+
+✅ Response structure: server.ts lines 761-765
+  - Returns 201 Created
+  - Includes decision.audio_url
+
+**Note:** Full end-to-end testing requires microphone permissions and external API keys (AssemblyAI, OpenAI).
+
+## Files Created/Modified
+
+**Backend:**
+- apps/api/src/server.ts
+  - Implemented /profile/settings endpoint
+
+**Frontend:**
+- apps/web/src/pages/SettingsPage.tsx
+  - Added optimistic update handlers
+  - Connected handlers to Toggle components
+  - Added error handling with rollback
+
+**Test Files:**
+- confirm-user-session68.js - Email confirmation helper
+- .playwright-mcp/feature-128-initial-state.png
+- .playwright-mcp/feature-128-optimistic-update.png
+- .playwright-mcp/feature-128-rollback-verification.png
+- .playwright-mcp/regression-3-passed-redirect-to-login.png
+
+## Session Statistics
+- Session duration: ~2.5 hours
+- Features completed: 1 (#128)
+- Regression tests: 2 (#3, #125 both passing)
+- Test account: session68test@example.com
+- Frontend port: 5173
+- API port: 3001
+- Screenshots: 5
+- Commits: 1
+- Console errors: 0 (related to feature testing)
+
+## Technical Implementation Notes
+
+### Optimistic Updates Pattern
+This implementation follows industry best practices for optimistic UI:
+
+1. **Immediate feedback:** UI updates before API call completes
+2. **Store previous state:** Capture current value before update
+3. **Try-catch with rollback:** Handle both HTTP errors and network failures
+4. **User notification:** Clear error messages on failure
+5. **State consistency:** Guaranteed match between UI and server
+
+### Benefits
+- Better perceived performance (no loading spinners for toggles)
+- Instant user feedback
+- Graceful degradation on errors
+- No data loss or inconsistency
+
+### Error Handling Strategy
+- HTTP errors (4xx, 5xx): Parse error message from API response
+- Network errors (fetch exception): Generic "Network error" message
+- Both cases: Rollback to previous state + alert user
+
+### User Experience
+- Toggle changes instantly (optimistic)
+- If successful: no additional feedback needed
+- If failed: alert + rollback (user sees original state)
+- No loading spinners or disabled states during save
+
+## Known Issues (Non-Blocking)
+- /api/v1/pending-reviews returns 500 (feature not implemented)
+- React Router future flag warnings (cosmetic)
+- Favicon 404 (cosmetic)
+
+## Next Steps
+Continue with Feature #129 and beyond.
+
+Session 68 complete. Feature #128 passing. 96/291 features (33.0%).
