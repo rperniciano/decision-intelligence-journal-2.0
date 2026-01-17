@@ -787,11 +787,56 @@ async function registerRoutes() {
       }
     });
 
-    api.delete('/categories/:id', async (request) => {
-      const { id } = request.params as { id: string };
-      const userId = request.user?.id;
-      // TODO: Implement category delete (verify ownership)
-      return { message: 'Delete category - to be implemented', id, userId };
+    api.delete('/categories/:id', async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // First, check if category has any decisions
+        const { data: decisions, error: decisionError } = await supabase
+          .from('decisions')
+          .select('id')
+          .eq('category_id', id)
+          .limit(1);
+
+        if (decisionError) {
+          server.log.error(decisionError);
+          return reply.code(500).send({ error: 'Failed to check category usage' });
+        }
+
+        if (decisions && decisions.length > 0) {
+          return reply.code(400).send({
+            error: 'Cannot delete category with existing decisions',
+            message: 'Please reassign or delete all decisions in this category first'
+          });
+        }
+
+        // Delete category (RLS will ensure user can only delete their own categories)
+        const { data: category, error } = await supabase
+          .from('categories')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', userId) // Ensure ownership
+          .select()
+          .single();
+
+        if (error) {
+          server.log.error(error);
+          if (error.code === 'PGRST116') {
+            return reply.code(404).send({ error: 'Category not found or you do not have permission to delete it' });
+          }
+          return reply.code(500).send({ error: 'Failed to delete category' });
+        }
+
+        return { success: true, deleted: category };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     // Insights

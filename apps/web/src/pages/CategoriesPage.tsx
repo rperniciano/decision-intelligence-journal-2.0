@@ -22,6 +22,12 @@ const Edit = () => (
   </svg>
 );
 
+const Trash = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
+
 interface Category {
   id: string;
   name: string;
@@ -157,6 +163,35 @@ export function CategoriesPage() {
     }
   };
 
+  const handleDeleteCategory = async (category: Category) => {
+    if (!confirm(`Delete "${category.name}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/v1/categories/${category.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
+
+      if (response.ok) {
+        // Refresh categories
+        await fetchCategories();
+      } else {
+        const error = await response.json();
+        if (response.status === 400) {
+          alert(error.message || 'Cannot delete category with existing decisions');
+        } else {
+          console.error('Failed to delete category');
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-bg-deep via-bg-dark to-bg-darker">
       {/* Header */}
@@ -220,13 +255,22 @@ export function CategoriesPage() {
                     style={{ backgroundColor: category.color }}
                   />
                   {category.user_id && (
-                    <button
-                      onClick={() => handleEditCategory(category)}
-                      className="p-2 glass glass-hover rounded-lg text-text-secondary hover:text-accent transition-all duration-200"
-                      title="Edit category"
-                    >
-                      <Edit />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleEditCategory(category)}
+                        className="p-2 glass glass-hover rounded-lg text-text-secondary hover:text-accent transition-all duration-200"
+                        title="Edit category"
+                      >
+                        <Edit />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(category)}
+                        className="p-2 glass glass-hover rounded-lg text-text-secondary hover:text-red-400 transition-all duration-200"
+                        title="Delete category"
+                      >
+                        <Trash />
+                      </button>
+                    </>
                   )}
                 </div>
               </motion.div>
