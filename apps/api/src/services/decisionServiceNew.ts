@@ -307,6 +307,87 @@ export class DecisionService {
   }
 
   /**
+   * Get deleted (trashed) decisions for a user
+   */
+  static async getDeletedDecisions(userId: string, filters?: {
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    try {
+      let query = supabase
+        .from('decisions')
+        .select(`
+          *,
+          category:categories(id, name, icon, color),
+          options:options!options_decision_id_fkey(
+            id,
+            title,
+            display_order,
+            pros_cons(id, type, content, display_order)
+          )
+        `)
+        .eq('user_id', userId)
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+
+      if (filters?.search) {
+        query = query.ilike('title', `%${filters.search}%`);
+      }
+
+      const limit = filters?.limit || 20;
+      const offset = filters?.offset || 0;
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      // Transform data to match expected format
+      const decisions = (data || []).map((d: any) => ({
+        id: d.id,
+        user_id: d.user_id,
+        title: d.title,
+        status: d.status,
+        category: d.category?.name || 'Uncategorized',
+        category_id: d.category_id,
+        emotional_state: d.detected_emotional_state,
+        created_at: d.created_at,
+        decided_at: d.decided_at,
+        options: (d.options || []).map((opt: any) => ({
+          id: opt.id,
+          text: opt.title,
+          pros: (opt.pros_cons || [])
+            .filter((pc: any) => pc.type === 'pro')
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+            .map((pc: any) => pc.content),
+          cons: (opt.pros_cons || [])
+            .filter((pc: any) => pc.type === 'con')
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+            .map((pc: any) => pc.content),
+          isChosen: d.chosen_option_id === opt.id
+        })).sort((a: any, b: any) => a.display_order - b.display_order),
+        notes: d.description,
+        transcription: d.raw_transcript,
+        deleted_at: d.deleted_at
+      }));
+
+      return {
+        decisions,
+        total: count || 0,
+        limit,
+        offset,
+      };
+    } catch (error) {
+      console.error('Error in getDeletedDecisions:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Soft delete a decision
    */
   static async deleteDecision(decisionId: string, userId: string) {

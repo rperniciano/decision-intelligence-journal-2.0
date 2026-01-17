@@ -125,6 +125,7 @@ const filterOptions = [
   { id: 'deliberating', label: 'Deliberating' },
   { id: 'decided', label: 'Decided' },
   { id: 'reviewed', label: 'Reviewed' },
+  { id: 'trash', label: 'Trash' },
 ];
 
 const ITEMS_PER_PAGE = 10;
@@ -158,7 +159,12 @@ export function HistoryPage() {
           return;
         }
 
-        const response = await fetch('http://localhost:3001/api/v1/decisions', {
+        // Use trash endpoint if trash filter is active, otherwise regular endpoint
+        const endpoint = activeFilter === 'trash'
+          ? 'http://localhost:3001/api/v1/decisions/trash'
+          : 'http://localhost:3001/api/v1/decisions';
+
+        const response = await fetch(endpoint, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -191,12 +197,14 @@ export function HistoryPage() {
     }
 
     fetchDecisions();
-  }, []);
+  }, [activeFilter]);
 
   // Filter decisions based on search and filter
   const filteredDecisions = decisions.filter((decision) => {
     const matchesSearch = decision.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === 'all' || decision.status === activeFilter;
+    // When viewing trash, show all deleted items regardless of status
+    // Otherwise, apply status filter
+    const matchesFilter = activeFilter === 'trash' || activeFilter === 'all' || decision.status === activeFilter;
     return matchesSearch && matchesFilter;
   });
 

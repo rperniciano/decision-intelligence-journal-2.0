@@ -86,6 +86,27 @@ async function registerRoutes() {
       }
     });
 
+    api.get('/decisions/trash', async (request, reply) => {
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const query = request.query as any;
+        const result = await DecisionService.getDeletedDecisions(userId, {
+          search: query.search,
+          limit: query.limit ? parseInt(query.limit) : 20,
+          offset: query.offset ? parseInt(query.offset) : 0,
+        });
+
+        return result;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
     api.get('/decisions/:id', async (request, reply) => {
       try {
         const { id } = request.params as { id: string };
