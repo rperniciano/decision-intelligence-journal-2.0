@@ -538,6 +538,12 @@ export function EditDecisionPage() {
   };
 
   const handleSave = async () => {
+    // Validation: Title is required
+    if (!title.trim()) {
+      alert('Please enter a title for your decision');
+      return;
+    }
+
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
@@ -548,7 +554,7 @@ export function EditDecisionPage() {
       }
 
       const updatePayload: any = {
-        title,
+        title: title.trim(),
         description: notes,
         status,
       };
