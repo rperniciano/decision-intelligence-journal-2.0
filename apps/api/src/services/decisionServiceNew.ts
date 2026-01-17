@@ -334,6 +334,17 @@ export class DecisionService {
       if (dto.detected_emotional_state !== undefined) updateData.detected_emotional_state = dto.detected_emotional_state;
       if (dto.category_id !== undefined) updateData.category_id = dto.category_id;
       if (dto.chosen_option_id !== undefined) updateData.chosen_option_id = dto.chosen_option_id;
+      if (dto.outcome !== undefined) updateData.outcome = dto.outcome;
+      if (dto.outcome_notes !== undefined) updateData.outcome_notes = dto.outcome_notes;
+
+      // If recording an outcome, set outcome_recorded_at timestamp
+      if (dto.outcome !== undefined) {
+        updateData.outcome_recorded_at = new Date().toISOString();
+        // Also update status to 'reviewed' if recording an outcome
+        if (!updateData.status) {
+          updateData.status = 'reviewed';
+        }
+      }
 
       // If transitioning to "decided" status, set decided_at timestamp
       if (dto.status === 'decided' && !existing.decided_at) {
