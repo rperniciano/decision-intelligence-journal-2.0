@@ -673,10 +673,52 @@ async function registerRoutes() {
       }
     });
 
-    api.post('/categories', async (request) => {
-      const userId = request.user?.id;
-      // TODO: Implement category creation
-      return { message: 'Create category - to be implemented', userId };
+    api.post('/categories', async (request, reply) => {
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as {
+          name: string;
+          icon?: string;
+          color?: string;
+        };
+
+        if (!body.name || body.name.trim() === '') {
+          return reply.code(400).send({ error: 'Category name is required' });
+        }
+
+        // Generate slug from name
+        const slug = body.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+
+        // Create category
+        const { data: category, error } = await supabase
+          .from('categories')
+          .insert({
+            user_id: userId,
+            name: body.name.trim(),
+            slug,
+            icon: body.icon || '📁',
+            color: body.color || '#00d4aa',
+          })
+          .select()
+          .single();
+
+        if (error) {
+          server.log.error(error);
+          return reply.code(500).send({ error: 'Failed to create category' });
+        }
+
+        return category;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     api.patch('/categories/:id', async (request) => {

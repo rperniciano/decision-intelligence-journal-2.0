@@ -17,6 +17,7 @@ import { CreateDecisionPage } from './pages/CreateDecisionPage';
 import { DecisionDetailPageTest } from './pages/DecisionDetailPageTest';
 import { EditDecisionPageTest } from './pages/EditDecisionPageTest';
 import { OnboardingPage } from './pages/OnboardingPage';
+import { CategoriesPage } from './pages/CategoriesPage';
 
 // Landing Page Component
 function LandingPage() {
@@ -191,6 +192,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ExportPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <ProtectedRoute>
+                <CategoriesPage />
               </ProtectedRoute>
             }
           />
