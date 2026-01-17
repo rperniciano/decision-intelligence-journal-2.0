@@ -1,0 +1,138 @@
+# Session 44 Progress Report
+Date: 2026-01-17
+Starting Progress: 69/291 features (23.7%)
+Ending Progress: 70/291 features (24.1%)
+
+## Summary
+Successfully implemented Feature #97 (Permanent delete from trash) with complete backend API endpoint and frontend UI. Completed regression tests for Features #58 and #93. Zero console errors throughout session.
+
+## Regression Tests Passed
+- Feature #58: Search returns only matching real data ✅
+  - Searched for "REGRESSION_61"
+  - Only 2 matching decisions shown
+  - Non-matching decisions filtered out correctly
+
+- Feature #93: Edit existing category ✅
+  - Edited category name, emoji (💡 → 🚀), and color (to Blue)
+  - Changes saved and immediately reflected in UI
+  - Category still linked to decisions
+
+## Feature #97 - Permanent Delete from Trash PASSING
+
+### Implementation Details
+
+**Backend (API):**
+- Added `permanentlyDeleteDecision` method to DecisionService
+  - Hard deletes from database using `.delete()`
+  - Verifies user ownership with `.eq('user_id', userId)`
+  - Only allows deletion of soft-deleted items (`.not('deleted_at', 'is', null)`)
+  - Returns deleted decision or null
+- Added POST /decisions/bulk-permanent-delete endpoint
+  - Accepts array of decisionIds in request body
+  - Iterates through each ID and calls DecisionService.permanentlyDeleteDecision
+  - Returns count of deleted decisions and any errors
+  - Proper HTTP status codes (200, 400, 401, 500)
+
+**Frontend (UI):**
+- Added `isPermanentlyDeleting` state to HistoryPage
+- Added `handleBulkPermanentDelete` function
+  - Strong confirmation dialog with warning emoji
+  - Requires typing "DELETE X" to confirm
+  - Success alert warns action cannot be undone
+  - Removes deleted decisions from trash view
+  - Clears selection after delete
+- Modified bulk actions toolbar to show TWO buttons in trash view:
+  1. "Restore Selected" button (cyan/accent color)
+  2. "Permanent Delete" button (red color) ← NEW
+- Both buttons disable each other during operations
+
+### Test Steps Completed
+1. ✅ Created soft-deleted decision via database script
+2. ✅ Navigated to Trash filter
+3. ✅ Found decision in trash list (6 total decisions)
+4. ✅ Selected decision using checkbox
+5. ✅ Bulk action toolbar appeared with "Restore Selected" and "Permanent Delete" buttons
+6. ✅ Clicked "Permanent Delete" button
+7. ✅ Strong confirmation prompt appeared with warning
+8. ✅ Typed "DELETE 1" to confirm
+9. ✅ Success alert showed "Permanently deleted 1 decision. This action cannot be undone."
+10. ✅ Decision removed from trash list (5 decisions remaining)
+11. ✅ Database verification confirmed hard delete (record completely gone)
+12. ✅ Zero console errors
+
+### Screenshots
+- regression-58-search-filtering.png - Search filtering test
+- regression-93-category-edited.png - Category edit test
+- feature-97-trash-view.png - Trash view with 6 deleted decisions
+- feature-97-permanent-delete-button.png - Bulk toolbar with Permanent Delete button
+- feature-97-after-permanent-delete.png - Trash after permanent deletion (5 decisions)
+
+### Database Verification
+```
+Decision ID: 9e99fd79-dc48-4ea3-b5e9-2524502c7a35
+✅ SUCCESS: Decision was permanently deleted from database
+The decision is completely gone - cannot be recovered
+```
+
+### Console Errors
+**Status:** Zero errors ✅
+
+## Technical Achievements
+
+1. **Complete Trash Workflow:**
+   - Delete (soft delete - sets deleted_at)
+   - View Trash (GET /decisions/trash)
+   - Restore (POST /decisions/bulk-restore)
+   - Permanent Delete (POST /decisions/bulk-permanent-delete) ✅ NEW
+
+2. **Safety Features:**
+   - Strong confirmation with typed text ("DELETE X")
+   - Warning emoji and all-caps text
+   - Only works on soft-deleted items
+   - Cannot accidentally delete active decisions
+   - User ownership verification at API level
+   - Clear warning that action cannot be undone
+
+3. **User Experience:**
+   - Two action buttons in trash (Restore vs Permanent Delete)
+   - Different colors (cyan vs red) for clarity
+   - Buttons disable each other during operations
+   - Loading states ("Deleting...")
+   - Immediate UI updates
+   - Helpful success/error messages
+
+4. **Data Integrity:**
+   - Hard delete only allowed on soft-deleted items
+   - Database constraints enforced
+   - No orphaned data
+   - Cannot permanently delete someone else's decisions
+
+## Files Modified
+- apps/api/src/services/decisionServiceNew.ts - Added permanentlyDeleteDecision method
+- apps/api/src/server.ts - Added bulk-permanent-delete endpoint
+- apps/web/src/pages/HistoryPage.tsx - Added permanent delete UI and handler
+
+## Files Created
+- create-permanent-delete-test.js - Test data creation script
+- test-trash-endpoint.js - API endpoint verification
+- verify-permanent-delete-session44.js - Database verification script
+- 5 screenshot files in .playwright-mcp/
+
+## Session Statistics
+- Session duration: ~3.5 hours
+- Features completed: 1 (#97)
+- Regression tests: 2 (both passing)
+- Backend methods added: 1 (permanentlyDeleteDecision)
+- Backend endpoints added: 1 (POST /decisions/bulk-permanent-delete)
+- Frontend components modified: 1 (HistoryPage)
+- Console errors: 0
+- Database queries: Verified
+- Screenshots: 5
+- Commits: 1
+
+## User Credentials
+- Email: session35test@example.com
+- Password: password123
+- User ID: e6260896-f8b6-4dc1-8a35-d8ac2ba09a51
+
+Session 44 complete. Feature #97 passing. 70/291 features (24.1%).
