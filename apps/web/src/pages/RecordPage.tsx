@@ -10,12 +10,19 @@ export function RecordPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAudioBlob, setSavedAudioBlob] = useState<Blob | null>(null);
+  const [isStartingRecording, setIsStartingRecording] = useState(false);
   const timerRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   const handleStartRecording = async () => {
+    // Prevent double-clicks - guard against multiple simultaneous recording attempts
+    if (isStartingRecording || isRecording) {
+      return;
+    }
+
     try {
+      setIsStartingRecording(true);
       setError(null);
       audioChunksRef.current = [];
 
@@ -45,6 +52,7 @@ export function RecordPage() {
       mediaRecorder.start();
 
       setIsRecording(true);
+      setIsStartingRecording(false);
       setRecordingTime(0);
 
       // Start timer
@@ -54,6 +62,7 @@ export function RecordPage() {
     } catch (err) {
       console.error('Error starting recording:', err);
       setError('Could not access microphone. Please check permissions.');
+      setIsStartingRecording(false);
     }
   };
 
@@ -312,9 +321,10 @@ export function RecordPage() {
             >
               <motion.button
                 onClick={handleStartRecording}
-                className="w-40 h-40 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent-strong flex items-center justify-center mb-8"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                disabled={isStartingRecording}
+                className={`w-40 h-40 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent-strong flex items-center justify-center mb-8 ${isStartingRecording ? 'opacity-70 cursor-not-allowed' : ''}`}
+                whileHover={isStartingRecording ? {} : { scale: 1.05 }}
+                whileTap={isStartingRecording ? {} : { scale: 0.95 }}
                 transition={{ type: 'spring', mass: 1, damping: 15 }}
               >
                 <svg className="w-16 h-16 text-bg-deep" fill="currentColor" viewBox="0 0 24 24">
