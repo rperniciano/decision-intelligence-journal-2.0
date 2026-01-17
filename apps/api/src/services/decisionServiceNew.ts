@@ -231,6 +231,8 @@ export class DecisionService {
           detected_emotional_state: dto.emotional_state,
           description: dto.notes,
           raw_transcript: dto.transcription,
+          audio_url: dto.audio_url,
+          audio_duration_seconds: dto.audio_duration_seconds,
           decided_at: dto.decided_at,
         })
         .select()

@@ -1,21 +1,59 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export function RecordPage() {
   const navigate = useNavigate();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
-  const handleStartRecording = () => {
-    setIsRecording(true);
-    setRecordingTime(0);
+  const handleStartRecording = async () => {
+    try {
+      setError(null);
+      audioChunksRef.current = [];
 
-    // Start timer
-    timerRef.current = window.setInterval(() => {
-      setRecordingTime((prev) => prev + 1);
-    }, 1000);
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Create MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm',
+      });
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        stream.getTracks().forEach((track) => track.stop());
+
+        // Process the recording
+        await processRecording();
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      // Start timer
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('Error starting recording:', err);
+      setError('Could not access microphone. Please check permissions.');
+    }
   };
 
   const handleStopRecording = () => {
@@ -25,6 +63,53 @@ export function RecordPage() {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+
+    // Stop media recorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const processRecording = async () => {
+    try {
+      setIsProcessing(true);
+
+      // Create audio blob
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', audioBlob, `recording-${Date.now()}.webm`);
+
+      // Upload to API
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/recordings/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      const result = await response.json();
+
+      // Navigate to the created decision
+      navigate(`/decisions/${result.decision.id}`);
+    } catch (err) {
+      console.error('Error processing recording:', err);
+      setError((err as Error).message || 'Failed to process recording');
+      setIsProcessing(false);
     }
   };
 
@@ -62,8 +147,48 @@ export function RecordPage() {
 
       {/* Main recording area */}
       <main className="flex-1 flex flex-col items-center justify-center p-6">
+        {/* Error message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-4 glass rounded-lg border border-red-500/20 bg-red-500/10 max-w-md"
+          >
+            <p className="text-red-400 text-sm">{error}</p>
+          </motion.div>
+        )}
+
         <AnimatePresence mode="wait">
-          {!isRecording ? (
+          {isProcessing ? (
+            <motion.div
+              key="processing"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="text-center"
+            >
+              <motion.div
+                className="w-40 h-40 rounded-full bg-gradient-to-br from-accent to-accent-700 flex items-center justify-center mb-8"
+                animate={{ rotate: 360 }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+              >
+                <svg className="w-16 h-16 text-bg-deep" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+              </motion.div>
+
+              <h2 className="text-2xl font-semibold mb-2 text-gradient">
+                Processing Your Decision...
+              </h2>
+              <p className="text-text-secondary max-w-md">
+                Transcribing audio and extracting decision insights with AI
+              </p>
+            </motion.div>
+          ) : !isRecording ? (
             <motion.div
               key="idle"
               initial={{ opacity: 0, scale: 0.9 }}

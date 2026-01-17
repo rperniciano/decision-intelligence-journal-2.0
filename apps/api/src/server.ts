@@ -2,12 +2,14 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
 import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from './middleware/auth';
 import { DecisionService } from './services/decisionServiceNew';
+import { VoiceService } from './services/voiceService';
 
 // Get directory paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -58,6 +60,13 @@ async function registerPlugins() {
   await server.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
+  });
+
+  // Multipart file upload
+  await server.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB max file size
+    },
   });
 }
 
@@ -225,9 +234,52 @@ async function registerRoutes() {
 
     // Recording endpoints
     api.post('/recordings/upload', async (request, reply) => {
-      const userId = request.user?.id;
-      // TODO: Implement audio upload
-      return { message: 'Upload endpoint - to be implemented', userId };
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Get uploaded file
+        const data = await request.file();
+        if (!data) {
+          return reply.code(400).send({ error: 'No audio file provided' });
+        }
+
+        // Read file buffer
+        const buffer = await data.toBuffer();
+
+        // Process the voice recording through the pipeline
+        const result = await VoiceService.processVoiceRecording(
+          userId,
+          buffer,
+          data.filename
+        );
+
+        // Create decision from extracted data
+        const decision = await DecisionService.createDecision(userId, {
+          title: result.extraction.title,
+          status: 'draft',
+          category: result.extraction.suggestedCategory || 'Personal',
+          emotional_state: result.extraction.emotionalState,
+          options: result.extraction.options,
+          transcription: result.transcript,
+          audio_url: result.audioUrl,
+          audio_duration_seconds: result.duration,
+        });
+
+        return reply.code(201).send({
+          decision,
+          transcript: result.transcript,
+          extraction: result.extraction,
+        });
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({
+          error: 'Voice processing failed',
+          message: (error as Error).message,
+        });
+      }
     });
 
     api.post('/recordings/:id/process', async (request, reply) => {
