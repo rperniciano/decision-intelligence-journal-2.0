@@ -16,6 +16,12 @@ const Plus = () => (
   </svg>
 );
 
+const Edit = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+  </svg>
+);
+
 interface Category {
   id: string;
   name: string;
@@ -40,10 +46,13 @@ export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('📁');
   const [selectedColor, setSelectedColor] = useState('#00d4aa');
   const [creating, setCreating] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -99,6 +108,52 @@ export function CategoriesPage() {
       console.error('Error creating category:', error);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setNewCategoryName(category.name);
+    setSelectedIcon(category.icon);
+    setSelectedColor(category.color);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory || !newCategoryName.trim()) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/v1/categories/${editingCategory.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: newCategoryName.trim(),
+          icon: selectedIcon,
+          color: selectedColor
+        })
+      });
+
+      if (response.ok) {
+        // Reset form and close modal
+        setEditingCategory(null);
+        setNewCategoryName('');
+        setSelectedIcon('📁');
+        setSelectedColor('#00d4aa');
+        setShowEditModal(false);
+
+        // Refresh categories
+        await fetchCategories();
+      } else {
+        console.error('Failed to update category');
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -159,10 +214,21 @@ export function CategoriesPage() {
                     </div>
                   </div>
                 </div>
-                <div
-                  className="w-6 h-6 rounded-full border border-white/20"
-                  style={{ backgroundColor: category.color }}
-                />
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-6 h-6 rounded-full border border-white/20"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  {category.user_id && (
+                    <button
+                      onClick={() => handleEditCategory(category)}
+                      className="p-2 glass glass-hover rounded-lg text-text-secondary hover:text-accent transition-all duration-200"
+                      title="Edit category"
+                    >
+                      <Edit />
+                    </button>
+                  )}
+                </div>
               </motion.div>
             ))
           )}
@@ -254,6 +320,103 @@ export function CategoriesPage() {
                 className="flex-1 bg-accent text-bg-deep py-3 rounded-xl font-medium hover:bg-accent-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {creating ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && editingCategory && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <motion.div
+            className="glass p-6 rounded-2xl max-w-md w-full"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h2 className="text-xl font-semibold text-text-primary mb-4">Edit Category</h2>
+
+            {/* Name Input */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Category Name
+              </label>
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g., Work Projects"
+                className="w-full glass p-3 rounded-xl text-text-primary placeholder-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                autoFocus
+              />
+            </div>
+
+            {/* Icon Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Select Emoji
+              </label>
+              <div className="grid grid-cols-6 gap-2">
+                {EMOJI_OPTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => setSelectedIcon(emoji)}
+                    className={`p-3 rounded-lg text-2xl transition-all duration-200 ${
+                      selectedIcon === emoji
+                        ? 'bg-accent/20 ring-2 ring-accent'
+                        : 'glass glass-hover'
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Select Color
+              </label>
+              <div className="grid grid-cols-6 gap-2">
+                {COLOR_OPTIONS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => setSelectedColor(color.value)}
+                    className={`w-full aspect-square rounded-lg transition-all duration-200 ${
+                      selectedColor === color.value
+                        ? 'ring-2 ring-white ring-offset-2 ring-offset-bg-darker'
+                        : 'hover:scale-110'
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingCategory(null);
+                  setNewCategoryName('');
+                  setSelectedIcon('📁');
+                  setSelectedColor('#00d4aa');
+                }}
+                className="flex-1 glass glass-hover py-3 rounded-xl text-text-secondary font-medium transition-all duration-200"
+                disabled={updating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateCategory}
+                disabled={!newCategoryName.trim() || updating}
+                className="flex-1 bg-accent text-bg-deep py-3 rounded-xl font-medium hover:bg-accent-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? 'Updating...' : 'Update'}
               </button>
             </div>
           </motion.div>

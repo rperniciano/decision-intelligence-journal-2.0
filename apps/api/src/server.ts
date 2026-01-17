@@ -721,11 +721,70 @@ async function registerRoutes() {
       }
     });
 
-    api.patch('/categories/:id', async (request) => {
-      const { id } = request.params as { id: string };
-      const userId = request.user?.id;
-      // TODO: Implement category update (verify ownership)
-      return { message: 'Update category - to be implemented', id, userId };
+    api.patch('/categories/:id', async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as {
+          name?: string;
+          icon?: string;
+          color?: string;
+        };
+
+        // Build update object with only provided fields
+        const updates: any = {};
+
+        if (body.name !== undefined) {
+          if (body.name.trim() === '') {
+            return reply.code(400).send({ error: 'Category name cannot be empty' });
+          }
+          updates.name = body.name.trim();
+          // Update slug when name changes
+          updates.slug = body.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+        }
+
+        if (body.icon !== undefined) {
+          updates.icon = body.icon;
+        }
+
+        if (body.color !== undefined) {
+          updates.color = body.color;
+        }
+
+        if (Object.keys(updates).length === 0) {
+          return reply.code(400).send({ error: 'No valid fields to update' });
+        }
+
+        // Update category (RLS will ensure user can only update their own categories)
+        const { data: category, error } = await supabase
+          .from('categories')
+          .update(updates)
+          .eq('id', id)
+          .eq('user_id', userId) // Ensure ownership
+          .select()
+          .single();
+
+        if (error) {
+          server.log.error(error);
+          if (error.code === 'PGRST116') {
+            return reply.code(404).send({ error: 'Category not found or you do not have permission to edit it' });
+          }
+          return reply.code(500).send({ error: 'Failed to update category' });
+        }
+
+        return category;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     api.delete('/categories/:id', async (request) => {
