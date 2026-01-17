@@ -447,8 +447,43 @@ export class DecisionService {
 
   /**
    * Soft delete a decision
+   * Also deletes related options and pros/cons to maintain data integrity
    */
   static async deleteDecision(decisionId: string, userId: string) {
+    // First, get all options for this decision
+    const { data: options, error: optionsError } = await supabase
+      .from('options')
+      .select('id')
+      .eq('decision_id', decisionId);
+
+    if (optionsError) {
+      console.error('Error fetching options for cascade delete:', optionsError);
+    }
+
+    // Delete pros/cons for all options
+    if (options && options.length > 0) {
+      const optionIds = options.map(o => o.id);
+      const { error: prosconsError } = await supabase
+        .from('pros_cons')
+        .delete()
+        .in('option_id', optionIds);
+
+      if (prosconsError) {
+        console.error('Error deleting pros/cons:', prosconsError);
+      }
+    }
+
+    // Delete all options for this decision
+    const { error: deleteOptionsError } = await supabase
+      .from('options')
+      .delete()
+      .eq('decision_id', decisionId);
+
+    if (deleteOptionsError) {
+      console.error('Error deleting options:', deleteOptionsError);
+    }
+
+    // Soft delete the decision
     const { data, error } = await supabase
       .from('decisions')
       .update({ deleted_at: new Date().toISOString() })
