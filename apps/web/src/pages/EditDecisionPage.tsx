@@ -602,6 +602,20 @@ export function EditDecisionPage() {
         body: JSON.stringify(updatePayload),
       });
 
+      // Check for session expiry (401 Unauthorized)
+      if (response.status === 401) {
+        // Clear session
+        await supabase.auth.signOut();
+
+        // Show alert
+        alert('Your session has expired. Please log in again to save your changes.');
+
+        // Redirect to login with return URL
+        const returnUrl = encodeURIComponent(`/decisions/${id}/edit`);
+        navigate(`/login?returnTo=${returnUrl}`);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to update decision');
       }
@@ -610,7 +624,7 @@ export function EditDecisionPage() {
       navigate(`/decisions/${id}`);
     } catch (error) {
       console.error('Error saving decision:', error);
-      // TODO: Show error message to user
+      alert('Failed to save decision. Please try again.');
     }
   };
 
