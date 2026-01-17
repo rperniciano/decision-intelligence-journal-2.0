@@ -74,21 +74,32 @@ export class DecisionService {
     limit?: number;
     offset?: number;
   }) {
+    // Build base query for counting
+    let countQuery = supabase
+      .from('decisions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .is('deleted_at', null);
+
+    // Build data query
     let query = supabase
       .from('decisions')
-      .select('*', { count: 'exact' })
+      .select('*')
       .eq('user_id', userId)
       .is('deleted_at', null);
 
     if (filters?.status) {
+      countQuery = countQuery.eq('status', filters.status);
       query = query.eq('status', filters.status);
     }
 
     if (filters?.category) {
+      countQuery = countQuery.eq('category', filters.category);
       query = query.eq('category', filters.category);
     }
 
     if (filters?.search) {
+      countQuery = countQuery.ilike('title', `%${filters.search}%`);
       query = query.ilike('title', `%${filters.search}%`);
     }
 
@@ -119,15 +130,21 @@ export class DecisionService {
 
     const limit = filters?.limit || 20;
     const offset = filters?.offset || 0;
+
+    // Get total count (without pagination)
+    const { count: totalCount, error: countError } = await countQuery;
+    if (countError) throw countError;
+
+    // Apply range for pagination to data query
     query = query.range(offset, offset + limit - 1);
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) throw error;
 
     return {
       decisions: data || [],
-      total: count || 0,
+      total: totalCount || 0,
       limit,
       offset,
     };

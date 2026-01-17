@@ -188,6 +188,7 @@ export function HistoryPage() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const [selectedDecisions, setSelectedDecisions] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -263,6 +264,12 @@ export function HistoryPage() {
         // Add sort parameter
         params.append('sort', sortBy);
 
+        // Add pagination parameters
+        const itemsPerPage = ITEMS_PER_PAGE;
+        const offset = (currentPage - 1) * itemsPerPage;
+        params.append('limit', itemsPerPage.toString());
+        params.append('offset', offset.toString());
+
         // Use trash endpoint if trash filter is active, otherwise regular endpoint
         const baseUrl = import.meta.env.VITE_API_URL;
         const endpoint = activeFilter === 'trash'
@@ -298,6 +305,7 @@ export function HistoryPage() {
         }));
 
         setDecisions(transformedDecisions);
+        setTotalCount(data.total || 0);
       } catch (error) {
         console.error('Error fetching decisions:', error);
         showErrorAlert(error, 'Failed to load decisions');
@@ -307,17 +315,14 @@ export function HistoryPage() {
     }
 
     fetchDecisions();
-  }, [activeFilter, selectedCategory, searchQuery, sortBy]);
+  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage]);
 
-  // API now handles filtering, so we just use the decisions directly
-  // (No need for client-side filtering since server does it)
-  const filteredDecisions = decisions;
+  // API now handles filtering and pagination, so we use decisions directly
+  // (No need for client-side filtering or pagination since server does it)
+  const paginatedDecisions = decisions;
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredDecisions.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedDecisions = filteredDecisions.slice(startIndex, endIndex);
+  // Pagination calculations using API total
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   // Handle page change
   const goToPage = (page: number) => {
@@ -681,7 +686,7 @@ export function HistoryPage() {
         )}
 
         {/* Select all button */}
-        {filteredDecisions.length > 0 && (
+        {decisions.length > 0 && (
           <motion.div
             className="mb-3 flex justify-end"
             initial={{ opacity: 0 }}
@@ -697,7 +702,7 @@ export function HistoryPage() {
         )}
 
         {/* Decisions list */}
-        {filteredDecisions.length > 0 ? (
+        {decisions.length > 0 ? (
           <>
             <div className="space-y-3">
               {paginatedDecisions.map((decision, index) => (
