@@ -318,6 +318,49 @@ async function registerRoutes() {
       }
     });
 
+    // Bulk permanent delete (hard delete from database)
+    api.post('/decisions/bulk-permanent-delete', async (request, reply) => {
+      try {
+        const { decisionIds } = request.body as { decisionIds: string[] };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        if (!Array.isArray(decisionIds) || decisionIds.length === 0) {
+          return reply.code(400).send({ error: 'decisionIds must be a non-empty array' });
+        }
+
+        // Permanently delete all decisions
+        const deletedDecisions = [];
+        const errors = [];
+
+        for (const decisionId of decisionIds) {
+          try {
+            const decision = await DecisionService.permanentlyDeleteDecision(decisionId, userId);
+            if (decision) {
+              deletedDecisions.push(decision);
+            } else {
+              errors.push({ id: decisionId, error: 'Not found, unauthorized, or not in trash' });
+            }
+          } catch (error) {
+            errors.push({ id: decisionId, error: 'Failed to permanently delete' });
+          }
+        }
+
+        return {
+          message: `Permanently deleted ${deletedDecisions.length} decisions`,
+          deletedCount: deletedDecisions.length,
+          deletedDecisions,
+          errors: errors.length > 0 ? errors : undefined
+        };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
     // Option management endpoints
     api.post('/decisions/:id/options', async (request, reply) => {
       try {

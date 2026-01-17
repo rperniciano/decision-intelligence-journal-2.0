@@ -174,6 +174,7 @@ export function HistoryPage() {
   const [selectedDecisions, setSelectedDecisions] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isPermanentlyDeleting, setIsPermanentlyDeleting] = useState(false);
 
   // Update activeFilter and selectedCategory when URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -419,6 +420,58 @@ export function HistoryPage() {
     }
   };
 
+  // Bulk permanent delete handler
+  const handleBulkPermanentDelete = async () => {
+    if (selectedDecisions.size === 0) return;
+
+    const confirmMessage = `⚠️ PERMANENT DELETE ⚠️\n\nThis will PERMANENTLY delete ${selectedDecisions.size} decision${selectedDecisions.size > 1 ? 's' : ''} from the database. This action CANNOT be undone.\n\nType "DELETE ${selectedDecisions.size}" to confirm.`;
+    const userInput = prompt(confirmMessage);
+
+    if (userInput !== `DELETE ${selectedDecisions.size}`) {
+      return;
+    }
+
+    setIsPermanentlyDeleting(true);
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        alert('Not authenticated');
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/bulk-permanent-delete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          decisionIds: Array.from(selectedDecisions)
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to permanently delete decisions');
+      }
+
+      const result = await response.json();
+
+      // Remove permanently deleted decisions from trash list
+      setDecisions(prev => prev.filter(d => !selectedDecisions.has(d.id)));
+      setSelectedDecisions(new Set());
+
+      alert(`Permanently deleted ${result.deletedCount} decision${result.deletedCount > 1 ? 's' : ''}. This action cannot be undone.`);
+    } catch (error) {
+      console.error('Error permanently deleting decisions:', error);
+      alert('Failed to permanently delete decisions. Please try again.');
+    } finally {
+      setIsPermanentlyDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
@@ -534,13 +587,22 @@ export function HistoryPage() {
                 Clear
               </button>
               {activeFilter === 'trash' ? (
-                <button
-                  onClick={handleBulkRestore}
-                  disabled={isRestoring}
-                  className="px-4 py-2 text-sm bg-accent/20 text-accent hover:bg-accent/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isRestoring ? 'Restoring...' : 'Restore Selected'}
-                </button>
+                <>
+                  <button
+                    onClick={handleBulkRestore}
+                    disabled={isRestoring || isPermanentlyDeleting}
+                    className="px-4 py-2 text-sm bg-accent/20 text-accent hover:bg-accent/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRestoring ? 'Restoring...' : 'Restore Selected'}
+                  </button>
+                  <button
+                    onClick={handleBulkPermanentDelete}
+                    disabled={isPermanentlyDeleting || isRestoring}
+                    className="px-4 py-2 text-sm bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isPermanentlyDeleting ? 'Deleting...' : 'Permanent Delete'}
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={handleBulkDelete}

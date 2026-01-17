@@ -492,6 +492,30 @@ export class DecisionService {
   }
 
   /**
+   * Permanently delete a decision from the database
+   * This is a hard delete - cannot be undone
+   */
+  static async permanentlyDeleteDecision(decisionId: string, userId: string) {
+    const { data, error } = await supabase
+      .from('decisions')
+      .delete()
+      .eq('id', decisionId)
+      .eq('user_id', userId)
+      .not('deleted_at', 'is', null) // Only allow permanent deletion of soft-deleted items
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    return data;
+  }
+
+  /**
    * Get dashboard statistics for a user
    */
   static async getStatistics(userId: string) {
