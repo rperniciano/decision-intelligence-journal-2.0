@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { FloatingActionButton } from '../components/FloatingActionButton';
 import { supabase } from '../lib/supabase';
 
 // Type definitions
@@ -340,6 +341,9 @@ export function HistoryPage() {
           <EmptyState />
         )}
       </main>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton to="/record" ariaLabel="Quick record decision" />
 
       {/* Bottom navigation */}
       <BottomNav />
