@@ -77,7 +77,7 @@ function OptionCard({ option, index }: { option: DecisionOption; index: number }
             {option.pros.map((pro, idx) => (
               <li key={idx} className="text-sm text-text-secondary flex items-start gap-2">
                 <span className="text-emerald-400 mt-0.5">✓</span>
-                <span>{pro}</span>
+                <span>{typeof pro === 'string' ? pro : pro.content}</span>
               </li>
             ))}
           </ul>
@@ -91,7 +91,7 @@ function OptionCard({ option, index }: { option: DecisionOption; index: number }
             {option.cons.map((con, idx) => (
               <li key={idx} className="text-sm text-text-secondary flex items-start gap-2">
                 <span className="text-rose-400 mt-0.5">✗</span>
-                <span>{con}</span>
+                <span>{typeof con === 'string' ? con : con.content}</span>
               </li>
             ))}
           </ul>

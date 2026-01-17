@@ -408,6 +408,55 @@ export function EditDecisionPage() {
     }
   };
 
+  const handleSwitchProCon = async (id: string, optionId: string, currentType: 'pro' | 'con', content: string, index: number) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const newType = currentType === 'pro' ? 'con' : 'pro';
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/pros-cons/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: newType,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to switch pro/con');
+      }
+
+      // Update local state - move from pros to cons or vice versa
+      setOptions(options.map(opt => {
+        if (opt.id === optionId) {
+          if (currentType === 'pro') {
+            // Moving from pro to con
+            const newPros = opt.pros.filter((_, i) => i !== index);
+            const newCons = [...opt.cons, { id, content, type: 'con' as const }];
+            return { ...opt, pros: newPros, cons: newCons };
+          } else {
+            // Moving from con to pro
+            const newCons = opt.cons.filter((_, i) => i !== index);
+            const newPros = [...opt.pros, { id, content, type: 'pro' as const }];
+            return { ...opt, cons: newCons, pros: newPros };
+          }
+        }
+        return opt;
+      }));
+    } catch (error) {
+      console.error('Error switching pro/con:', error);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -700,6 +749,15 @@ export function EditDecisionPage() {
                             placeholder="Pro"
                           />
                           <button
+                            onClick={() => handleSwitchProCon(pro.id, option.id, 'pro', pro.content, index)}
+                            className="p-1.5 hover:bg-blue-500/20 rounded transition-all"
+                            title="Switch to con"
+                          >
+                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
+                          </button>
+                          <button
                             onClick={() => handleDeleteProCon(pro.id, option.id, 'pro', index)}
                             className="p-1.5 hover:bg-red-500/20 rounded transition-all"
                             title="Remove pro"
@@ -746,6 +804,15 @@ export function EditDecisionPage() {
                             className="flex-1 px-3 py-1.5 text-sm bg-red-500/10 border border-red-500/20 rounded-lg text-text-primary focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all"
                             placeholder="Con"
                           />
+                          <button
+                            onClick={() => handleSwitchProCon(con.id, option.id, 'con', con.content, index)}
+                            className="p-1.5 hover:bg-blue-500/20 rounded transition-all"
+                            title="Switch to pro"
+                          >
+                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
+                          </button>
                           <button
                             onClick={() => handleDeleteProCon(con.id, option.id, 'con', index)}
                             className="p-1.5 hover:bg-red-500/20 rounded transition-all"

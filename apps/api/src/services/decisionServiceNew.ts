@@ -161,11 +161,11 @@ export class DecisionService {
           pros: (opt.pros_cons || [])
             .filter((pc: any) => pc.type === 'pro')
             .sort((a: any, b: any) => a.display_order - b.display_order)
-            .map((pc: any) => pc.content),
+            .map((pc: any) => ({ id: pc.id, content: pc.content, type: 'pro' as const })),
           cons: (opt.pros_cons || [])
             .filter((pc: any) => pc.type === 'con')
             .sort((a: any, b: any) => a.display_order - b.display_order)
-            .map((pc: any) => pc.content),
+            .map((pc: any) => ({ id: pc.id, content: pc.content, type: 'con' as const })),
           isChosen: data.chosen_option_id === opt.id
         })).sort((a: any, b: any) => a.display_order - b.display_order),
         notes: data.description,

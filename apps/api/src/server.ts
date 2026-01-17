@@ -626,14 +626,15 @@ async function registerRoutes() {
           return reply.code(403).send({ error: 'Forbidden' });
         }
 
-        const body = request.body as { content?: string; weight?: number };
+        const body = request.body as { content?: string; weight?: number; type?: 'pro' | 'con' };
 
         // Update pro/con
         const { data: updated, error: updateError } = await supabase
           .from('pros_cons')
           .update({
             ...(body.content !== undefined && { content: body.content }),
-            ...(body.weight !== undefined && { weight: body.weight })
+            ...(body.weight !== undefined && { weight: body.weight }),
+            ...(body.type !== undefined && { type: body.type })
           })
           .eq('id', proConId)
           .select()
