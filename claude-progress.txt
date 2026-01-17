@@ -5032,3 +5032,27 @@ Session 35 complete. Features #85 and #86 passing. Critical status enum bug fixe
 Feature #87 PASSING - Transition to Decided status workflow complete
 Progress: 64/291 features (22.0%)
 See session36-progress.txt for full details
+
+
+# Session 37 Summary (2026-01-17)
+=====================================
+
+## Critical Bug Fix + Feature #88 UI Implementation
+
+**Bug Fixed:**
+- supabaseAdmin undefined in API server (broke all option/pros-cons endpoints)
+- Fixed by replacing 19 instances with correct 'supabase' variable
+- Feature #83 regression test now passing
+
+**Feature #88 - Abandon Decision Workflow:**
+- ✅ UI implementation complete
+- ✅ Abandon reason dropdown (7 predefined options)
+- ✅ Optional abandon note textarea
+- ✅ Red-themed conditional UI with animations
+- ✅ Frontend sends abandon data to API
+- ⚠️ Database migration pending (abandon_reason, abandon_note columns)
+- Migration SQL ready in migration-add-abandon-fields.sql
+
+**Status:** Feature #88 in progress (UI complete, DB migration required)
+**Progress:** 64/291 features (22.0%)
+**See:** session37-progress.txt for full details
