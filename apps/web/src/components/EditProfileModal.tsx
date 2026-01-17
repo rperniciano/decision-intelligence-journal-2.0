@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -41,8 +42,8 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
         throw new Error(data.error || 'Failed to update profile');
       }
 
-      // Wait a moment for the session to update
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Refresh the Supabase session to get updated user metadata
+      await supabase.auth.refreshSession();
 
       onSuccess();
       onClose();
