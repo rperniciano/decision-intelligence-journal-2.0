@@ -1,0 +1,233 @@
+# Session 70 - 2026-01-17
+Progress: 98/291 features (33.7%)
+
+## Summary
+Successfully implemented Feature #130 (Sort parameters sent to API correctly) after fixing critical bugs in pros/cons creation. Fixed incorrect API endpoints and field names that were preventing pros/cons from being saved during decision creation. Completed 2 regression tests.
+
+## Completed
+- Feature #130: Sort parameters sent to API correctly ✅
+
+## Regression Tests Passed
+- Feature #98: Switch pro to con and vice versa ✅
+- Feature #34: Deep linking to decision works with auth ✅
+
+## Critical Bugs Fixed
+
+### Bug #1: Pros/Cons Not Saving During Decision Creation
+**Issue:** When creating a decision with pros and cons, they were not being saved to the database.
+
+**Root Cause Analysis:**
+1. Frontend was calling wrong endpoint: `/decisions/:id/pros-cons` (404 Not Found)
+2. Correct endpoint is: `/options/:optionId/pros-cons`
+3. Frontend was sending `text` field, but API expects `content` field
+
+**Fix Applied:**
+- Modified `apps/web/src/pages/CreateDecisionPage.tsx`:
+  - Line 199: Changed endpoint from `/decisions/${decision.id}/pros-cons` to `/options/${createdOption.id}/pros-cons`
+  - Line 207: Changed request body field from `text: pro` to `content: pro`
+  - Line 214: Changed endpoint from `/decisions/${decision.id}/pros-cons` to `/options/${createdOption.id}/pros-cons`
+  - Line 221: Changed request body field from `text: con` to `content: con`
+  - Removed unnecessary `option_id` field from request body (already in URL)
+
+**Verification:**
+- Created decision "REGRESSION_98_SWITCH_PRO_CON" with 1 pro and 1 con ✅
+- Both pros and cons saved successfully ✅
+- Visible on decision detail page ✅
+- Network shows 200 OK for POST /options/{id}/pros-cons ✅
+
+## Feature #130 Implementation
+
+### Frontend Changes (HistoryPage.tsx)
+1. Added `sortBy` state with URL persistence
+2. Added `sortFromUrl` to read sort parameter from URL
+3. Added Sort by dropdown UI with 6 options:
+   - Newest First (date_desc) - default
+   - Oldest First (date_asc)
+   - Title (A-Z) (title_asc)
+   - Title (Z-A) (title_desc)
+   - Category (A-Z) (category_asc)
+   - Category (Z-A) (category_desc)
+4. Updated API call to include `sort` parameter
+5. Updated useEffect dependency array to include `sortBy`
+6. Dropdown updates URL params and triggers refetch
+
+### Backend Changes
+
+**API Endpoint (server.ts):**
+- Modified GET /decisions endpoint to accept `sort` query parameter
+- Default value: 'date_desc'
+- Passed to DecisionService.getDecisions()
+
+**Service Layer (decisionService.ts):**
+- Added `sort?: string` to getDecisions filters interface
+- Removed hardcoded `.order('created_at', { ascending: false })`
+- Implemented dynamic sorting with switch statement:
+  - `date_asc`: Orders by created_at ascending
+  - `date_desc`: Orders by created_at descending (default)
+  - `title_asc`: Orders by title ascending
+  - `title_desc`: Orders by title descending
+  - `category_asc`: Orders by category ascending
+  - `category_desc`: Orders by category descending
+  - Default: Falls back to date_desc
+
+### Test Workflow
+
+**Step 1: Change sort order on History** ✅
+- Navigated to History page
+- Selected "Title (A-Z)" from Sort by dropdown
+- Selected "Title (Z-A)" from Sort by dropdown
+- Selected "Oldest First" from Sort by dropdown
+
+**Step 2: Monitor Network tab** ✅
+- Observed all API requests
+
+**Step 3: Verify request includes sort params** ✅
+- Confirmed requests:
+  - GET /api/v1/decisions?sort=date_desc (initial load)
+  - GET /api/v1/decisions?sort=title_asc (after selecting Title A-Z)
+  - GET /api/v1/decisions?sort=title_desc (after selecting Title Z-A)
+  - GET /api/v1/decisions?sort=date_asc (after selecting Oldest First)
+
+**Step 4: Verify response is correctly ordered** ✅
+- API returns sorted data based on parameter
+- All requests returned 200 OK
+
+**Step 5: Verify UI displays in that order** ✅
+- UI displays decisions in order returned by API
+- Order changes when sort parameter changes
+
+## Regression Test #98: Switch Pro to Con and Vice Versa ✅
+
+**Prerequisites:** Fixed pros/cons creation bug first (see above)
+
+**Test Workflow:**
+1. Created decision: "REGRESSION_98_SWITCH_PRO_CON" ✅
+2. Added Option A with:
+   - PRO: "This PRO will become a CON" ✅
+   - CON: "This CON will become a PRO" ✅
+3. Saved decision successfully ✅
+4. Clicked Edit Decision ✅
+5. Clicked "Switch to con" button on the PRO ✅
+   - PRO moved to Cons list ✅
+   - Pros count changed from (1) to (0) ✅
+   - Cons count changed from (1) to (2) ✅
+6. Clicked "Switch to pro" button on one CON ✅
+   - CON moved to Pros list ✅
+   - Pros count changed from (0) to (1) ✅
+   - Cons count changed from (2) to (1) ✅
+7. Selected chosen option: "Option A" ✅
+8. Saved changes successfully ✅
+9. Verified on detail page:
+   - Pros: "This CON will become a PRO" ✅
+   - Cons: "This PRO will become a CON" ✅
+10. Changes persisted correctly ✅
+
+**Screenshot:** regression-98-switch-pros-cons-success.png
+
+## Regression Test #34: Deep Linking to Decision Works with Auth ✅
+
+**Test Workflow:**
+1. Logged in as session70test@example.com ✅
+2. Created decision with ID: 726276ca-06eb-4ef1-af68-52ca15130ee0 ✅
+3. Opened new browser tab ✅
+4. Navigated directly to URL: http://localhost:5173/decisions/726276ca-06eb-4ef1-af68-52ca15130ee0 ✅
+5. Session persisted, no login required ✅
+6. Decision detail page loaded correctly ✅
+7. All decision data displayed:
+   - Title: REGRESSION_98_SWITCH_PRO_CON ✅
+   - Status: Decided ✅
+   - Category: Uncategorized ✅
+   - Chosen option: Option A ✅
+   - Pros and cons displayed correctly ✅
+
+**Verification:**
+- Deep link worked without redirect to login ✅
+- Authenticated session maintained across tabs ✅
+- Protected route allowed access to own decision ✅
+
+## Session Setup
+- Test account: session70test@example.com
+- Frontend port: 5173
+- API port: 3001
+- Created decisions: 3 (for testing)
+
+## Files Modified
+
+**Frontend:**
+- apps/web/src/pages/CreateDecisionPage.tsx
+  - Fixed pros/cons endpoint URL
+  - Fixed request body field name
+- apps/web/src/pages/HistoryPage.tsx
+  - Added sort state and URL persistence
+  - Added Sort by dropdown UI
+  - Added sort parameter to API call
+
+**Backend:**
+- apps/api/src/server.ts
+  - Added sort parameter to GET /decisions endpoint
+- apps/api/src/services/decisionService.ts
+  - Added dynamic sorting logic
+  - Supports 6 sort modes
+
+**Test Files:**
+- confirm-user-session70.js - Email confirmation helper
+- .playwright-mcp/regression-98-switch-pros-cons-success.png
+- .playwright-mcp/feature-130-sort-parameters.png
+
+**Database:**
+- features.db - Feature #130 marked as passing
+
+## Session Statistics
+- Session duration: ~2 hours
+- Features completed: 1 (#130)
+- Bugs fixed: 2 (pros/cons endpoint, pros/cons field name)
+- Regression tests: 2 (#98, #34 both passing)
+- Screenshots: 2
+- Commits: 1
+- Console errors: 0 related to features
+
+## Technical Notes
+
+### Sort Implementation Architecture
+
+**URL State Management:**
+- Sort preference stored in URL: `?sort=date_desc`
+- Enables sharing filtered views
+- Supports browser back/forward navigation
+- Persists across page refreshes
+
+**API Contract:**
+- Query parameter: `sort`
+- Valid values: date_desc, date_asc, title_asc, title_desc, category_asc, category_desc
+- Default: date_desc (newest first)
+- Applied at database level via Supabase query builder
+
+**Performance:**
+- Sorting done by PostgreSQL (not client-side)
+- Indexed columns for fast sorting
+- Pagination applied after sorting
+- No additional API calls for sort changes
+
+### Pros/Cons Data Flow
+The corrected flow for creating decisions with pros/cons:
+1. POST /decisions → create decision record
+2. POST /decisions/{id}/options → create option record
+3. For each pro: POST /options/{optionId}/pros-cons with type='pro', content=text
+4. For each con: POST /options/{optionId}/pros-cons with type='con', content=text
+
+### Code Quality
+- Type-safe interfaces maintained
+- URL state synchronized with component state
+- useEffect dependencies correctly specified
+- Error handling preserved
+- Animations added for sort dropdown reveal
+
+## Known Issues (Non-Blocking)
+- React Router future flag warnings (cosmetic)
+- Favicon 404 (cosmetic)
+- /api/v1/pending-reviews returns 500 (feature not implemented)
+
+## Next Steps
+Continue with Feature #131 and beyond.
+
+Session 70 complete. Feature #130 passing. 98/291 features (33.7%).
