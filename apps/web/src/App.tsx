@@ -14,6 +14,7 @@ import { DecisionDetailPage } from './pages/DecisionDetailPage';
 import { EditDecisionPage } from './pages/EditDecisionPage';
 import { DecisionDetailPageTest } from './pages/DecisionDetailPageTest';
 import { EditDecisionPageTest } from './pages/EditDecisionPageTest';
+import { OnboardingPage } from './pages/OnboardingPage';
 
 // Landing Page Component
 function LandingPage() {
@@ -116,6 +117,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
 
           {/* Protected routes */}
           <Route
