@@ -243,7 +243,7 @@ async function registerRoutes() {
         }
 
         // Verify decision belongs to user
-        const { data: decision, error: decisionError } = await supabaseAdmin
+        const { data: decision, error: decisionError } = await supabase
           .from('decisions')
           .select('id')
           .eq('id', id)
@@ -261,7 +261,7 @@ async function registerRoutes() {
         }
 
         // Create new option
-        const { data: option, error: optionError } = await supabaseAdmin
+        const { data: option, error: optionError } = await supabase
           .from('options')
           .insert({
             decision_id: id,
@@ -293,7 +293,7 @@ async function registerRoutes() {
         }
 
         // Verify option belongs to user's decision
-        const { data: option } = await supabaseAdmin
+        const { data: option } = await supabase
           .from('options')
           .select('decision_id')
           .eq('id', optionId)
@@ -303,7 +303,7 @@ async function registerRoutes() {
           return reply.code(404).send({ error: 'Option not found' });
         }
 
-        const { data: decision } = await supabaseAdmin
+        const { data: decision } = await supabase
           .from('decisions')
           .select('id')
           .eq('id', option.decision_id)
@@ -317,7 +317,7 @@ async function registerRoutes() {
         const body = request.body as { title?: string; description?: string };
 
         // Update option
-        const { data: updatedOption, error: updateError } = await supabaseAdmin
+        const { data: updatedOption, error: updateError } = await supabase
           .from('options')
           .update({
             ...(body.title && { title: body.title }),
@@ -349,7 +349,7 @@ async function registerRoutes() {
         }
 
         // Verify option belongs to user's decision
-        const { data: option } = await supabaseAdmin
+        const { data: option } = await supabase
           .from('options')
           .select('decision_id')
           .eq('id', optionId)
@@ -359,7 +359,7 @@ async function registerRoutes() {
           return reply.code(404).send({ error: 'Option not found' });
         }
 
-        const { data: decision } = await supabaseAdmin
+        const { data: decision } = await supabase
           .from('decisions')
           .select('id')
           .eq('id', option.decision_id)
@@ -371,7 +371,7 @@ async function registerRoutes() {
         }
 
         // Delete option
-        const { error: deleteError } = await supabaseAdmin
+        const { error: deleteError } = await supabase
           .from('options')
           .delete()
           .eq('id', optionId);
@@ -399,7 +399,7 @@ async function registerRoutes() {
         }
 
         // Verify option belongs to user's decision
-        const { data: option } = await supabaseAdmin
+        const { data: option } = await supabase
           .from('options')
           .select('decision_id')
           .eq('id', optionId)
@@ -409,7 +409,7 @@ async function registerRoutes() {
           return reply.code(404).send({ error: 'Option not found' });
         }
 
-        const { data: decision } = await supabaseAdmin
+        const { data: decision } = await supabase
           .from('decisions')
           .select('id')
           .eq('id', option.decision_id)
@@ -431,7 +431,7 @@ async function registerRoutes() {
         }
 
         // Create new pro/con
-        const { data: proCon, error: proConError } = await supabaseAdmin
+        const { data: proCon, error: proConError } = await supabase
           .from('pros_cons')
           .insert({
             option_id: optionId,
@@ -466,7 +466,7 @@ async function registerRoutes() {
         }
 
         // Verify pro/con belongs to user's decision
-        const { data: proCon } = await supabaseAdmin
+        const { data: proCon } = await supabase
           .from('pros_cons')
           .select('option_id')
           .eq('id', proConId)
@@ -476,7 +476,7 @@ async function registerRoutes() {
           return reply.code(404).send({ error: 'Pro/Con not found' });
         }
 
-        const { data: option } = await supabaseAdmin
+        const { data: option } = await supabase
           .from('options')
           .select('decision_id')
           .eq('id', proCon.option_id)
@@ -486,7 +486,7 @@ async function registerRoutes() {
           return reply.code(404).send({ error: 'Option not found' });
         }
 
-        const { data: decision } = await supabaseAdmin
+        const { data: decision } = await supabase
           .from('decisions')
           .select('id')
           .eq('id', option.decision_id)
@@ -500,7 +500,7 @@ async function registerRoutes() {
         const body = request.body as { content?: string; weight?: number };
 
         // Update pro/con
-        const { data: updated, error: updateError } = await supabaseAdmin
+        const { data: updated, error: updateError } = await supabase
           .from('pros_cons')
           .update({
             ...(body.content !== undefined && { content: body.content }),
@@ -532,7 +532,7 @@ async function registerRoutes() {
         }
 
         // Verify pro/con belongs to user's decision
-        const { data: proCon } = await supabaseAdmin
+        const { data: proCon } = await supabase
           .from('pros_cons')
           .select('option_id')
           .eq('id', proConId)
@@ -542,7 +542,7 @@ async function registerRoutes() {
           return reply.code(404).send({ error: 'Pro/Con not found' });
         }
 
-        const { data: option } = await supabaseAdmin
+        const { data: option } = await supabase
           .from('options')
           .select('decision_id')
           .eq('id', proCon.option_id)
@@ -552,7 +552,7 @@ async function registerRoutes() {
           return reply.code(404).send({ error: 'Option not found' });
         }
 
-        const { data: decision } = await supabaseAdmin
+        const { data: decision } = await supabase
           .from('decisions')
           .select('id')
           .eq('id', option.decision_id)
@@ -564,7 +564,7 @@ async function registerRoutes() {
         }
 
         // Delete pro/con
-        const { error: deleteError } = await supabaseAdmin
+        const { error: deleteError } = await supabase
           .from('pros_cons')
           .delete()
           .eq('id', proConId);
