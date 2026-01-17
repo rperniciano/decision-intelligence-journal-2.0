@@ -7947,3 +7947,160 @@ Supabase's PostgREST behavior:
 Continue with Feature #132 and beyond.
 
 Session 71 complete. Feature #131 passing. 99/291 features (34.0%).
+# Session 72 - 2026-01-17
+Progress: 99/291 features (34.0%)
+
+## Summary
+Successfully verified 2 regression tests (#72, #131). Started work on Feature #132 (Insights API integration).
+
+## Regression Tests Passed
+- Feature #72: Soft delete and trash functionality ✅
+- Feature #131: Pagination parameters work correctly ✅
+
+## In Progress
+- Feature #132: Insights data fetched from API
+
+## Test Account
+- Email: session72test@example.com
+- Password: testpass123
+
+## Regression Test #72: Soft Delete and Trash ✅
+
+**Test Workflow:**
+1. Created decision "TRASH_TEST_ITEM_SESSION_72" ✅
+2. Deleted it (soft delete) ✅
+3. Navigated to Trash view ✅
+4. Verified decision appeared in trash ✅
+5. Selected decision and clicked "Restore Selected" ✅
+6. Confirmed restoration dialog ✅
+7. Verified trash is now empty ✅
+8. Verified decision returned to main list ✅
+
+**Key Features Verified:**
+- Soft delete sets deleted_at timestamp
+- Trash filter shows only deleted items
+- Bulk restore functionality works
+- Confirmation dialogs appear
+- Restored items return to active list
+
+**Screenshots:**
+- regression-72-restored-decision.png
+
+## Regression Test #131: Pagination Parameters ✅
+
+**Setup:**
+- Created 15 pagination test decisions using script
+- Total decisions: 16 (15 pagination + 1 trash test)
+
+**Test Workflow:**
+1. Navigated to History page (page 1) ✅
+2. Verified API request: `GET /api/v1/decisions?sort=date_desc&limit=10&offset=0` ✅
+3. Verified 10 decisions displayed (PAGINATION_TEST_DECISION_1-9 + TRASH_TEST_ITEM_SESSION_72) ✅
+4. Navigated to page 2 ✅
+5. Verified API request: `GET /api/v1/decisions?sort=date_desc&limit=10&offset=10` ✅
+6. Verified 6 different decisions displayed (PAGINATION_TEST_DECISION_10-15) ✅
+
+**Verification Checklist:**
+✅ Pagination parameters (limit, offset) sent to API
+✅ Different decisions returned for different pages
+✅ Page number updates URL (?page=2)
+✅ Offset calculated correctly: (page-1) * limit
+✅ API respects limit parameter (max 10 per page)
+✅ Page changes trigger new API requests with correct offset
+
+**Network Evidence:**
+```
+Page 1: GET /api/v1/decisions?sort=date_desc&limit=10&offset=0 => 200 OK
+Page 2: GET /api/v1/decisions?sort=date_desc&limit=10&offset=10 => 200 OK
+```
+
+**Screenshots:**
+- regression-131-page-1.png
+- regression-131-page-2-with-params.png
+
+## Feature #132: Insights API Integration (In Progress)
+
+**Current State:**
+- InsightsPage calls `/api/v1/decisions?limit=1000`
+- Calculates insights client-side from decision data
+- `/api/v1/insights` endpoint exists but returns mock data:
+  ```typescript
+  {
+    score: 50,
+    patterns: { timing: null, emotional: null, categories: null },
+    summary: null,
+    userId
+  }
+  ```
+
+**What Needs to be Done:**
+1. Implement real insights calculation in `/api/v1/insights` endpoint
+2. Calculate decision score based on outcomes
+3. Analyze emotional patterns (which emotions lead to better outcomes)
+4. Analyze timing patterns
+5. Analyze category patterns
+6. Update InsightsPage to call `/api/v1/insights` instead of calculating client-side
+7. Verify insights display correctly in UI
+
+**Code Locations:**
+- API endpoint: `apps/api/src/server.ts` line 1007
+- Frontend page: `apps/web/src/pages/InsightsPage.tsx`
+
+## Files Created/Modified
+
+**Test Scripts:**
+- confirm-user-session72.js - Email confirmation helper
+- create-test-decisions-session72.js - Created 15 pagination test decisions
+
+**Config:**
+- turbo.json - Created Turborepo configuration
+
+**Screenshots:**
+- .playwright-mcp/regression-72-restored-decision.png
+- .playwright-mcp/regression-131-page-1.png
+- .playwright-mcp/regression-131-page-2-with-params.png
+
+## Session Statistics
+- Session start: ~17:20 UTC
+- Features in progress: 1 (#132)
+- Regression tests: 2 (both passing)
+- Test account: session72test@example.com
+- Frontend port: 5176
+- API port: 3001 (old server still running)
+- Screenshots: 3
+- Test decisions created: 16
+
+## Technical Notes
+
+### Server Issue
+- Old API server from previous session still running on port 3001
+- New API server failed to start due to port conflict
+- Frontend successfully communicates with old API server
+- All endpoints tested work correctly with existing server
+
+### Pagination Implementation
+- Server-side pagination with limit/offset parameters
+- Separate count query for total (though count returns 0 - known issue)
+- Frontend sends page parameter, calculates offset
+- Page navigation via URL query params (?page=2)
+
+### Soft Delete Pattern
+- Uses `deleted_at` timestamp column
+- Deleted items filtered via `.is('deleted_at', null)` for active lists
+- Trash view filters `.not('deleted_at', 'is', null)`
+- Bulk restore updates `deleted_at` to null
+- 7-day recovery window as per app spec
+
+## Known Issues
+- Total count returns 0 from API (pagination still works via offset/limit)
+- Old API server blocking new server from starting (port 3001 in use)
+- Category dropdown shows after clicking filter buttons (minor UI state issue)
+
+## Next Steps
+1. Complete Feature #132: Implement insights API endpoint
+2. Continue with Feature #133 and beyond
+
+Session 72 notes complete.
+
+# Session 72 - 2026-01-17
+Regression tests verified. Feature #132 in progress. 99/291 (34.0%). See session-72-notes.txt for details.
