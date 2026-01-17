@@ -1,0 +1,161 @@
+import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get directory paths for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from monorepo root
+config({ path: path.resolve(__dirname, '../../../../.env') });
+
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing Supabase environment variables. Please check .env file.');
+}
+
+// Service role client for admin operations
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+export interface EmotionalPattern {
+  emotion: string;
+  better: number;
+  worse: number;
+  as_expected: number;
+  total: number;
+  successRate: number;
+}
+
+export interface CategoryPattern {
+  category: string;
+  count: number;
+  withOutcomes: number;
+  positiveRate: number;
+}
+
+export interface InsightsData {
+  totalDecisions: number;
+  decisionsWithOutcomes: number;
+  positiveOutcomes: number;
+  negativeOutcomes: number;
+  neutralOutcomes: number;
+  emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }>;
+  categoryDistribution: Record<string, number>;
+  decisionScore: number;
+  scoreTrend: number;
+  bestEmotionalState: EmotionalPattern | null;
+  topCategories: CategoryPattern[];
+}
+
+export class InsightsService {
+  /**
+   * Calculate insights for a user based on their decisions
+   */
+  static async getInsights(userId: string): Promise<InsightsData> {
+    // Fetch all decisions for the user (not deleted)
+    const { data: decisions, error } = await supabase
+      .from('decisions')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching decisions for insights:', error);
+      throw error;
+    }
+
+    const allDecisions = decisions || [];
+
+    // Calculate basic stats
+    const totalDecisions = allDecisions.length;
+    const decisionsWithOutcomes = allDecisions.filter(d => d.outcome);
+    const positiveOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'better').length;
+    const negativeOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'worse').length;
+    const neutralOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'as_expected').length;
+
+    // Calculate emotional patterns
+    const emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }> = {};
+    decisionsWithOutcomes.forEach(d => {
+      const emotion = d.emotional_state || 'unknown';
+      if (!emotionalPatterns[emotion]) {
+        emotionalPatterns[emotion] = { better: 0, worse: 0, as_expected: 0 };
+      }
+      if (d.outcome === 'better') emotionalPatterns[emotion].better++;
+      else if (d.outcome === 'worse') emotionalPatterns[emotion].worse++;
+      else if (d.outcome === 'as_expected') emotionalPatterns[emotion].as_expected++;
+    });
+
+    // Calculate category distribution
+    const categoryDistribution: Record<string, number> = {};
+    allDecisions.forEach(d => {
+      const category = d.category || 'Uncategorized';
+      categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
+    });
+
+    // Calculate decision score (simple formula: total decisions * 2, max 100)
+    const decisionScore = Math.min(100, totalDecisions * 2);
+
+    // Calculate score trend (compare this month vs last month)
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const thisMonthDecisions = allDecisions.filter(d => new Date(d.created_at) >= thisMonthStart);
+    const lastMonthDecisions = allDecisions.filter(d => {
+      const date = new Date(d.created_at);
+      return date >= lastMonthStart && date < thisMonthStart;
+    });
+
+    const thisMonthScore = Math.min(100, thisMonthDecisions.length * 10);
+    const lastMonthScore = Math.min(100, lastMonthDecisions.length * 10);
+    const scoreTrend = thisMonthScore - lastMonthScore;
+
+    // Find best emotional state
+    let bestEmotionalState: EmotionalPattern | null = null;
+    const emotionEntries = Object.entries(emotionalPatterns);
+    if (emotionEntries.length > 0) {
+      const emotionStats = emotionEntries.map(([emotion, outcomes]) => {
+        const total = outcomes.better + outcomes.worse + outcomes.as_expected;
+        const successRate = total > 0 ? outcomes.better / total : 0;
+        return { emotion, ...outcomes, total, successRate };
+      });
+
+      // Only consider emotions with at least 2 decisions
+      const validEmotions = emotionStats.filter(e => e.total >= 2);
+      if (validEmotions.length > 0) {
+        bestEmotionalState = validEmotions.reduce((best, current) =>
+          current.successRate > best.successRate ? current : best
+        );
+      }
+    }
+
+    // Calculate top categories with outcomes
+    const categoryStats: CategoryPattern[] = Object.entries(categoryDistribution).map(([category, count]) => {
+      const categoryDecisions = allDecisions.filter(d => (d.category || 'Uncategorized') === category);
+      const withOutcomes = categoryDecisions.filter(d => d.outcome).length;
+      const positives = categoryDecisions.filter(d => d.outcome === 'better').length;
+      const positiveRate = withOutcomes > 0 ? positives / withOutcomes : 0;
+      return { category, count, withOutcomes, positiveRate };
+    });
+
+    const topCategories = categoryStats.sort((a, b) => b.count - a.count).slice(0, 5);
+
+    return {
+      totalDecisions,
+      decisionsWithOutcomes: decisionsWithOutcomes.length,
+      positiveOutcomes,
+      negativeOutcomes,
+      neutralOutcomes,
+      emotionalPatterns,
+      categoryDistribution,
+      decisionScore,
+      scoreTrend,
+      bestEmotionalState,
+      topCategories,
+    };
+  }
+}

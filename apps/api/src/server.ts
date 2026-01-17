@@ -12,6 +12,7 @@ import { DecisionService } from './services/decisionServiceNew';
 import { VoiceService } from './services/voiceService';
 import { AsyncVoiceService } from './services/asyncVoiceService';
 import { jobManager } from './services/jobManager';
+import { InsightsService } from './services/insightsService';
 
 // Get directory paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -1004,19 +1005,19 @@ async function registerRoutes() {
     });
 
     // Insights
-    api.get('/insights', async (request) => {
-      const userId = request.user?.id;
-      // TODO: Implement insights for this user
-      return {
-        score: 50,
-        patterns: {
-          timing: null,
-          emotional: null,
-          categories: null,
-        },
-        summary: null,
-        userId,
-      };
+    api.get('/insights', async (request, reply) => {
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const insights = await InsightsService.getInsights(userId);
+        return insights;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Failed to fetch insights' });
+      }
     });
 
     // Profile

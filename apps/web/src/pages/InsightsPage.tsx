@@ -191,55 +191,26 @@ export function InsightsPage() {
 
         if (!token) return;
 
-        // Fetch all decisions with outcomes
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions?limit=1000`, {
+        // Fetch insights from API
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/insights`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
 
-        if (!response.ok) throw new Error('Failed to fetch decisions');
+        if (!response.ok) throw new Error('Failed to fetch insights');
 
-        const result = await response.json();
-        const decisions = result.decisions || [];
-
-        // Calculate insights from real data
-        const decisionsWithOutcomes = decisions.filter((d: any) => d.outcome);
-        const positiveOutcomes = decisionsWithOutcomes.filter((d: any) => d.outcome === 'better').length;
-        const negativeOutcomes = decisionsWithOutcomes.filter((d: any) => d.outcome === 'worse').length;
-        const neutralOutcomes = decisionsWithOutcomes.filter((d: any) => d.outcome === 'as_expected').length;
-
-        // Emotional patterns analysis
-        const emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }> = {};
-        decisionsWithOutcomes.forEach((d: any) => {
-          const emotion = d.emotional_state || 'unknown';
-          if (!emotionalPatterns[emotion]) {
-            emotionalPatterns[emotion] = { better: 0, worse: 0, as_expected: 0 };
-          }
-          if (d.outcome === 'better') emotionalPatterns[emotion].better++;
-          else if (d.outcome === 'worse') emotionalPatterns[emotion].worse++;
-          else if (d.outcome === 'as_expected') emotionalPatterns[emotion].as_expected++;
-        });
-
-        // Category distribution analysis
-        const categoryDistribution: Record<string, number> = {};
-        decisions.forEach((d: any) => {
-          const category = d.category || 'Uncategorized';
-          categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
-        });
-
-        // Calculate decision score (simple formula: total decisions * 2, max 100)
-        const decisionScore = Math.min(100, decisions.length * 2);
+        const insights = await response.json();
 
         setInsightsData({
-          totalDecisions: decisions.length,
-          decisionsWithOutcomes: decisionsWithOutcomes.length,
-          positiveOutcomes,
-          negativeOutcomes,
-          neutralOutcomes,
-          emotionalPatterns,
-          categoryDistribution,
-          decisionScore,
+          totalDecisions: insights.totalDecisions,
+          decisionsWithOutcomes: insights.decisionsWithOutcomes,
+          positiveOutcomes: insights.positiveOutcomes,
+          negativeOutcomes: insights.negativeOutcomes,
+          neutralOutcomes: insights.neutralOutcomes,
+          emotionalPatterns: insights.emotionalPatterns,
+          categoryDistribution: insights.categoryDistribution,
+          decisionScore: insights.decisionScore,
         });
       } catch (error) {
         console.error('Error fetching insights:', error);
