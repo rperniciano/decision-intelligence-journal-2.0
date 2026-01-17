@@ -2831,3 +2831,62 @@ This session focused on implementing a new feature (Category Performance) rather
 The feature successfully demonstrates that category statistics are calculated from real database data in real-time, not from cached or mock values. The test proved that creating decisions immediately updates the category count displayed to users.
 
 Session 21 complete. Category Performance statistics implemented with real-time data. 48/291 features passing (16.5%).
+---
+# Session 22 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 22
+
+## Session Summary
+
+Successfully completed Feature #68 - Related decisions cleared on delete (cascade effects verification). This session verified that the PostgreSQL CASCADE DELETE constraints are properly configured and working to remove orphaned options and pros/cons when decisions are deleted.
+
+## Completed Tasks
+
+### 1. Server Management
+- Killed and restarted servers after API crash
+- Frontend on port 5177, API on port 3001
+- Resolved port conflicts
+
+### 2. User Setup
+- Created new test user: session22test@example.com
+- Confirmed email via Supabase admin API
+- Successfully logged in and accessed authenticated routes
+
+### 3. Regression Testing
+- Feature #1 (Unauthenticated redirect from /dashboard) - PASSING
+- Feature #50 (Export page accessible from Settings) - PASSING
+
+### 4. Feature #68 - Related decisions cleared on delete
+- STATUS: PASSING
+- Verified two-stage delete process (soft delete + hard delete)
+- Confirmed CASCADE DELETE removes orphaned options and pros/cons
+- Zero orphaned records after deletion
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 49 (was 48)
+- Completion: 16.8%
+- Features completed this session: 1 (#68)
+
+## Key Findings
+
+The app uses a two-stage delete process:
+1. Soft Delete (User-Facing): Sets deleted_at timestamp, preserves data for 7-day recovery
+2. Hard Delete (System-Level): PostgreSQL CASCADE DELETE removes all related data
+
+Cascade Delete Flow:
+- decisions (parent) → options (child) → pros_cons (grandchild)
+- All foreign keys configured with ON DELETE CASCADE
+- Verified with test: 2 options + 4 pros/cons all cascade deleted
+
+## Files Created
+- create-cascade-test-decision.js
+- count-cascade-items.js
+- check-decision-deleted-at.js
+- verify-cascade-complete.js
+- confirm-user-email.js
+- Various schema check scripts
+
+Session 22 complete. Cascade delete verification passed. 49/291 features passing (16.8%).
