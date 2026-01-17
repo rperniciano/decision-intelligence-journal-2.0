@@ -44,7 +44,17 @@ function StatusBadge({ status }: { status: Decision['status'] }) {
 }
 
 // Decision card component
-function DecisionCard({ decision, index }: { decision: Decision; index: number }) {
+function DecisionCard({
+  decision,
+  index,
+  isSelected,
+  onToggleSelect
+}: {
+  decision: Decision;
+  index: number;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+}) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -62,35 +72,48 @@ function DecisionCard({ decision, index }: { decision: Decision; index: number }
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
+      className="relative"
     >
-      <Link to={`/decisions/${decision.id}`}>
-        <div className="glass p-4 rounded-xl rim-light hover:bg-white/[0.03] transition-colors cursor-pointer">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-text-primary truncate">{decision.title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-text-secondary">{decision.category}</span>
-                {decision.emotionalState && (
-                  <>
-                    <span className="text-text-secondary/30">•</span>
-                    <span className="text-xs text-text-secondary">{decision.emotionalState}</span>
-                  </>
-                )}
+      <div className="glass p-4 rounded-xl rim-light hover:bg-white/[0.03] transition-colors">
+        <div className="flex items-start gap-3">
+          {/* Checkbox */}
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect(decision.id)}
+            className="mt-1 w-5 h-5 rounded border-white/20 bg-white/5 text-accent focus:ring-accent focus:ring-offset-0 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Decision content (clickable to navigate) */}
+          <Link to={`/decisions/${decision.id}`} className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-text-primary truncate">{decision.title}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-text-secondary">{decision.category}</span>
+                  {decision.emotionalState && (
+                    <>
+                      <span className="text-text-secondary/30">•</span>
+                      <span className="text-xs text-text-secondary">{decision.emotionalState}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <StatusBadge status={decision.status} />
+                <span className="text-xs text-text-secondary">{formatDate(decision.createdAt)}</span>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <StatusBadge status={decision.status} />
-              <span className="text-xs text-text-secondary">{formatDate(decision.createdAt)}</span>
-            </div>
-          </div>
-          {decision.chosenOption && (
-            <div className="mt-3 pt-3 border-t border-white/5">
-              <span className="text-xs text-text-secondary">Chose: </span>
-              <span className="text-xs text-accent">{decision.chosenOption}</span>
-            </div>
-          )}
+            {decision.chosenOption && (
+              <div className="mt-3 pt-3 border-t border-white/5">
+                <span className="text-xs text-text-secondary">Chose: </span>
+                <span className="text-xs text-accent">{decision.chosenOption}</span>
+              </div>
+            )}
+          </Link>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }
@@ -148,6 +171,8 @@ export function HistoryPage() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDecisions, setSelectedDecisions] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Update activeFilter and selectedCategory when URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -263,6 +288,85 @@ export function HistoryPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Toggle decision selection
+  const toggleDecisionSelection = (decisionId: string) => {
+    setSelectedDecisions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(decisionId)) {
+        newSet.delete(decisionId);
+      } else {
+        newSet.add(decisionId);
+      }
+      return newSet;
+    });
+  };
+
+  // Select all decisions on current page
+  const selectAllOnPage = () => {
+    setSelectedDecisions(prev => {
+      const newSet = new Set(prev);
+      paginatedDecisions.forEach(d => newSet.add(d.id));
+      return newSet;
+    });
+  };
+
+  // Deselect all
+  const deselectAll = () => {
+    setSelectedDecisions(new Set());
+  };
+
+  // Bulk delete handler
+  const handleBulkDelete = async () => {
+    if (selectedDecisions.size === 0) return;
+
+    const confirmMessage = `Are you sure you want to delete ${selectedDecisions.size} decision${selectedDecisions.size > 1 ? 's' : ''}? Type "DELETE ${selectedDecisions.size}" to confirm.`;
+    const userInput = prompt(confirmMessage);
+
+    if (userInput !== `DELETE ${selectedDecisions.size}`) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        alert('Not authenticated');
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          decisionIds: Array.from(selectedDecisions)
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete decisions');
+      }
+
+      const result = await response.json();
+
+      // Refresh decisions list
+      setDecisions(prev => prev.filter(d => !selectedDecisions.has(d.id)));
+      setSelectedDecisions(new Set());
+
+      alert(`Successfully deleted ${result.deletedCount} decision${result.deletedCount > 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Error deleting decisions:', error);
+      alert('Failed to delete decisions. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
@@ -360,12 +464,62 @@ export function HistoryPage() {
           </motion.div>
         )}
 
+        {/* Bulk action toolbar */}
+        {selectedDecisions.size > 0 && (
+          <motion.div
+            className="mb-4 p-4 glass rounded-xl rim-light flex items-center justify-between"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="text-sm text-text-primary">
+              {selectedDecisions.size} decision{selectedDecisions.size > 1 ? 's' : ''} selected
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={deselectAll}
+                className="px-4 py-2 text-sm bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                Clear
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Selected'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Select all button */}
+        {filteredDecisions.length > 0 && (
+          <motion.div
+            className="mb-3 flex justify-end"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <button
+              onClick={selectAllOnPage}
+              className="text-xs text-accent hover:text-accent-400 transition-colors"
+            >
+              Select all on page
+            </button>
+          </motion.div>
+        )}
+
         {/* Decisions list */}
         {filteredDecisions.length > 0 ? (
           <>
             <div className="space-y-3">
               {paginatedDecisions.map((decision, index) => (
-                <DecisionCard key={decision.id} decision={decision} index={index} />
+                <DecisionCard
+                  key={decision.id}
+                  decision={decision}
+                  index={index}
+                  isSelected={selectedDecisions.has(decision.id)}
+                  onToggleSelect={toggleDecisionSelection}
+                />
               ))}
             </div>
 
