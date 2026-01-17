@@ -2116,3 +2116,169 @@ Highly productive session with 2 features completed and 1 major feature implemen
 2. **Invalid Date display** - UI formatting bug on detail page (data is correct)
 
 Session 17 complete. 44/291 features passing (15.1%). Export functionality now working with real data.
+---
+# Session 18 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 18
+
+## Session Summary
+
+Successfully completed 1 major feature: Implemented Insights page with real-time data analysis from database. This was a significant implementation task as the Insights page was previously a placeholder with hardcoded values.
+
+## Completed Tasks
+
+### 1. Server Setup and Configuration
+- Encountered port conflicts throughout session
+- API was configured for port 3003 (from previous sessions)
+- Frontend trying to connect to hardcoded 3003
+- Reverted configuration to standard port 3001 for consistency
+- Updated .env: API_PORT=3001, VITE_API_URL=http://localhost:3001/api/v1
+- Servers running:
+  - Frontend: http://localhost:5173
+  - Backend API: http://localhost:3001
+
+### 2. Regression Testing
+- Tested Feature #11 (Invalid auth token rejected) - PASSING
+  - Made API request with invalid/garbage token
+  - Verified 401 Unauthorized response
+  - Verified error message: "Invalid or expired token"
+  - No data exposed
+
+### 3. Feature #64 - Insights patterns based on real decisions
+- **STATUS**: FULLY IMPLEMENTED AND PASSING
+
+**Problem Identified**:
+- InsightsPage was a placeholder with hardcoded hasData = false
+- All patterns showed "Not enough data"
+- No API calls being made
+- Mock data with static values
+
+**Frontend Implementation (InsightsPage.tsx)**:
+1. Added imports: useState, useEffect, supabase
+2. Created InsightsData interface with all analytics fields
+3. Implemented useEffect to fetch decisions from API
+4. Real-time calculation of insights:
+   - Total decisions count
+   - Decisions with outcomes
+   - Positive/negative/neutral outcome counts
+   - Emotional patterns analysis (tracks outcomes by emotional state)
+   - Decision score calculation: Math.min(100, totalDecisions * 2)
+5. Pattern generation from real data:
+   - Outcome Rate: Calculates percentage of positive outcomes
+   - Emotional Impact: Finds emotional state with highest success rate
+   - Decision Count: Shows actual total from database
+6. Fixed API response handling:
+   - API returns {decisions: [...]}, not array directly
+   - Updated to extract result.decisions || []
+7. Fixed field name mismatch:
+   - Changed detected_emotional_state to emotional_state to match API
+
+**Backend Implementation (decisionServiceNew.ts)**:
+- Added outcome fields to getDecisions method response:
+  - outcome
+  - outcome_notes
+  - outcome_recorded_at
+- Previously these were only in getDecisionById
+- Used replace_all to update both occurrences in file
+
+**Test Data Creation**:
+- Created script: create-insights-test-data.js
+- Generated 7 decisions with varied data:
+  - 3 with better outcomes (different emotional states)
+  - 2 with worse outcomes
+  - 1 with as_expected outcome
+  - 1 without outcome (recent decision)
+- Distributed across 30-day timespan
+- Various emotional states: confident, calm, anxious, uncertain, neutral, excited
+
+**Verification Results**:
+- Created several decisions at different times (7 decisions spanning 30 days)
+- Some with positive outcomes, some negative (3 better, 2 worse, 1 as_expected)
+- Navigated to Insights page
+- Patterns reflect actual decision data:
+  - Decision Score: 20 (calculated from 10 decisions × 2)
+  - Outcome Rate: 44% positive (4 better / 9 total with outcomes)
+  - Emotional Impact: calm (100% success rate based on real data)
+  - Decision Count: 10 decisions (actual count)
+- NOT generic placeholder patterns - all show real calculated values
+- Zero console errors
+
+Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 45 (was 44)
+- Completion: 15.5%
+- Features completed this session: 1 (#64)
+
+## Technical Notes
+- Insights page now fully functional with real data
+- Frontend on port 5173 (Vite auto-increment)
+- API on port 3001 (reverted from 3003 for consistency)
+- Decision score formula: Math.min(100, totalDecisions * 2)
+- Emotional pattern analysis finds best-performing emotional states
+- Success rate calculated as: better / (better + worse + as_expected)
+
+## Files Created/Modified
+
+**New Files**:
+- create-session18-user.js - Creates session18test@example.com user
+- create-insights-test-data.js - Creates 7 test decisions with outcomes
+- test-insights-api.js - Script to test API response structure
+- .playwright-mcp/feature-64-insights-empty.png
+- .playwright-mcp/feature-64-insights-with-real-data.png
+
+**Modified Files**:
+- apps/web/src/pages/InsightsPage.tsx (MAJOR CHANGES)
+  - Lines 1-5: Added useState, useEffect, supabase imports
+  - Lines 171-179: Added InsightsData interface
+  - Lines 181-242: Implemented useEffect with API fetching and calculation
+  - Lines 202-203: Fixed API response handling (result.decisions)
+  - Line 214: Fixed field name (emotional_state)
+  - Lines 244-298: Dynamic pattern generation from real data
+- apps/api/src/services/decisionServiceNew.ts
+  - Added outcome fields to getDecisions response
+  - Both occurrences updated with replace_all
+- .env
+  - Changed API_PORT from 3003 to 3001
+  - Changed VITE_API_URL to http://localhost:3001/api/v1
+- features.db - Updated feature #64 status to passing
+
+## Bugs/Issues Found and Fixed
+
+1. **Insights page was placeholder** (Major Missing Functionality)
+   - Location: InsightsPage.tsx
+   - Impact: Users saw "No insights yet" regardless of data
+   - Fix: Implemented complete insights calculation system
+
+2. **API missing outcome fields in list endpoint**
+   - Location: decisionServiceNew.ts getDecisions method
+   - Impact: Outcome data not available for insights calculation
+   - Fix: Added outcome, outcome_notes, outcome_recorded_at to response
+
+3. **Frontend using wrong API response structure**
+   - Location: InsightsPage.tsx
+   - Impact: TypeError - decisions.filter is not a function
+   - Fix: Changed to extract result.decisions
+
+4. **Field name mismatch**
+   - Location: InsightsPage.tsx
+   - Impact: Emotional patterns not grouped correctly
+   - Fix: Changed detected_emotional_state to emotional_state
+
+5. **Port configuration inconsistency**
+   - Location: .env
+   - Impact: Frontend could not connect to API
+   - Fix: Reverted API_PORT and VITE_API_URL to 3001
+
+## Key Achievements
+
+1. **Major Feature Implementation**: Built complete Insights analytics system
+2. **Real Data Integration**: Insights calculate from actual database data
+3. **Emotional Pattern Analysis**: Identifies most successful emotional states
+4. **Outcome Tracking**: Calculates success rates from recorded outcomes
+5. **Quality Assurance**: Zero console errors, clean UI rendering
+
+Session 18 complete. Insights page now fully functional with real-time data analysis. 45/291 features passing (15.5%).
