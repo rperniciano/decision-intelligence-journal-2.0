@@ -2,10 +2,58 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { useState, useEffect } from 'react';
+
+interface Statistics {
+  totalDecisions: number;
+  positiveOutcomePercentage: number;
+  decisionScore: number;
+}
 
 export function DashboardPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [statistics, setStatistics] = useState<Statistics>({
+    totalDecisions: 0,
+    positiveOutcomePercentage: 0,
+    decisionScore: 50,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch statistics on mount
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        const token = localStorage.getItem('sb-doqojfsldvajmlscpwhu-auth-token');
+        if (!token) {
+          console.error('No auth token found');
+          return;
+        }
+
+        const authData = JSON.parse(token);
+        const accessToken = authData.access_token;
+
+        const response = await fetch('http://localhost:3001/api/v1/decisions/stats', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch statistics');
+        }
+
+        const stats = await response.json();
+        setStatistics(stats);
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStatistics();
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -91,7 +139,9 @@ export function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="text-3xl font-bold text-gradient">0</div>
+              <div className="text-3xl font-bold text-gradient">
+                {loading ? '...' : statistics.totalDecisions}
+              </div>
               <div className="text-text-secondary text-sm mt-1">Total Decisions</div>
             </motion.div>
 
@@ -101,7 +151,9 @@ export function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="text-3xl font-bold text-success">0%</div>
+              <div className="text-3xl font-bold text-success">
+                {loading ? '...' : `${statistics.positiveOutcomePercentage}%`}
+              </div>
               <div className="text-text-secondary text-sm mt-1">Positive Outcomes</div>
             </motion.div>
 
@@ -111,7 +163,9 @@ export function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="text-3xl font-bold text-accent">50</div>
+              <div className="text-3xl font-bold text-accent">
+                {loading ? '...' : statistics.decisionScore}
+              </div>
               <div className="text-text-secondary text-sm mt-1">Decision Score</div>
             </motion.div>
           </div>

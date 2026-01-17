@@ -450,4 +450,55 @@ export class DecisionService {
 
     return data;
   }
+
+  /**
+   * Get dashboard statistics for a user
+   */
+  static async getStatistics(userId: string) {
+    try {
+      // Get total count of active decisions (not deleted)
+      const { count: totalDecisions, error: countError } = await supabase
+        .from('decisions')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('deleted_at', null);
+
+      if (countError) {
+        console.error('Count error:', countError);
+        throw countError;
+      }
+
+      // Get count of decisions with status='decided'
+      const { count: decidedCount, error: decidedError } = await supabase
+        .from('decisions')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .eq('status', 'decided');
+
+      if (decidedError) {
+        console.error('Decided count error:', decidedError);
+        // Don't throw - just set to 0
+      }
+
+      // Calculate positive outcomes percentage (simplified for now)
+      // Using decided decisions as a proxy for positive outcomes
+      const positiveOutcomePercentage = decidedCount && totalDecisions && totalDecisions > 0
+        ? Math.round((decidedCount / totalDecisions) * 100)
+        : 0;
+
+      // Calculate decision score (simplified: based on number of decisions)
+      // More decisions = higher score (max 100, +2 points per decision)
+      const decisionScore = Math.min(100, (totalDecisions || 0) * 2);
+
+      return {
+        totalDecisions: totalDecisions || 0,
+        positiveOutcomePercentage,
+        decisionScore,
+      };
+    } catch (error) {
+      console.error('Error in getStatistics:', error);
+      throw error;
+    }
+  }
 }

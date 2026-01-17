@@ -118,6 +118,27 @@ async function registerRoutes() {
       }
     });
 
+    api.get('/decisions/stats', async (request, reply) => {
+      try {
+        console.log('Stats endpoint called');
+        const userId = request.user?.id;
+        console.log('User ID:', userId);
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        console.log('Calling DecisionService.getStatistics');
+        const stats = await DecisionService.getStatistics(userId);
+        console.log('Stats returned:', stats);
+        return stats;
+      } catch (error) {
+        console.error('Error in stats endpoint:', error);
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
     api.get('/decisions/:id', async (request, reply) => {
       try {
         const { id } = request.params as { id: string };
