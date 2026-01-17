@@ -8,6 +8,9 @@ export function ExportPage() {
   const [exporting, setExporting] = useState<string | null>(null);
 
   const handleExport = async (format: 'json' | 'csv' | 'pdf') => {
+    // Prevent multiple simultaneous exports
+    if (exporting) return;
+
     setExporting(format);
 
     try {
@@ -19,27 +22,20 @@ export function ExportPage() {
         return;
       }
 
-      // Fetch all decisions from API
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions?limit=1000`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch decisions');
-      }
-
-      const data = await response.json();
-      const decisions = data.decisions || [];
-
       if (format === 'json') {
-        // Create JSON export
-        const exportData = {
-          exportDate: new Date().toISOString(),
-          totalDecisions: decisions.length,
-          decisions: decisions,
-        };
+        // Call JSON export endpoint
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/export/json`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to export data');
+        }
+
+        const exportData = await response.json();
 
         // Create and download file
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -52,6 +48,19 @@ export function ExportPage() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else if (format === 'csv') {
+        // Fetch all decisions from API for CSV export
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions?limit=1000`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch decisions');
+        }
+
+        const data = await response.json();
+        const decisions = data.decisions || [];
         // Create CSV export
         const csvHeaders = [
           'Title',
