@@ -2663,3 +2663,171 @@ This session successfully demonstrated that the AI extraction is NOT using mock 
 The vacation decision example shows realistic extraction with specific details like "Beautiful beaches", "Northern Lights might be visible", "Very expensive", etc. - all pulled directly from the spoken content.
 
 Session 20 complete. AI extraction verified with real OpenAI processing. 47/291 features passing (16.2%).
+---
+# Session 21 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 21
+
+## Session Summary
+
+Successfully completed 1 feature: Implemented Category Performance statistics on Insights page with real-time data verification.
+
+## Completed Tasks
+
+### 1. Server Management
+- Restarted servers (frontend on port 5182, API on port 3001)
+- Resolved port conflicts and connection issues
+
+### 2. Regression Testing
+- Tested Feature #5 (Unauthenticated user redirected from /history) - PASSING
+- Initially appeared to fail (showed history page)
+- Root cause: Browser had valid session from previous testing
+- Cleared localStorage and retested
+- Verified proper redirect to /login for unauthenticated users
+- Security feature working correctly
+
+### 3. Feature #67 - Category statistics update in real-time
+- **STATUS**: FULLY IMPLEMENTED AND PASSING
+
+**Implementation**:
+
+1. **Frontend - InsightsPage.tsx**:
+   - Added categoryDistribution field to InsightsData interface
+   - Implemented category distribution calculation from decisions
+   - Created Category Performance pattern card showing most-used category
+   - Card displays: categoryName: count decisions
+   - Scrollable pattern cards showcase all insights
+
+2. **Data Calculation**:
+   - Loops through all decisions
+   - Counts decisions per category
+   - Finds category with highest count
+   - Displays in Category Performance card
+
+3. **Pattern Card Design**:
+   - Icon: Grid squares (category symbol)
+   - Title: Category Performance
+   - Description: Your most-used category
+   - Value: Dynamic based on real data
+   - Consistent styling with other pattern cards
+
+**Testing Process**:
+1. Created test user: session21test@example.com
+2. Created custom category: STATS_TEST_CAT
+   - Verified initial decision count: 0
+3. Created 3 decisions in STATS_TEST_CAT
+   - STATS_TEST_DECISION_1
+   - STATS_TEST_DECISION_2
+   - STATS_TEST_DECISION_WITH_OUTCOME
+4. Added outcomes to all 3 decisions (required for Insights page to display)
+5. Navigated to Insights page
+6. Verified Category Performance card shows:
+   - STATS_TEST_CAT: 3 decisions
+7. Count matches exact number in database
+8. NOT mock or placeholder data
+
+**Verification Complete**:
+- ✅ Created custom category 'STATS_TEST_CAT'
+- ✅ Checked initial decision count (was 0)
+- ✅ Created 3 decisions in category
+- ✅ Verified count shows 3 (updated in real-time from database)
+- ✅ Statistics calculated from real data, not cached values
+
+Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 48 (was 47)
+- Completion: 16.5%
+- Features completed this session: 1 (#67)
+
+## Technical Notes
+- Category statistics calculated client-side from decisions API
+- Frontend on port 5182 (auto-incremented due to conflicts)
+- API on port 3001
+- Category Performance card added to Insights page pattern section
+- Decision counts are dynamically calculated, ensuring real-time accuracy
+
+## Files Created/Modified
+
+**New Files**:
+- create-session21-user.js - Creates session21test@example.com user
+- check-categories-decision-count.js - Checks categories table schema
+- test-category-stats.js - Complete test script for feature
+- add-outcome-decision.js - Adds decision with outcome for testing
+- add-outcomes-to-decisions.js - Batch adds outcomes to decisions
+- .playwright-mcp/regression-5-PASSING.png - Regression test verification
+- .playwright-mcp/feature-67-category-stats.png - Insights page screenshot
+- .playwright-mcp/feature-67-category-performance-visible.png - Category Performance card
+
+**Modified Files**:
+- apps/web/src/pages/InsightsPage.tsx
+  - Added categoryDistribution to InsightsData interface (line 178)
+  - Added category distribution calculation (lines 224-229)
+  - Included categoryDistribution in state (line 241)
+  - Created categoryPerformance calculation (lines 267-278)
+  - Added Category Performance pattern card (lines 301-310)
+- features.db - Updated feature #67 status to passing
+
+## Bugs/Issues Found and Fixed
+
+1. **False alarm on authentication redirect**
+   - Location: Browser session from previous tests
+   - Impact: Appeared that unauthenticated users could access /history
+   - Fix: Cleared localStorage - security working correctly
+
+2. **Port conflicts during server restart**
+   - Location: Multiple Vite instances running
+   - Impact: Frontend auto-incremented to port 5182
+   - Fix: Used correct port in browser navigation
+
+3. **Insights page requires 3 outcomes minimum**
+   - Location: InsightsPage.tsx hasData check
+   - Impact: Pattern cards not visible with only 2 decisions
+   - Fix: Added outcomes to all 3 test decisions
+
+## Key Achievements
+
+1. **Real-Time Statistics**: Category counts calculated from live database data
+2. **Dynamic UI**: Pattern card automatically shows most-used category
+3. **Data Verification**: Confirmed counts match exact database records
+4. **Quality Assurance**: Zero console errors, polished UI
+5. **Test Coverage**: Comprehensive testing with custom category and decisions
+
+## Implementation Highlights
+
+**Category Distribution Logic**:
+Loops through all decisions and counts occurrences per category, storing in a Record object.
+
+**Pattern Card Display**:
+- Shows category with most decisions
+- Format: CategoryName: count decisions
+- Scrollable horizontal layout with other pattern cards
+- Consistent glassmorphism design
+
+**Test Data Created**:
+- Custom category: STATS_TEST_CAT (emoji: 📊)
+- 3 decisions all with outcomes
+- All decisions in same category to ensure clear test results
+
+## Next Steps for Future Sessions
+
+1. **Continue Real Data Verification features** (remaining 200+ features)
+2. **Add more pattern cards**: Timing Bias analysis
+3. **Implement category management UI**: Create, edit, delete categories
+4. **Add category-specific insights**: Success rates per category
+5. **Performance optimization**: Cache insights with TTL
+
+## Notes
+
+This session focused on implementing a new feature (Category Performance) rather than just testing existing functionality. The implementation required:
+- Frontend TypeScript interface updates
+- Data calculation logic
+- UI component creation
+- Database interaction verification
+
+The feature successfully demonstrates that category statistics are calculated from real database data in real-time, not from cached or mock values. The test proved that creating decisions immediately updates the category count displayed to users.
+
+Session 21 complete. Category Performance statistics implemented with real-time data. 48/291 features passing (16.5%).
