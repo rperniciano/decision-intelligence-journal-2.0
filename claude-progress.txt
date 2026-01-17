@@ -6156,3 +6156,60 @@ Successfully completed Feature #110 (Loading states during API calls) and 2 regr
 - Commits: 1
 
 Session 54 complete. Feature #110 passing. 81/291 features (27.8%).
+
+# Session 55 - 2026-01-17
+Progress: 82/291 features (28.2%)
+
+## Summary
+Fixed critical CreateDecisionPage enum bug and implemented Feature #111 (transcription error recovery). Completed 2 regression tests.
+
+## Bug Fix: CreateDecisionPage Status Enum Values
+- **Issue:** Status dropdown used invalid values ("deliberating", "reviewed")
+- **Error:** 500 on save - `invalid input value for enum decision_status: "deliberating"`
+- **Fix:** Changed to valid database values: draft, in_progress, decided, abandoned
+- **Impact:** Users can now create decisions without 500 errors
+
+## Regression Tests
+- Feature #86: In Progress status creation ✅
+- Feature #4: Unauthenticated /settings redirect ✅
+
+## Feature #111 - Transcription Error Recovery ✅
+
+### Implementation
+Added comprehensive error handling for voice transcription failures:
+
+**1. Audio Preservation:**
+- New state: `savedAudioBlob` preserves recording after processing
+- Audio saved before API call, available for retry
+
+**2. Retry Mechanism:**
+- `handleRetry()` re-processes saved audio without re-recording
+- Modified `processRecording()` to accept optional blob parameter
+- Users can retry multiple times with same audio
+
+**3. Manual Fallback:**
+- `handleEnterManually()` navigates to `/decisions/new`
+- Allows users to bypass voice input entirely
+- Graceful degradation from voice to manual entry
+
+**4. Enhanced Error UI:**
+- Error message with warning icon
+- "Retry Transcription" button (accent color, primary)
+- "Enter Manually" button (glass styling, secondary)
+- Buttons disabled during processing
+- Only shown when audio is saved
+
+### Code Quality
+- Optional TypeScript parameter for retry blob
+- Conditional rendering based on error context
+- Separation of concerns (retry vs initial recording)
+- Mobile-friendly button layout
+- Consistent with glassmorphism design
+
+### User Benefits
+- Never lose recording due to API failures
+- Multiple recovery paths (retry vs manual)
+- Clear guidance on what to do next
+- Visual hierarchy guides to recommended action
+
+Session 55 complete. Feature #111 passing. 82/291 features (28.2%).
