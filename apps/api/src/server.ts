@@ -97,6 +97,7 @@ async function registerRoutes() {
           status: query.status,
           category: query.category,
           search: query.search,
+          sort: query.sort || 'date_desc',
           limit: query.limit ? parseInt(query.limit) : 20,
           offset: query.offset ? parseInt(query.offset) : 0,
         });

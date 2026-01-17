@@ -196,31 +196,29 @@ export function CreateDecisionPage() {
 
           // Create pros and cons
           for (const pro of option.pros) {
-            await fetch(`${import.meta.env.VITE_API_URL}/decisions/${decision.id}/pros-cons`, {
+            await fetch(`${import.meta.env.VITE_API_URL}/options/${createdOption.id}/pros-cons`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                option_id: createdOption.id,
                 type: 'pro',
-                text: pro,
+                content: pro,
               }),
             });
           }
 
           for (const con of option.cons) {
-            await fetch(`${import.meta.env.VITE_API_URL}/decisions/${decision.id}/pros-cons`, {
+            await fetch(`${import.meta.env.VITE_API_URL}/options/${createdOption.id}/pros-cons`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                option_id: createdOption.id,
                 type: 'con',
-                text: con,
+                content: con,
               }),
             });
           }

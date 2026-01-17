@@ -179,10 +179,12 @@ export function HistoryPage() {
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
   const filterFromUrl = searchParams.get('filter') || 'all';
   const categoryFromUrl = searchParams.get('category') || 'all';
+  const sortFromUrl = searchParams.get('sort') || 'date_desc';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(filterFromUrl);
   const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
+  const [sortBy, setSortBy] = useState(sortFromUrl);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,11 +193,12 @@ export function HistoryPage() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [isPermanentlyDeleting, setIsPermanentlyDeleting] = useState(false);
 
-  // Update activeFilter and selectedCategory when URL changes (e.g., browser back/forward)
+  // Update activeFilter, selectedCategory, and sortBy when URL changes (e.g., browser back/forward)
   useEffect(() => {
     setActiveFilter(filterFromUrl);
     setSelectedCategory(categoryFromUrl);
-  }, [filterFromUrl, categoryFromUrl]);
+    setSortBy(sortFromUrl);
+  }, [filterFromUrl, categoryFromUrl, sortFromUrl]);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -257,6 +260,9 @@ export function HistoryPage() {
           params.append('search', searchQuery.trim());
         }
 
+        // Add sort parameter
+        params.append('sort', sortBy);
+
         // Use trash endpoint if trash filter is active, otherwise regular endpoint
         const baseUrl = import.meta.env.VITE_API_URL;
         const endpoint = activeFilter === 'trash'
@@ -301,7 +307,7 @@ export function HistoryPage() {
     }
 
     fetchDecisions();
-  }, [activeFilter, selectedCategory, searchQuery]);
+  }, [activeFilter, selectedCategory, searchQuery, sortBy]);
 
   // API now handles filtering, so we just use the decisions directly
   // (No need for client-side filtering since server does it)
@@ -599,6 +605,33 @@ export function HistoryPage() {
             </select>
           </motion.div>
         )}
+
+        {/* Sort order */}
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <label className="block text-sm text-text-secondary mb-2">Sort by</label>
+          <select
+            value={sortBy}
+            onChange={(e) => {
+              const newParams = new URLSearchParams(searchParams);
+              newParams.set('sort', e.target.value);
+              newParams.set('page', '1');
+              setSearchParams(newParams);
+            }}
+            className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+          >
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+            <option value="title_asc">Title (A-Z)</option>
+            <option value="title_desc">Title (Z-A)</option>
+            <option value="category_asc">Category (A-Z)</option>
+            <option value="category_desc">Category (Z-A)</option>
+          </select>
+        </motion.div>
 
         {/* Bulk action toolbar */}
         {selectedDecisions.size > 0 && (

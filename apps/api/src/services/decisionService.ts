@@ -70,6 +70,7 @@ export class DecisionService {
     status?: Decision['status'];
     category?: string;
     search?: string;
+    sort?: string;
     limit?: number;
     offset?: number;
   }) {
@@ -77,8 +78,7 @@ export class DecisionService {
       .from('decisions')
       .select('*', { count: 'exact' })
       .eq('user_id', userId)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .is('deleted_at', null);
 
     if (filters?.status) {
       query = query.eq('status', filters.status);
@@ -90,6 +90,31 @@ export class DecisionService {
 
     if (filters?.search) {
       query = query.ilike('title', `%${filters.search}%`);
+    }
+
+    // Apply sorting
+    const sortBy = filters?.sort || 'date_desc';
+    switch (sortBy) {
+      case 'date_asc':
+        query = query.order('created_at', { ascending: true });
+        break;
+      case 'date_desc':
+        query = query.order('created_at', { ascending: false });
+        break;
+      case 'title_asc':
+        query = query.order('title', { ascending: true });
+        break;
+      case 'title_desc':
+        query = query.order('title', { ascending: false });
+        break;
+      case 'category_asc':
+        query = query.order('category', { ascending: true });
+        break;
+      case 'category_desc':
+        query = query.order('category', { ascending: false });
+        break;
+      default:
+        query = query.order('created_at', { ascending: false });
     }
 
     const limit = filters?.limit || 20;
