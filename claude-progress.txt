@@ -7707,3 +7707,6 @@ This implementation follows industry best practices for optimistic UI:
 Continue with Feature #129 and beyond.
 
 Session 68 complete. Feature #128 passing. 96/291 features (33.0%).
+
+# Session 69 - 2026-01-17
+Feature #129 complete. Filter parameters now sent to API correctly. 97/291 (33.3%). See session-69-notes.txt for details.
