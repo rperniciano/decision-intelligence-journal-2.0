@@ -232,6 +232,162 @@ async function registerRoutes() {
       }
     });
 
+    // Option management endpoints
+    api.post('/decisions/:id/options', async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Verify decision belongs to user
+        const { data: decision, error: decisionError } = await supabaseAdmin
+          .from('decisions')
+          .select('id')
+          .eq('id', id)
+          .eq('user_id', userId)
+          .single();
+
+        if (decisionError || !decision) {
+          return reply.code(404).send({ error: 'Decision not found' });
+        }
+
+        const body = request.body as { title: string; description?: string };
+
+        if (!body.title || !body.title.trim()) {
+          return reply.code(400).send({ error: 'Option title is required' });
+        }
+
+        // Create new option
+        const { data: option, error: optionError } = await supabaseAdmin
+          .from('options')
+          .insert({
+            decision_id: id,
+            title: body.title,
+            description: body.description || null
+          })
+          .select()
+          .single();
+
+        if (optionError) {
+          server.log.error(optionError);
+          return reply.code(500).send({ error: 'Failed to create option' });
+        }
+
+        return option;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
+    api.patch('/options/:optionId', async (request, reply) => {
+      try {
+        const { optionId } = request.params as { optionId: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Verify option belongs to user's decision
+        const { data: option } = await supabaseAdmin
+          .from('options')
+          .select('decision_id')
+          .eq('id', optionId)
+          .single();
+
+        if (!option) {
+          return reply.code(404).send({ error: 'Option not found' });
+        }
+
+        const { data: decision } = await supabaseAdmin
+          .from('decisions')
+          .select('id')
+          .eq('id', option.decision_id)
+          .eq('user_id', userId)
+          .single();
+
+        if (!decision) {
+          return reply.code(403).send({ error: 'Forbidden' });
+        }
+
+        const body = request.body as { title?: string; description?: string };
+
+        // Update option
+        const { data: updatedOption, error: updateError } = await supabaseAdmin
+          .from('options')
+          .update({
+            ...(body.title && { title: body.title }),
+            ...(body.description !== undefined && { description: body.description })
+          })
+          .eq('id', optionId)
+          .select()
+          .single();
+
+        if (updateError) {
+          server.log.error(updateError);
+          return reply.code(500).send({ error: 'Failed to update option' });
+        }
+
+        return updatedOption;
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
+    api.delete('/options/:optionId', async (request, reply) => {
+      try {
+        const { optionId } = request.params as { optionId: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Verify option belongs to user's decision
+        const { data: option } = await supabaseAdmin
+          .from('options')
+          .select('decision_id')
+          .eq('id', optionId)
+          .single();
+
+        if (!option) {
+          return reply.code(404).send({ error: 'Option not found' });
+        }
+
+        const { data: decision } = await supabaseAdmin
+          .from('decisions')
+          .select('id')
+          .eq('id', option.decision_id)
+          .eq('user_id', userId)
+          .single();
+
+        if (!decision) {
+          return reply.code(403).send({ error: 'Forbidden' });
+        }
+
+        // Delete option
+        const { error: deleteError } = await supabaseAdmin
+          .from('options')
+          .delete()
+          .eq('id', optionId);
+
+        if (deleteError) {
+          server.log.error(deleteError);
+          return reply.code(500).send({ error: 'Failed to delete option' });
+        }
+
+        return { message: 'Option deleted successfully' };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
     // Recording endpoints
     api.post('/recordings/upload', async (request, reply) => {
       try {

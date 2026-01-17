@@ -43,6 +43,8 @@ export function EditDecisionPage() {
   const [status, setStatus] = useState('draft');
   const [categoryId, setCategoryId] = useState<string>('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [options, setOptions] = useState<DecisionOption[]>([]);
+  const [newOptionText, setNewOptionText] = useState('');
 
   // Fetch decision data
   useEffect(() => {
@@ -72,6 +74,7 @@ export function EditDecisionPage() {
         setTitle(data.title);
         setNotes(data.notes || '');
         setStatus(data.status);
+        setOptions(data.options || []);
       } catch (error) {
         console.error('Error fetching decision:', error);
       } finally {
@@ -114,6 +117,110 @@ export function EditDecisionPage() {
 
     fetchCategories();
   }, []);
+
+  const handleAddOption = async () => {
+    if (!newOptionText.trim()) return;
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}/options`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newOptionText.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add option');
+      }
+
+      const newOption = await response.json();
+
+      // Update local state
+      setOptions([...options, {
+        id: newOption.id,
+        text: newOption.title,
+        pros: [],
+        cons: [],
+      }]);
+      setNewOptionText('');
+    } catch (error) {
+      console.error('Error adding option:', error);
+    }
+  };
+
+  const handleRemoveOption = async (optionId: string) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/options/${optionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete option');
+      }
+
+      // Update local state
+      setOptions(options.filter(opt => opt.id !== optionId));
+    } catch (error) {
+      console.error('Error deleting option:', error);
+    }
+  };
+
+  const handleUpdateOption = async (optionId: string, newText: string) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/options/${optionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update option');
+      }
+
+      // Update local state
+      setOptions(options.map(opt =>
+        opt.id === optionId ? { ...opt, text: newText } : opt
+      ));
+    } catch (error) {
+      console.error('Error updating option:', error);
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -256,22 +363,53 @@ export function EditDecisionPage() {
             </select>
           </div>
 
-          {/* Options (read-only for now) */}
-          {decision.options && decision.options.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Options ({decision.options.length})</label>
-              <div className="space-y-2">
-                {decision.options.map((option) => (
-                  <div key={option.id} className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
-                    <div className="font-medium text-text-primary">{option.text}</div>
-                    {option.isChosen && (
-                      <span className="text-xs text-accent">Chosen</span>
-                    )}
-                  </div>
-                ))}
+          {/* Options (editable) */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Options ({options.length})</label>
+            <div className="space-y-2">
+              {options.map((option) => (
+                <div key={option.id} className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={option.text}
+                    onChange={(e) => handleUpdateOption(option.id, e.target.value)}
+                    className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+                    placeholder="Option name"
+                  />
+                  <button
+                    onClick={() => handleRemoveOption(option.id)}
+                    className="p-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl transition-all"
+                    title="Remove option"
+                  >
+                    <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+
+              {/* Add new option */}
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={newOptionText}
+                  onChange={(e) => setNewOptionText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddOption()}
+                  className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+                  placeholder="Add new option..."
+                />
+                <button
+                  onClick={handleAddOption}
+                  className="p-3 bg-accent/10 hover:bg-accent/20 border border-accent/20 rounded-xl transition-all"
+                  title="Add option"
+                >
+                  <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Action buttons */}
           <div className="flex gap-3 pt-4">
