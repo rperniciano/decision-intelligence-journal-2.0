@@ -5024,3 +5024,11 @@ Completed 2 features successfully (Features #85 and #86) and fixed a critical bu
 - Test scripts created: 7
 
 Session 35 complete. Features #85 and #86 passing. Critical status enum bug fixed. 63/291 features (21.6%).
+
+
+# Session 36 Summary (2026-01-17)
+=====================================
+
+Feature #87 PASSING - Transition to Decided status workflow complete
+Progress: 64/291 features (22.0%)
+See session36-progress.txt for full details
