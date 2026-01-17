@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { BottomNav } from '../components/BottomNav';
+import { EditProfileModal } from '../components/EditProfileModal';
 
 // Setting section component
 function SettingSection({
@@ -150,12 +151,19 @@ export function SettingsPage() {
   const { user, signOut } = useAuth();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [weeklyDigestEnabled, setWeeklyDigestEnabled] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [profileKey, setProfileKey] = useState(0); // Force re-render after profile update
 
   // Get display name from user metadata or email
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleProfileUpdate = () => {
+    // Force component re-render to show updated name
+    setProfileKey(prev => prev + 1);
   };
 
   return (
@@ -176,13 +184,15 @@ export function SettingsPage() {
       {/* Main content */}
       <main className="max-w-2xl mx-auto px-4 py-6">
         {/* Profile Section */}
-        <SettingSection title="Profile" delay={0.1}>
-          <SettingRow
-            icon={<ProfileIcon />}
-            label={displayName}
-            description="Edit your profile"
-            action={<ChevronRightIcon />}
-          />
+        <SettingSection title="Profile" delay={0.1} key={profileKey}>
+          <button onClick={() => setIsEditProfileOpen(true)} className="w-full">
+            <SettingRow
+              icon={<ProfileIcon />}
+              label={displayName}
+              description="Edit your profile"
+              action={<ChevronRightIcon />}
+            />
+          </button>
           <SettingRow
             icon={<EmailIcon />}
             label="Email"
@@ -278,6 +288,14 @@ export function SettingsPage() {
 
       {/* Bottom navigation */}
       <BottomNav />
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        currentName={displayName}
+        onSuccess={handleProfileUpdate}
+      />
 
       {/* Grain overlay */}
       <div className="grain-overlay" />

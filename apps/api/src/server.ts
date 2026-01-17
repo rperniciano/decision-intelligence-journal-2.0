@@ -367,10 +367,45 @@ async function registerRoutes() {
       return { message: 'Profile endpoint - to be implemented', userId };
     });
 
-    api.patch('/profile', async (request) => {
-      const userId = request.user?.id;
-      // TODO: Implement profile update
-      return { message: 'Profile update - to be implemented', userId };
+    api.patch('/profile', async (request, reply) => {
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as { name?: string };
+
+        if (!body.name || body.name.trim() === '') {
+          return reply.code(400).send({ error: 'Name is required' });
+        }
+
+        // Update user metadata using Supabase Admin API
+        const { data, error } = await supabase.auth.admin.updateUserById(
+          userId,
+          {
+            user_metadata: {
+              name: body.name.trim()
+            }
+          }
+        );
+
+        if (error) {
+          server.log.error({ error }, 'Failed to update user profile');
+          return reply.code(500).send({ error: 'Failed to update profile' });
+        }
+
+        return {
+          success: true,
+          profile: {
+            name: data.user.user_metadata.name,
+            email: data.user.email
+          }
+        };
+      } catch (error) {
+        server.log.error({ error }, 'Error updating profile');
+        return reply.code(500).send({ error: 'Failed to update profile' });
+      }
     });
 
     api.patch('/profile/settings', async (request) => {
