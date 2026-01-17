@@ -109,3 +109,78 @@ Status: PASSING
 - 10 screenshot files for verification
 
 Session 27 complete. Feature #76 passing. 55/291 features passing (18.9%).
+
+## Additional Features Completed
+
+### Feature #78 - Emotions stored per decision
+- **STATUS**: FULLY IMPLEMENTED AND PASSING
+
+**Test Process:**
+
+**Step 1 - Create decision with anxious emotion**:
+- Created DECISION_WITH_ANXIOUS_EMOTION
+- Set detected_emotional_state = 'anxious'
+- Confirmed saved to database
+
+**Step 2 - Create decision with confident emotion**:
+- Created DECISION_WITH_CONFIDENT_EMOTION
+- Set detected_emotional_state = 'confident'
+- Confirmed saved to database
+
+**Step 3 - View decisions in History**:
+- Navigated to History page
+- Both decisions visible with emotional states
+- DECISION_WITH_CONFIDENT_EMOTION shows "confident"
+- DECISION_WITH_ANXIOUS_EMOTION shows "anxious"
+- TEST_SESSION27_FIRST_DECISION shows "confident"
+
+**Step 4 - Refresh and verify persistence**:
+- Refreshed browser (full page reload)
+- All emotional states still display correctly
+- No data loss or corruption
+
+**Verification Complete**:
+- ✅ Created decisions with different emotional states
+- ✅ Emotional states saved to database
+- ✅ Each decision maintains its unique emotion
+- ✅ Data persists across page refreshes
+- ✅ UI displays emotions correctly on History page
+- ✅ No cross-contamination between decisions
+
+Status: PASSING
+
+### Feature #77 - Multiple check-ins tracked separately
+- **STATUS**: SKIPPED (External Blocker)
+
+**Reason for Skip**:
+- Requires `outcomes` table with `check_in_number` field
+- Migration file exists (migration-add-outcomes-tables.sql)
+- Execution requires manual SQL in Supabase UI
+- Cannot execute migrations programmatically without exec_sql function
+- exec_sql function creation also requires Supabase UI access
+
+**Blocker Type**: External - requires Supabase dashboard access
+
+Feature moved to end of queue (priority 313).
+
+## Updated Feature Statistics
+- Total Features: 291
+- Passing: 56 (was 55)
+- Completion: 19.2%
+- Features completed: 2 (#76, #78)
+- Features skipped: 1 (#77)
+
+## Files Created This Session
+- create-session27-user.js
+- create-session27-decision.js
+- create-empty-user.js
+- check-decisions-columns.js
+- create-anxious-decision.js
+- create-confident-decision.js
+- check-outcomes-table.js
+- run-outcomes-migration-now.js
+- manual-create-outcomes-table.js
+- test-decision-api-response.js
+- 12 screenshot files
+
+Session 27 complete. Features #76 and #78 passing. 56/291 features (19.2%).
