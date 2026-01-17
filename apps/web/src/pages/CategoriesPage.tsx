@@ -2,7 +2,19 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+
+// Icons
+const ArrowLeft = () => (
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+  </svg>
+);
+
+const Plus = () => (
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+);
 
 interface Category {
   id: string;
@@ -24,7 +36,7 @@ const COLOR_OPTIONS = [
 
 export function CategoriesPage() {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { session } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -41,7 +53,7 @@ export function CategoriesPage() {
     try {
       const response = await fetch('http://localhost:3001/api/v1/categories', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${session?.access_token}`
         }
       });
       const data = await response.json();
@@ -61,7 +73,7 @@ export function CategoriesPage() {
       const response = await fetch('http://localhost:3001/api/v1/categories', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${session?.access_token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -99,7 +111,9 @@ export function CategoriesPage() {
             onClick={() => navigate('/settings')}
             className="p-2 glass glass-hover rounded-lg transition-all duration-200"
           >
-            <ArrowLeft className="w-5 h-5 text-text-secondary" />
+            <div className="text-text-secondary">
+              <ArrowLeft />
+            </div>
           </button>
           <h1 className="text-xl font-semibold text-text-primary">Manage Categories</h1>
         </div>
@@ -114,7 +128,9 @@ export function CategoriesPage() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <Plus className="w-5 h-5 text-accent" />
+          <div className="text-accent">
+            <Plus />
+          </div>
           <span className="text-accent font-medium">Create New Category</span>
         </motion.button>
 
