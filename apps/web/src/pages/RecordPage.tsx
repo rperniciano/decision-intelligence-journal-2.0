@@ -9,6 +9,7 @@ export function RecordPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedAudioBlob, setSavedAudioBlob] = useState<Blob | null>(null);
   const timerRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -71,12 +72,16 @@ export function RecordPage() {
     }
   };
 
-  const processRecording = async () => {
+  const processRecording = async (audioBlob?: Blob) => {
     try {
       setIsProcessing(true);
+      setError(null);
 
-      // Create audio blob
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      // Create audio blob if not provided (initial recording)
+      const blob = audioBlob || new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+      // Save the audio blob for retry
+      setSavedAudioBlob(blob);
 
       // Get auth token
       const { data: { session } } = await supabase.auth.getSession();
@@ -86,7 +91,7 @@ export function RecordPage() {
 
       // Create form data
       const formData = new FormData();
-      formData.append('file', audioBlob, `recording-${Date.now()}.webm`);
+      formData.append('file', blob, `recording-${Date.now()}.webm`);
 
       // Upload to API
       const response = await fetch(`${import.meta.env.VITE_API_URL}/recordings/upload`, {
@@ -99,7 +104,7 @@ export function RecordPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed');
+        throw new Error(errorData.message || 'Transcription failed. Please try again or enter manually.');
       }
 
       const result = await response.json();
@@ -108,9 +113,20 @@ export function RecordPage() {
       navigate(`/decisions/${result.decision.id}`);
     } catch (err) {
       console.error('Error processing recording:', err);
-      setError((err as Error).message || 'Failed to process recording');
+      setError((err as Error).message || 'Transcription failed. Please try again or enter manually.');
       setIsProcessing(false);
     }
+  };
+
+  const handleRetry = () => {
+    if (savedAudioBlob) {
+      processRecording(savedAudioBlob);
+    }
+  };
+
+  const handleEnterManually = () => {
+    // Navigate to manual decision creation page
+    navigate('/decisions/new');
   };
 
   const handleClose = () => {
@@ -147,8 +163,39 @@ export function RecordPage() {
 
       {/* Main recording area */}
       <main className="flex-1 flex flex-col items-center justify-center p-6">
-        {/* Error message */}
-        {error && (
+        {/* Error message with retry options */}
+        {error && savedAudioBlob && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-6 glass rounded-lg border border-red-500/20 bg-red-500/10 max-w-md"
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-red-400 text-sm mb-4">{error}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleRetry}
+                    className="flex-1 px-4 py-2 bg-accent hover:bg-accent-600 text-bg-deep rounded-lg font-medium transition-colors"
+                    disabled={isProcessing}
+                  >
+                    Retry Transcription
+                  </button>
+                  <button
+                    onClick={handleEnterManually}
+                    className="flex-1 px-4 py-2 glass glass-hover rounded-lg font-medium transition-colors"
+                  >
+                    Enter Manually
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        {error && !savedAudioBlob && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
