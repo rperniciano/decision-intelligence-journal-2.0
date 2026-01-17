@@ -51,8 +51,65 @@ export function ExportPage() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+      } else if (format === 'csv') {
+        // Create CSV export
+        const csvHeaders = [
+          'Title',
+          'Status',
+          'Category',
+          'Emotional State',
+          'Confidence Level',
+          'Chosen Option',
+          'Options',
+          'Notes',
+          'Created Date',
+          'Decided Date',
+          'Abandoned Date',
+        ];
+
+        const csvRows = decisions.map((decision: any) => {
+          // Format options as a semicolon-separated list
+          const optionsText = decision.options?.map((opt: any) => opt.title).join('; ') || '';
+
+          // Get chosen option if exists
+          const chosenOption = decision.options?.find((opt: any) => opt.is_chosen)?.title || '';
+
+          return [
+            decision.title || '',
+            decision.status || '',
+            decision.category_name || 'Uncategorized',
+            decision.emotional_state || '',
+            decision.confidence_level || '',
+            chosenOption,
+            optionsText,
+            decision.notes || '',
+            decision.created_at ? new Date(decision.created_at).toLocaleString() : '',
+            decision.decided_at ? new Date(decision.decided_at).toLocaleString() : '',
+            decision.abandoned_at ? new Date(decision.abandoned_at).toLocaleString() : '',
+          ].map(field => {
+            // Escape fields containing commas, quotes, or newlines
+            const stringField = String(field);
+            if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+              return `"${stringField.replace(/"/g, '""')}"`;
+            }
+            return stringField;
+          }).join(',');
+        });
+
+        const csvContent = [csvHeaders.join(','), ...csvRows].join('\n');
+
+        // Create and download file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `decisions-export-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       } else {
-        // CSV and PDF not implemented yet
+        // PDF not implemented yet
         alert(`Export as ${format.toUpperCase()} - Coming soon!`);
       }
     } catch (error) {
