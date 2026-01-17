@@ -17,7 +17,7 @@ interface DecisionOption {
 interface Decision {
   id: string;
   title: string;
-  status: 'draft' | 'deliberating' | 'decided' | 'abandoned' | 'reviewed';
+  status: 'draft' | 'deliberating' | 'decided' | 'abandoned' | 'reviewed' | 'in_progress';
   category: string;
   emotionalState?: string;
   createdAt: string;
@@ -38,9 +38,10 @@ function StatusBadge({ status }: { status: Decision['status'] }) {
     decided: { label: 'Decided', className: 'bg-accent/20 text-accent' },
     abandoned: { label: 'Abandoned', className: 'bg-white/5 text-text-secondary' },
     reviewed: { label: 'Reviewed', className: 'bg-emerald-500/20 text-emerald-400' },
+    in_progress: { label: 'In Progress', className: 'bg-blue-500/20 text-blue-400' },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || { label: status || 'Unknown', className: 'bg-white/10 text-text-secondary' };
 
   return (
     <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.className}`}>
