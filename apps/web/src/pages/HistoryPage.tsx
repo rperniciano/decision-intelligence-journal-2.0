@@ -11,10 +11,18 @@ interface Decision {
   title: string;
   status: 'draft' | 'deliberating' | 'decided' | 'abandoned' | 'reviewed';
   category: string;
+  categoryId?: string;
   emotionalState?: string;
   createdAt: string;
   decidedAt?: string;
   chosenOption?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  icon?: string;
 }
 
 // Status badge component
@@ -134,16 +142,47 @@ export function HistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
   const filterFromUrl = searchParams.get('filter') || 'all';
+  const categoryFromUrl = searchParams.get('category') || 'all';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(filterFromUrl);
+  const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
   const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Update activeFilter when URL changes (e.g., browser back/forward)
+  // Update activeFilter and selectedCategory when URL changes (e.g., browser back/forward)
   useEffect(() => {
     setActiveFilter(filterFromUrl);
-  }, [filterFromUrl]);
+    setSelectedCategory(categoryFromUrl);
+  }, [filterFromUrl, categoryFromUrl]);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        const token = session.session?.access_token;
+
+        if (!token) return;
+
+        const response = await fetch('http://localhost:3001/api/v1/categories', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data.categories || []);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+
+    fetchCategories();
+  }, []);
 
   // Fetch decisions from API
   useEffect(() => {
@@ -182,6 +221,7 @@ export function HistoryPage() {
           title: d.title,
           status: d.status,
           category: d.category,
+          categoryId: d.category_id,
           emotionalState: d.emotional_state,
           createdAt: d.created_at,
           decidedAt: d.decided_at,
@@ -199,13 +239,15 @@ export function HistoryPage() {
     fetchDecisions();
   }, [activeFilter]);
 
-  // Filter decisions based on search and filter
+  // Filter decisions based on search, status filter, and category
   const filteredDecisions = decisions.filter((decision) => {
     const matchesSearch = decision.title.toLowerCase().includes(searchQuery.toLowerCase());
     // When viewing trash, show all deleted items regardless of status
     // Otherwise, apply status filter
     const matchesFilter = activeFilter === 'trash' || activeFilter === 'all' || decision.status === activeFilter;
-    return matchesSearch && matchesFilter;
+    // Category filter
+    const matchesCategory = selectedCategory === 'all' || decision.categoryId === selectedCategory;
+    return matchesSearch && matchesFilter && matchesCategory;
   });
 
   // Pagination calculations
@@ -265,7 +307,7 @@ export function HistoryPage() {
 
         {/* Filter chips */}
         <motion.div
-          className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide"
+          className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
@@ -289,6 +331,35 @@ export function HistoryPage() {
             </button>
           ))}
         </motion.div>
+
+        {/* Category filter */}
+        {categories.length > 0 && (
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <label className="block text-sm text-text-secondary mb-2">Category</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set('category', e.target.value);
+                newParams.set('page', '1');
+                setSearchParams(newParams);
+              }}
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </motion.div>
+        )}
 
         {/* Decisions list */}
         {filteredDecisions.length > 0 ? (
