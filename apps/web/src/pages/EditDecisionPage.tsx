@@ -507,10 +507,9 @@ export function EditDecisionPage() {
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
             >
               <option value="draft">Draft</option>
-              <option value="deliberating">Deliberating</option>
+              <option value="in_progress">In Progress</option>
               <option value="decided">Decided</option>
               <option value="abandoned">Abandoned</option>
-              <option value="reviewed">Reviewed</option>
             </select>
           </div>
 

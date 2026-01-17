@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 interface Decision {
   id: string;
   title: string;
-  status: 'draft' | 'deliberating' | 'decided' | 'abandoned' | 'reviewed';
+  status: 'draft' | 'in_progress' | 'decided' | 'abandoned';
   category: string;
   categoryId?: string;
   emotionalState?: string;
@@ -29,10 +29,9 @@ interface Category {
 function StatusBadge({ status }: { status: Decision['status'] }) {
   const statusConfig = {
     draft: { label: 'Draft', className: 'bg-white/10 text-text-secondary' },
-    deliberating: { label: 'Deliberating', className: 'bg-amber-500/20 text-amber-400' },
+    in_progress: { label: 'In Progress', className: 'bg-amber-500/20 text-amber-400' },
     decided: { label: 'Decided', className: 'bg-accent/20 text-accent' },
     abandoned: { label: 'Abandoned', className: 'bg-white/5 text-text-secondary' },
-    reviewed: { label: 'Reviewed', className: 'bg-emerald-500/20 text-emerald-400' },
   };
 
   const config = statusConfig[status] || { label: status || 'Unknown', className: 'bg-white/10 text-text-secondary' };
@@ -130,9 +129,8 @@ function EmptyState() {
 // Filter chips
 const filterOptions = [
   { id: 'all', label: 'All' },
-  { id: 'deliberating', label: 'Deliberating' },
+  { id: 'in_progress', label: 'In Progress' },
   { id: 'decided', label: 'Decided' },
-  { id: 'reviewed', label: 'Reviewed' },
   { id: 'trash', label: 'Trash' },
 ];
 
