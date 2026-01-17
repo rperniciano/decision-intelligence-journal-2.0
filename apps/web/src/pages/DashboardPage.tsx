@@ -10,6 +10,20 @@ interface Statistics {
   decisionScore: number;
 }
 
+interface PendingReview {
+  id: string;
+  decision_id: string;
+  remind_at: string;
+  status: string;
+  decisions: {
+    id: string;
+    title: string;
+    status: string;
+    category: string;
+    decided_at: string;
+  };
+}
+
 export function DashboardPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -19,6 +33,8 @@ export function DashboardPage() {
     decisionScore: 50,
   });
   const [loading, setLoading] = useState(true);
+  const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   // Fetch statistics on mount
   useEffect(() => {
@@ -53,6 +69,41 @@ export function DashboardPage() {
     };
 
     fetchStatistics();
+  }, []);
+
+  // Fetch pending reviews on mount
+  useEffect(() => {
+    const fetchPendingReviews = async () => {
+      try {
+        const token = localStorage.getItem('sb-doqojfsldvajmlscpwhu-auth-token');
+        if (!token) {
+          console.error('No auth token found');
+          return;
+        }
+
+        const authData = JSON.parse(token);
+        const accessToken = authData.access_token;
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/pending-reviews`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch pending reviews');
+        }
+
+        const data = await response.json();
+        setPendingReviews(data.pendingReviews || []);
+      } catch (error) {
+        console.error('Error fetching pending reviews:', error);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    fetchPendingReviews();
   }, []);
 
   const handleSignOut = async () => {
@@ -169,6 +220,52 @@ export function DashboardPage() {
               <div className="text-text-secondary text-sm mt-1">Decision Score</div>
             </motion.div>
           </div>
+
+          {/* Pending Reviews Section */}
+          {!reviewsLoading && pendingReviews.length > 0 && (
+            <motion.div
+              className="mt-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <h2 className="text-xl font-semibold mb-4">Pending Reviews</h2>
+              <div className="space-y-3">
+                {pendingReviews.map((review, index) => (
+                  <motion.div
+                    key={review.id}
+                    className="glass p-4 rounded-xl rim-light cursor-pointer hover:bg-white/5 transition-colors"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                    onClick={() => navigate(`/decisions/${review.decision_id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-text-primary mb-1">
+                          {review.decisions.title}
+                        </h3>
+                        <div className="flex items-center gap-3 text-sm text-text-secondary">
+                          <span className="px-2 py-1 rounded-lg bg-white/5 text-xs">
+                            {review.decisions.category}
+                          </span>
+                          <span>
+                            Due {new Date(review.remind_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-accent">Review</span>
+                        <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Empty state for recent decisions */}
           <motion.div

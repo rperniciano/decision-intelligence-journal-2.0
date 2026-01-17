@@ -434,6 +434,48 @@ async function registerRoutes() {
       return { message: 'Create reminder - to be implemented', decisionId: id, userId };
     });
 
+    // Pending Reviews - fetch outcome reminders that are due
+    api.get('/pending-reviews', async (request, reply) => {
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Query outcome_reminders table for pending reviews
+        const { data: reminders, error } = await supabase
+          .from('outcome_reminders')
+          .select(`
+            id,
+            decision_id,
+            remind_at,
+            status,
+            created_at,
+            decisions!inner(
+              id,
+              title,
+              status,
+              category,
+              decided_at
+            )
+          `)
+          .eq('user_id', userId)
+          .eq('status', 'pending')
+          .lte('remind_at', new Date().toISOString())
+          .order('remind_at', { ascending: true });
+
+        if (error) {
+          server.log.error(error);
+          return reply.code(500).send({ error: 'Failed to fetch pending reviews' });
+        }
+
+        return { pendingReviews: reminders || [] };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
   }, { prefix: '/api/v1' });
 }
 
