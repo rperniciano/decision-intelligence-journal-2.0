@@ -1,0 +1,111 @@
+# Session 27 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 27
+
+## Session Summary
+
+Successfully completed Feature #76 - Detect mock data in UI. This session verified that the application contains no hardcoded mock data patterns and all displayed data comes from real database queries or shows appropriate empty states.
+
+## Completed Tasks
+
+### 1. Server Management
+- Frontend running on port 5173
+- API server already running on port 3001 from previous session
+- Both services operational and healthy
+
+### 2. Regression Testing
+- **Feature #70** (Empty state shown when no data exists) - PASSING
+  - Created new user account (session27test)
+  - Verified Dashboard shows "No decisions yet" empty state
+  - Verified History shows "No decisions yet" empty state
+  - Created first decision via database
+  - Refreshed History page - empty state disappeared
+  - Decision now displays correctly
+  - ✅ Empty state transitions properly to showing real data
+  - Screenshots captured
+
+### 3. Feature #76 - Detect mock data in UI
+- **STATUS**: FULLY IMPLEMENTED AND PASSING
+
+**Test Process**:
+
+**Step 1 - Create test users**:
+- Created session27test@example.com with 1 decision
+- Created emptyuser@example.com with 0 decisions
+- Both users confirmed in database with real metadata
+
+**Step 2 - Browse application with data**:
+- Logged in as session27test
+- Dashboard shows:
+  - Real user name: "Session 27 Test User"
+  - Real stats: "1 Total Decisions", "100% Positive Outcomes", "2 Decision Score"
+  - ✅ No mock data patterns
+- History shows:
+  - Real decision: "TEST_SESSION27_FIRST_DECISION"
+  - ✅ No sample or demo content
+- Settings shows:
+  - Real name: "Session 27 Test User"
+  - Real email: "session27test@example.com"
+  - ✅ No placeholder user info
+- Decision Detail shows:
+  - Real title: "TEST_SESSION27_FIRST_DECISION"
+  - Real notes: "This is a test decision for session 27"
+  - ✅ No lorem ipsum or fake content
+
+**Step 3 - Browse application without data**:
+- Logged in as emptyuser
+- Dashboard shows:
+  - Real user name: "Empty User"
+  - Real stats: All zeros (0, 0%, 0)
+  - Empty state: "No decisions yet"
+  - ✅ No hidden or collapsed mock data
+- History shows:
+  - Empty state: "No decisions yet"
+  - ✅ No sample decisions appearing
+- Insights shows:
+  - Empty state: "No insights yet"
+  - ✅ No fake patterns or charts
+
+**Step 4 - Code verification**:
+- Searched for mock data patterns
+- Zero matches for "John Doe|Lorem ipsum|Sample|Demo|mockData|fakeData|dummyData"
+- InsightsPage calculates from real API data
+- All pages fetch from /api/v1/* endpoints
+- No hardcoded decision arrays
+- Only acceptable placeholders in input fields
+
+**Step 5 - Console verification**:
+- Checked browser console for errors
+- Only React Router warnings (expected)
+- Pending reviews 500 error (known from previous session)
+- ✅ No errors related to mock data loading
+
+**Verification Complete**:
+- ✅ Browsed all major pages (Dashboard, History, Insights, Settings, Decision Detail)
+- ✅ No "John Doe", "Lorem ipsum", "Sample", or "Demo" patterns found
+- ✅ Code search confirms no hardcoded mock data
+- ✅ All displayed data comes from real database or API calls
+- ✅ Empty states are genuine (show when no data exists)
+- ✅ Data transitions correctly (empty state → real data when created)
+- ✅ User profile shows real user_metadata
+- ✅ Stats calculate from actual database records
+- ✅ Zero suspicious placeholder content
+
+Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 55 (was 54)
+- Completion: 18.9%
+- Features completed this session: 1 (#76)
+
+## Files Created
+- create-session27-user.js
+- create-session27-decision.js
+- create-empty-user.js
+- check-decisions-columns.js
+- 10 screenshot files for verification
+
+Session 27 complete. Feature #76 passing. 55/291 features passing (18.9%).
