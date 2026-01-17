@@ -154,11 +154,11 @@ export class DecisionService {
 
         const pros = (prosCons || [])
           .filter(pc => pc.type === 'pro')
-          .map(pc => pc.content);
+          .map(pc => ({ id: pc.id, content: pc.content, type: 'pro' as const }));
 
         const cons = (prosCons || [])
           .filter(pc => pc.type === 'con')
-          .map(pc => pc.content);
+          .map(pc => ({ id: pc.id, content: pc.content, type: 'con' as const }));
 
         return {
           id: option.id,
