@@ -6690,3 +6690,155 @@ Key fields: id, title, status, user_id, created_at, deleted_at
 Continue with Feature #121 and beyond.
 
 Session 60 complete. Feature #120 passing. 88/291 features (30.2%).
+
+# Session 61 - 2026-01-17
+Progress: 89/291 features (30.6%)
+
+## Summary
+Completed Feature #121 (category dropdown from database) and 2 regression tests. Verified complete end-to-end category management workflow from creation to display in decision forms.
+
+## Completed
+- Feature #121: Category dropdown populated from database ✅
+
+## Regression Tests Passed
+- Feature #47: Onboarding flow progresses correctly ✅
+- Feature #49: Trash view accessible from History ✅
+
+## Feature #121 Implementation Verification
+
+### Evidence Chain
+1. **Network Monitoring**
+   - GET http://localhost:3001/api/v1/categories → 200 OK
+   - Request made when CreateDecisionPage loads
+   - Dynamic data fetching confirmed
+
+2. **Code Analysis**
+   - CreateDecisionPage.tsx lines 48-74
+   - Uses fetch() to get categories from API
+   - No hardcoded category data found
+   - useEffect hook fetches on component mount
+
+3. **End-to-End Test**
+   - Created custom category via UI: "🚀 FEATURE_121_TEST_CATEGORY"
+   - Navigated to Create Decision page
+   - Opened category dropdown
+   - Verified new category appears in list
+   - Category sorted alphabetically with emoji icon
+
+### Verification Steps
+1. Navigated to /categories page ✅
+2. Clicked "Create New Category" ✅
+3. Filled form with name, emoji (🚀), and color (Purple) ✅
+4. Category created and appeared in management list ✅
+5. Navigated to /decisions/new ✅
+6. Opened category dropdown ✅
+7. Custom category visible: "🚀 FEATURE_121_TEST_CATEGORY" ✅
+8. Network request to /api/v1/categories confirmed ✅
+
+## Regression Test #47: Onboarding Flow ✅
+
+**Test Steps:**
+1. Navigated to /onboarding (manual navigation)
+2. Step 1: Entered name "Test User" ✅
+3. Clicked Continue → Step 2 appeared ✅
+4. Step 2: Viewed feature overview (Voice-First, AI-Powered, Pattern Discovery) ✅
+5. Clicked Continue → Step 3 appeared ✅
+6. Step 3: Viewed "How it works" (Speak, AI Extracts, Discover) ✅
+7. Clicked Continue → Step 4 appeared ✅
+8. Step 4: "Ready to begin?" final step ✅
+9. Clicked "Get Started" → Redirected to /dashboard ✅
+
+**Verification:**
+- All 4 onboarding steps display correctly ✅
+- Progress indicators work (visual dots showing current step) ✅
+- Navigation between steps works seamlessly ✅
+- Final step redirects to dashboard ✅
+- Skip button available on all steps ✅
+
+**Note:** 
+- Onboarding flow works correctly when accessed at /onboarding
+- However, new users are NOT automatically redirected to onboarding after registration
+- They go directly to dashboard after email confirmation/login
+- This is a missing feature, but the onboarding UI itself functions correctly
+
+## Regression Test #49: Trash View ✅
+
+**Test Steps:**
+1. Created decision via database: REGRESSION_49_TEST_DECISION ✅
+2. Navigated to /history - decision appeared in list ✅
+3. Clicked decision to open detail page ✅
+4. Clicked "Delete" button ✅
+5. Confirmation modal appeared ✅
+6. Confirmed deletion ✅
+7. Redirected to /history - decision no longer in main list ✅
+8. Clicked "Trash" filter button ✅
+9. URL changed to /history?filter=trash&page=1 ✅
+10. Deleted decision now visible in trash view ✅
+
+**Verification:**
+- Soft delete functionality works ✅
+- Trash filter button accessible from History ✅
+- Trash view shows only deleted decisions ✅
+- URL updates with filter parameter ✅
+- Trash button highlighted when active ✅
+
+## Files Created/Modified
+
+**New Files:**
+- .playwright-mcp/feature-121-category-dropdown.png
+- .playwright-mcp/regression-47-onboarding-complete.png
+- .playwright-mcp/regression-49-trash-view.png
+- check-decision-schema-session61.js (test helper)
+- create-test-decision-session61.js (test helper)
+
+**Modified Files:**
+- features.db (Feature #121 marked as passing)
+
+## Screenshots
+- regression-47-onboarding-complete.png - Dashboard after completing onboarding
+- regression-49-trash-view.png - Trash filter showing deleted decision
+- feature-121-category-dropdown.png - Category dropdown with custom category
+
+## Session Statistics
+- Session duration: ~2 hours
+- Features completed: 1 (#121)
+- Regression tests: 2 (#47, #49 both passing)
+- API server restarted: 1 time (turbo.json missing, used pnpm filter instead)
+- Test account: session60test@example.com
+- Frontend port: 5173
+- API port: 3001
+- Screenshots: 3
+- Commits: 1
+- Console errors: 0 related to feature testing (some React warnings about duplicate keys)
+
+## Technical Notes
+
+### Category Management Pattern
+The app implements a complete category management system:
+- System categories (immutable, created by default)
+- Custom categories (user-created, editable/deletable)
+- Dynamic fetching from API on every page load
+- Real-time updates when categories are created
+
+### Code Quality
+- Proper separation of system vs custom categories
+- Clean API integration with error handling
+- React hooks for data fetching (useEffect)
+- Supabase auth token included in requests
+
+### UI/UX
+- Categories display with emoji icons
+- Alphabetically sorted in dropdown
+- Clear visual distinction (System vs Custom labels)
+- Responsive category creation modal
+
+## Known Issues (Non-Blocking)
+- Console warnings: "Encountered two children with the same key" in CategoriesPage
+  - Does not affect functionality
+  - UI renders correctly
+  - Duplicate key in emoji selection (🎯 appears twice)
+
+## Next Steps
+Continue with Feature #122 and beyond.
+
+Session 61 complete. Feature #121 passing. 89/291 features (30.6%).
