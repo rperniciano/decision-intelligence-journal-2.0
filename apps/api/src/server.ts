@@ -1066,10 +1066,45 @@ async function registerRoutes() {
       }
     });
 
-    api.patch('/profile/settings', async (request) => {
-      const userId = request.user?.id;
-      // TODO: Implement settings update
-      return { message: 'Settings update - to be implemented', userId };
+    api.patch('/profile/settings', async (request, reply) => {
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as {
+          outcome_reminders_enabled?: boolean;
+          weekly_digest_enabled?: boolean;
+        };
+
+        // Update user metadata with notification preferences
+        const { data, error } = await supabase.auth.admin.updateUserById(
+          userId,
+          {
+            user_metadata: {
+              outcome_reminders_enabled: body.outcome_reminders_enabled,
+              weekly_digest_enabled: body.weekly_digest_enabled
+            }
+          }
+        );
+
+        if (error) {
+          server.log.error({ error }, 'Failed to update settings');
+          return reply.code(500).send({ error: 'Failed to update settings' });
+        }
+
+        return {
+          success: true,
+          settings: {
+            outcome_reminders_enabled: body.outcome_reminders_enabled,
+            weekly_digest_enabled: body.weekly_digest_enabled
+          }
+        };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     api.delete('/profile', async (request) => {

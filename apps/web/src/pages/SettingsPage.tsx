@@ -154,9 +154,13 @@ const ChevronRightIcon = () => (
 );
 
 export function SettingsPage() {
-  const { user, signOut } = useAuth();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [weeklyDigestEnabled, setWeeklyDigestEnabled] = useState(false);
+  const { user, signOut, session } = useAuth();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    user?.user_metadata?.outcome_reminders_enabled ?? true
+  );
+  const [weeklyDigestEnabled, setWeeklyDigestEnabled] = useState(
+    user?.user_metadata?.weekly_digest_enabled ?? false
+  );
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [profileKey, setProfileKey] = useState(0); // Force re-render after profile update
 
@@ -170,6 +174,76 @@ export function SettingsPage() {
   const handleProfileUpdate = () => {
     // Force component re-render to show updated name
     setProfileKey(prev => prev + 1);
+  };
+
+  // Optimistic update handler for notification settings
+  const handleNotificationToggle = async (newValue: boolean) => {
+    const previousValue = notificationsEnabled;
+
+    // Optimistically update UI
+    setNotificationsEnabled(newValue);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/v1/profile/settings', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          outcome_reminders_enabled: newValue,
+          weekly_digest_enabled: weeklyDigestEnabled
+        })
+      });
+
+      if (!response.ok) {
+        // Rollback on failure
+        setNotificationsEnabled(previousValue);
+        const error = await response.json();
+        alert(error.error || 'Failed to update settings. Please try again.');
+        console.error('Failed to update settings:', error);
+      }
+    } catch (error) {
+      // Rollback on network error
+      setNotificationsEnabled(previousValue);
+      alert('Network error. Your changes could not be saved.');
+      console.error('Network error:', error);
+    }
+  };
+
+  // Optimistic update handler for weekly digest
+  const handleWeeklyDigestToggle = async (newValue: boolean) => {
+    const previousValue = weeklyDigestEnabled;
+
+    // Optimistically update UI
+    setWeeklyDigestEnabled(newValue);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/v1/profile/settings', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          outcome_reminders_enabled: notificationsEnabled,
+          weekly_digest_enabled: newValue
+        })
+      });
+
+      if (!response.ok) {
+        // Rollback on failure
+        setWeeklyDigestEnabled(previousValue);
+        const error = await response.json();
+        alert(error.error || 'Failed to update settings. Please try again.');
+        console.error('Failed to update settings:', error);
+      }
+    } catch (error) {
+      // Rollback on network error
+      setWeeklyDigestEnabled(previousValue);
+      alert('Network error. Your changes could not be saved.');
+      console.error('Network error:', error);
+    }
   };
 
   return (
@@ -215,7 +289,7 @@ export function SettingsPage() {
             action={
               <Toggle
                 enabled={notificationsEnabled}
-                onChange={setNotificationsEnabled}
+                onChange={handleNotificationToggle}
               />
             }
           />
@@ -226,7 +300,7 @@ export function SettingsPage() {
             action={
               <Toggle
                 enabled={weeklyDigestEnabled}
-                onChange={setWeeklyDigestEnabled}
+                onChange={handleWeeklyDigestToggle}
               />
             }
           />
