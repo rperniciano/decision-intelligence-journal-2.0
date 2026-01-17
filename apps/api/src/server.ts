@@ -5,6 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from './middleware/auth';
 import { DecisionService } from './services/decisionServiceNew';
 
@@ -14,6 +15,16 @@ const __dirname = path.dirname(__filename);
 
 // Load environment variables from monorepo root
 config({ path: path.resolve(__dirname, '../../../.env') });
+
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const server = Fastify({
   logger: {
@@ -215,8 +226,29 @@ async function registerRoutes() {
     // Categories
     api.get('/categories', async (request) => {
       const userId = request.user?.id;
-      // TODO: Implement categories list for this user
-      return { categories: [], userId };
+
+      if (!userId) {
+        return { error: 'Unauthorized' };
+      }
+
+      try {
+        // Fetch categories for this user (both system categories and user-created)
+        const { data: categories, error } = await supabase
+          .from('categories')
+          .select('*')
+          .or(`user_id.eq.${userId},user_id.is.null`)
+          .order('name', { ascending: true });
+
+        if (error) {
+          server.log.error(error);
+          return { error: 'Failed to fetch categories' };
+        }
+
+        return { categories: categories || [] };
+      } catch (error) {
+        server.log.error(error);
+        return { error: 'Internal server error' };
+      }
     });
 
     api.post('/categories', async (request) => {

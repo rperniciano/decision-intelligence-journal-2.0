@@ -25,6 +25,14 @@ interface Decision {
   transcription?: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  user_id: string | null;
+}
+
 export function EditDecisionPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -33,6 +41,8 @@ export function EditDecisionPage() {
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState('draft');
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Fetch decision data
   useEffect(() => {
@@ -73,6 +83,37 @@ export function EditDecisionPage() {
       fetchDecision();
     }
   }, [id, navigate]);
+
+  // Fetch categories
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        const token = session.session?.access_token;
+
+        if (!token) {
+          return;
+        }
+
+        const response = await fetch('http://localhost:3001/api/v1/categories', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories');
+        }
+
+        const data = await response.json();
+        setCategories(data.categories || []);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+
+    fetchCategories();
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -198,12 +239,21 @@ export function EditDecisionPage() {
             />
           </div>
 
-          {/* Category (read-only for now) */}
+          {/* Category */}
           <div>
             <label className="block text-sm font-medium mb-2">Category</label>
-            <div className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-secondary">
-              {decision.category}
-            </div>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+            >
+              <option value="">Uncategorized</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.icon} {category.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Options (read-only for now) */}
