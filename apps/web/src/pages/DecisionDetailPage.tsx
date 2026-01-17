@@ -129,6 +129,11 @@ export function DecisionDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [outcomeResult, setOutcomeResult] = useState<string>('');
+  const [outcomeSatisfaction, setOutcomeSatisfaction] = useState<number>(3);
+  const [outcomeNotes, setOutcomeNotes] = useState('');
+  const [isRecordingOutcome, setIsRecordingOutcome] = useState(false);
 
   useEffect(() => {
     async function fetchDecision() {
@@ -210,6 +215,65 @@ export function DecisionDetailPage() {
       setError('Failed to delete decision');
       setIsDeleting(false);
       setShowDeleteModal(false);
+    }
+  };
+
+  const handleRecordOutcome = async () => {
+    // Prevent double-clicks / rapid submissions
+    if (!id || !outcomeResult || isRecordingOutcome) return;
+
+    try {
+      setIsRecordingOutcome(true);
+
+      // Get auth token
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // Record outcome via API
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}/outcomes`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          result: outcomeResult,
+          satisfaction: outcomeSatisfaction,
+          notes: outcomeNotes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to record outcome');
+      }
+
+      const data = await response.json();
+
+      // Update local decision state
+      if (decision && data.success) {
+        setDecision({
+          ...decision,
+          outcome: data.outcome.result,
+          outcome_notes: data.outcome.notes,
+          outcome_recorded_at: data.outcome.recordedAt,
+        });
+      }
+
+      // Close modal and reset form
+      setShowOutcomeModal(false);
+      setOutcomeResult('');
+      setOutcomeSatisfaction(3);
+      setOutcomeNotes('');
+    } catch (err) {
+      console.error('Error recording outcome:', err);
+      alert('Failed to record outcome. Please try again.');
+    } finally {
+      setIsRecordingOutcome(false);
     }
   };
 
@@ -447,8 +511,17 @@ export function DecisionDetailPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.3 }}
-          className="flex gap-3"
+          className="flex flex-wrap gap-3"
         >
+          {/* Record Outcome button - only show if no outcome recorded and status is decided */}
+          {!decision.outcome && (decision.status === 'decided' || decision.status === 'in_progress') && (
+            <button
+              onClick={() => setShowOutcomeModal(true)}
+              className="flex-1 px-4 py-2.5 bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent/90 transition-all text-sm"
+            >
+              Record Outcome
+            </button>
+          )}
           <Link to={`/decisions/${id}/edit`} className="flex-1">
             <button className="w-full px-4 py-2.5 glass glass-hover rounded-xl text-sm font-medium">
               Edit Decision
@@ -475,6 +548,122 @@ export function DecisionDetailPage() {
         cancelText="Cancel"
         isLoading={isDeleting}
       />
+
+      {/* Outcome recording modal */}
+      {showOutcomeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md glass rounded-2xl p-6 rim-light"
+          >
+            <h3 className="text-xl font-semibold mb-4">Record Outcome</h3>
+            <p className="text-sm text-text-secondary mb-6">
+              How did this decision turn out?
+            </p>
+
+            {/* Outcome result selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Result</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOutcomeResult('better')}
+                  className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    outcomeResult === 'better'
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                      : 'glass border border-white/10 hover:bg-white/5'
+                  }`}
+                >
+                  Better
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOutcomeResult('as_expected')}
+                  className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    outcomeResult === 'as_expected'
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                      : 'glass border border-white/10 hover:bg-white/5'
+                  }`}
+                >
+                  As Expected
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOutcomeResult('worse')}
+                  className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    outcomeResult === 'worse'
+                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50'
+                      : 'glass border border-white/10 hover:bg-white/5'
+                  }`}
+                >
+                  Worse
+                </button>
+              </div>
+            </div>
+
+            {/* Satisfaction rating */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">
+                Satisfaction: {outcomeSatisfaction}/5
+              </label>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setOutcomeSatisfaction(level)}
+                    className={`p-2 rounded-lg transition-all ${
+                      level <= outcomeSatisfaction
+                        ? 'text-accent scale-110'
+                        : 'text-white/20 hover:text-white/40'
+                    }`}
+                  >
+                    <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Notes (optional)</label>
+              <textarea
+                value={outcomeNotes}
+                onChange={(e) => setOutcomeNotes(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all resize-none"
+                placeholder="Any reflections on the outcome..."
+              />
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowOutcomeModal(false);
+                  setOutcomeResult('');
+                  setOutcomeSatisfaction(3);
+                  setOutcomeNotes('');
+                }}
+                className="flex-1 px-4 py-2.5 glass glass-hover rounded-xl text-sm font-medium"
+                disabled={isRecordingOutcome}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRecordOutcome}
+                disabled={!outcomeResult || isRecordingOutcome}
+                className="flex-1 px-4 py-2.5 bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRecordingOutcome ? 'Recording...' : 'Record'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Grain overlay */}
       <div className="grain-overlay" />
