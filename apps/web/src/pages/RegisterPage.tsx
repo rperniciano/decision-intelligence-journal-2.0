@@ -153,6 +153,14 @@ export function RegisterPage() {
                 className="p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm"
               >
                 {error}
+                {error.toLowerCase().includes('already registered') && (
+                  <div className="mt-2 text-text-secondary">
+                    Already have an account?{' '}
+                    <Link to="/login" className="text-accent hover:text-accent-400 transition-colors underline">
+                      Sign in instead
+                    </Link>
+                  </div>
+                )}
               </motion.div>
             )}
 
