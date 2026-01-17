@@ -6571,3 +6571,122 @@ Used browser automation with fetch interception to simulate 401 responses:
 Continue with Feature #120 and beyond.
 
 Session 59 complete. Feature #119 passing. 87/291 features (29.9%).
+
+# Session 60 - 2026-01-17
+Progress: 88/291 features (30.2%)
+
+## Summary
+Successfully completed Feature #120 (decision list from real API) and 2 regression tests. Verified complete end-to-end data flow from database → API → UI with exact data matching.
+
+## Completed
+- Feature #120: Decision list fetched from real API ✅
+
+## Regression Tests Passed
+- Feature #70: Empty state shown when no data exists ✅
+- Feature #53: Decision persists after logout/login ✅
+
+## Feature #120 Implementation Verification
+
+### Evidence Chain
+1. **Code Analysis** - HistoryPage.tsx lines 228-283
+   - Uses fetch() with real API endpoint
+   - Endpoint: `${VITE_API_URL}/decisions`
+   - Authorization: Bearer token from Supabase auth
+   - No mock data patterns found
+
+2. **Network Monitoring**
+   - GET http://localhost:3001/api/v1/decisions → 200 OK
+   - Multiple successful requests captured
+   - Response transformed and rendered in UI
+
+3. **Database Verification**
+   - Query result: 1 decision (ID: 087f8534-a556-4b94-a43d-5059f3ab6f28)
+   - Title: REGRESSION_70_TEST_DECISION
+   - Status: decided
+   - Created: 2026-01-17T14:16:35.334206+00:00
+
+4. **UI Rendering Verification**
+   - UI shows exact match to database data
+   - Title: "REGRESSION_70_TEST_DECISION" ✅
+   - Status badge: "Decided" ✅
+   - Date: "Today" ✅
+   - Category: "Uncategorized" ✅
+
+5. **Data Persistence Test**
+   - Created decision while logged in
+   - Logged out
+   - Logged back in
+   - Decision still present with same data ✅
+
+### Regression Test #70: Empty State ✅
+1. New account with 0 decisions
+2. Navigated to History page
+3. Verified empty state message: "No decisions yet"
+4. Verified helpful description text
+5. Created first decision
+6. Empty state disappeared
+7. Decision list now shows 1 item
+
+### Regression Test #53: Logout/Login Persistence ✅
+1. Verified decision exists: "REGRESSION_70_TEST_DECISION"
+2. Clicked Sign Out
+3. Redirected to landing page
+4. Signed back in with same credentials
+5. Navigated to History page
+6. Decision still present with all original data
+7. Stats show: 1 Total Decision
+
+## Technical Notes
+
+### API Integration Pattern
+The HistoryPage implements proper API integration:
+- Fetches auth token from Supabase session
+- Constructs authorized API request
+- Handles loading states
+- Transforms API response to component interface
+- Updates React state with fetched data
+
+### No Mock Data Found
+Searched codebase for mock data patterns:
+- No hardcoded decision arrays
+- No fake data generators
+- No placeholder content in list rendering
+- Empty state correctly shown for new accounts
+
+### Database Schema Verified
+Table: `decisions` (lowercase)
+Key fields: id, title, status, user_id, created_at, deleted_at
+
+## Files Created
+- .playwright-mcp/feature-120-history-list.png
+- .playwright-mcp/regression-70-empty-state.png
+- .playwright-mcp/regression-70-decision-appears.png
+- .playwright-mcp/regression-53-decision-persists.png
+
+## Session Statistics
+- Session duration: ~1.5 hours
+- Features completed: 1 (#120)
+- Regression tests: 2 (#70, #53 both passing)
+- Test account: session60test@example.com
+- Frontend port: 5173
+- API port: 3001
+- Screenshots: 4
+- Commits: 1
+- Console errors: 0 related to feature testing
+
+## Known Issues (Non-Blocking)
+- API endpoint `/api/v1/pending-reviews` returns 500 (missing table)
+  - Does not affect decision list functionality
+  - Feature likely not yet implemented
+
+## Code Quality
+- Proper TypeScript types throughout
+- Error handling with try/catch
+- Loading states implemented
+- Auth token handling secure
+- React best practices followed
+
+## Next Steps
+Continue with Feature #121 and beyond.
+
+Session 60 complete. Feature #120 passing. 88/291 features (30.2%).
