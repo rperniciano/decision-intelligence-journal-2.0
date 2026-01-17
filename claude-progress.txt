@@ -3969,3 +3969,200 @@ Key achievements:
 - Beautiful UI with glassmorphism and animations
 
 Session 26 complete. Features #73 and #75 passing. 54/291 features (18.6%).
+# Session 30 Progress Report (Coding Agent)
+# ============================================
+Date: 2026-01-17
+Agent: Coding Agent
+Session: 30
+
+## Session Summary
+
+Successfully completed Feature #82 - Update decision title. This session verified that users can edit decision titles through the UI and that changes persist in the database and across all views (detail page, history page, breadcrumbs).
+
+## Completed Tasks
+
+### 1. Server Management
+- Frontend already running on port 5177
+- API server already running on port 3001
+- Both servers operational from previous sessions
+
+### 2. User Setup
+- Created new test user: session30test@example.com
+- Confirmed email verification via database script
+- Successfully logged in to test the application
+
+### 3. Regression Testing
+- **Feature #44** (Breadcrumbs reflect navigation path) - PASSING ✅
+  - Navigated to decision detail page
+  - Verified breadcrumbs show: Dashboard > History > Decision Title
+  - Clicked "History" in breadcrumb
+  - Successfully navigated back to History page
+  - Breadcrumb structure correct and functional
+  - Screenshot captured: regression-44-breadcrumbs.png
+
+### 4. Feature #82 - Update decision title
+- **STATUS**: FULLY IMPLEMENTED AND PASSING ✅
+
+**Test Process:**
+
+**Step 1 - Navigate to a decision detail:**
+- Created test decision: "Test Decision for Breadcrumb Verification"
+- Navigated to decision detail page
+- Decision ID: 6c783d38-06aa-462c-bbfe-4e6fbfcc40be
+
+**Step 2 - Click Edit:**
+- Clicked "Edit Decision" button
+- Navigated to /decisions/{id}/edit page
+- Edit form loaded with current title pre-filled
+
+**Step 3 - Change the title:**
+- Updated title to: "Updated Title - Session 30 Verification"
+- Form accepted the new title
+
+**Step 4 - Save changes:**
+- Clicked "Save Changes" button
+- Redirected back to decision detail page
+- No errors during save operation
+
+**Step 5 - Verify new title shown:**
+- ✅ Decision detail page heading shows new title
+- ✅ Breadcrumb updated to show new title
+- ✅ History page shows new title in decision card
+- Screenshot captured: feature-82-updated-title-detail.png
+- Screenshot captured: feature-82-updated-title-history.png
+
+**Step 6 - Refresh and verify persistence:**
+- Refreshed decision detail page
+- ✅ Title still shows "Updated Title - Session 30 Verification"
+- Queried database directly
+- ✅ Database confirms title = "Updated Title - Session 30 Verification"
+- Navigated to History page
+- ✅ Updated title displayed in decision listing
+
+**Database Verification:**
+```javascript
+Decision ID: 6c783d38-06aa-462c-bbfe-4e6fbfcc40be
+Title in database: Updated Title - Session 30 Verification
+Expected: Updated Title - Session 30 Verification
+Match: ✅
+```
+
+**Verification Complete:**
+- ✅ Edit form loads with current title
+- ✅ Title can be changed and saved
+- ✅ New title displayed on detail page
+- ✅ New title displayed in breadcrumb
+- ✅ New title displayed on History page
+- ✅ Changes persist in database
+- ✅ Changes persist after page refresh
+- ✅ Zero console errors during entire workflow
+
+Status: PASSING
+
+## Feature Statistics
+- Total Features: 291
+- Passing: 59 (was 58)
+- Completion: 20.3%
+- Features completed this session: 1 (#82)
+
+## Technical Notes
+
+**Title Editing Implementation:**
+- Edit page located at: /decisions/{id}/edit
+- Edit form includes: title, status, notes, category
+- Title field is a controlled input pre-filled with current value
+- Save button triggers API call to update decision
+- Successful save redirects to decision detail page
+- All views (detail, history, breadcrumb) immediately reflect changes
+
+**API Endpoint:**
+- PATCH /api/v1/decisions/{id}
+- Accepts partial update (title only, or any combination of fields)
+- Updates decision in Supabase
+- Returns updated decision object
+- Proper authentication required
+
+**UI/UX Flow:**
+1. User clicks "Edit Decision" button on detail page
+2. Navigates to edit form with pre-filled data
+3. Changes title (and optionally other fields)
+4. Clicks "Save Changes"
+5. API updates database
+6. User redirected to detail page
+7. New title visible everywhere
+
+**Data Persistence:**
+- Changes stored in Supabase `decisions` table
+- RLS policies ensure user can only edit own decisions
+- No client-side caching issues observed
+- Breadcrumb component reactively updates
+- History page refetches data on navigation
+
+## Files Created/Modified
+
+**New Files:**
+- confirm-session30-user.js - Script to confirm email for test user
+- create-session30-decision.js - Script to create test decision
+- verify-title-update.js - Script to verify title in database
+- .playwright-mcp/regression-44-breadcrumbs.png - Regression test screenshot
+- .playwright-mcp/feature-82-updated-title-detail.png - Updated title on detail page
+- .playwright-mcp/feature-82-updated-title-history.png - Updated title on history page
+- session30-progress.txt - This file
+
+**Modified Files:**
+- features.db - Updated feature #82 status to passing
+
+## Bugs/Issues Found and Fixed
+
+None - feature worked perfectly on first test.
+
+## Key Achievements
+
+1. **Title Editing Verified**: Users can successfully edit decision titles
+2. **Persistence Confirmed**: Changes saved to database and survive refresh
+3. **Multi-View Consistency**: Title updates reflected across all pages
+4. **Breadcrumb Integration**: Breadcrumbs dynamically update with new title
+5. **Zero Bugs**: Feature worked flawlessly without any fixes needed
+
+## Implementation Quality
+
+**Why This Feature Works Well:**
+1. **Pre-filled Form**: Current values loaded into edit form (good UX)
+2. **Partial Updates**: API accepts updating just title without requiring all fields
+3. **Reactive UI**: All components update immediately after save
+4. **Database-Backed**: No mock data, real persistence
+5. **Clean Navigation**: Redirect to detail page after save (expected behavior)
+
+**Testing Methodology:**
+- Created unique test data with identifiable content
+- Verified update in UI (detail page, breadcrumb, history page)
+- Verified update in database with direct query
+- Tested persistence with page refresh
+- Took screenshots for visual proof
+- Zero console errors confirms clean implementation
+
+## Next Steps for Future Sessions
+
+1. **Continue Workflow Completeness features** (remaining 232 features)
+2. **Test other field editing**: status, notes, category updates
+3. **Test validation**: empty title, very long title, special characters
+4. **Test concurrent edits**: What happens if two sessions edit same decision?
+5. **Test edit permissions**: Verify users can't edit others' decisions
+
+## Notes
+
+This session focused on verifying the core editing workflow for decisions. The title field is the most prominent and frequently edited attribute, so ensuring it works correctly is critical for user experience.
+
+The successful verification proves that:
+1. Edit form properly loads existing data
+2. API correctly processes update requests
+3. Database changes persist
+4. UI reactively reflects changes across all views
+5. No caching or state management issues
+
+This is a fundamental CRUD operation (Update) that serves as a building block for editing other decision attributes like status, category, notes, etc.
+
+**Breadcrumb Regression Test:**
+During setup, also verified Feature #44 (Breadcrumbs) which tests navigation UX. Breadcrumbs correctly show the navigation path and enable easy navigation back to parent pages. The breadcrumb also dynamically updates when decision title changes, showing excellent component integration.
+
+Session 30 complete. Feature #82 passing. Regression test #44 confirmed passing. 59/291 features passing (20.3%).
