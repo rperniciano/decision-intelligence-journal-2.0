@@ -120,7 +120,9 @@ function DecisionCard({
 }
 
 // Empty state component
-function EmptyState() {
+function EmptyState({ searchQuery }: { searchQuery?: string }) {
+  const isSearching = searchQuery && searchQuery.trim().length > 0;
+
   return (
     <motion.div
       className="text-center py-16"
@@ -129,23 +131,35 @@ function EmptyState() {
       transition={{ delay: 0.2 }}
     >
       <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
-        <svg className="w-8 h-8 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
+        {isSearching ? (
+          <svg className="w-8 h-8 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        ) : (
+          <svg className="w-8 h-8 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )}
       </div>
-      <h3 className="text-lg font-medium mb-2">No decisions yet</h3>
+      <h3 className="text-lg font-medium mb-2">
+        {isSearching ? 'No results found' : 'No decisions yet'}
+      </h3>
       <p className="text-text-secondary text-sm max-w-sm mx-auto mb-6">
-        Start recording your decisions to build your history. Each decision becomes part of your journey.
+        {isSearching
+          ? 'Try adjusting your search terms or filters to find what you\'re looking for.'
+          : 'Start recording your decisions to build your history. Each decision becomes part of your journey.'}
       </p>
-      <Link to="/record">
-        <motion.button
-          className="px-6 py-2.5 bg-accent text-bg-deep font-medium rounded-full hover:bg-accent-400 transition-all"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          Record Your First Decision
-        </motion.button>
-      </Link>
+      {!isSearching && (
+        <Link to="/record">
+          <motion.button
+            className="px-6 py-2.5 bg-accent text-bg-deep font-medium rounded-full hover:bg-accent-400 transition-all"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Record Your First Decision
+          </motion.button>
+        </Link>
+      )}
     </motion.div>
   );
 }
@@ -697,7 +711,7 @@ export function HistoryPage() {
             )}
           </>
         ) : (
-          <EmptyState />
+          <EmptyState searchQuery={searchQuery} />
         )}
       </main>
 
