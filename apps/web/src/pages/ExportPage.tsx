@@ -2,17 +2,65 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { supabase } from '../lib/supabase';
 
 export function ExportPage() {
   const [exporting, setExporting] = useState<string | null>(null);
 
   const handleExport = async (format: 'json' | 'csv' | 'pdf') => {
     setExporting(format);
-    // TODO: Implement actual export functionality
-    setTimeout(() => {
+
+    try {
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('You must be logged in to export data');
+        setExporting(null);
+        return;
+      }
+
+      // Fetch all decisions from API
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions?limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch decisions');
+      }
+
+      const data = await response.json();
+      const decisions = data.decisions || [];
+
+      if (format === 'json') {
+        // Create JSON export
+        const exportData = {
+          exportDate: new Date().toISOString(),
+          totalDecisions: decisions.length,
+          decisions: decisions,
+        };
+
+        // Create and download file
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `decisions-export-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        // CSV and PDF not implemented yet
+        alert(`Export as ${format.toUpperCase()} - Coming soon!`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export data. Please try again.');
+    } finally {
       setExporting(null);
-      alert(`Export as ${format.toUpperCase()} - Coming soon!`);
-    }, 1500);
+    }
   };
 
   return (
