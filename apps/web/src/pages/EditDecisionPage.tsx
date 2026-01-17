@@ -75,9 +75,38 @@ export function EditDecisionPage() {
   }, [id, navigate]);
 
   const handleSave = async () => {
-    // TODO: Implement save functionality
-    console.log('Save clicked', { title, notes, status });
-    navigate(`/decisions/${id}`);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:3001/api/v1/decisions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description: notes,
+          status,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update decision');
+      }
+
+      // Navigate back to decision detail page
+      navigate(`/decisions/${id}`);
+    } catch (error) {
+      console.error('Error saving decision:', error);
+      // TODO: Show error message to user
+    }
   };
 
   const handleCancel = () => {
