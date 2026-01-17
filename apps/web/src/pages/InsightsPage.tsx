@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 // Pattern card component
 function PatternCard({
@@ -166,17 +168,107 @@ function EmptyState() {
   );
 }
 
+interface InsightsData {
+  totalDecisions: number;
+  decisionsWithOutcomes: number;
+  positiveOutcomes: number;
+  negativeOutcomes: number;
+  neutralOutcomes: number;
+  emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }>;
+  decisionScore: number;
+}
+
 export function InsightsPage() {
-  // Mock data - will be replaced with real API data
-  const hasData = false; // Set to true when user has enough data
-  const decisionScore = 50;
-  const scoreTrend = 0;
+  const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchInsights() {
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session.data.session?.access_token;
+
+        if (!token) return;
+
+        // Fetch all decisions with outcomes
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions?limit=1000`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch decisions');
+
+        const result = await response.json();
+        const decisions = result.decisions || [];
+
+        // Calculate insights from real data
+        const decisionsWithOutcomes = decisions.filter((d: any) => d.outcome);
+        const positiveOutcomes = decisionsWithOutcomes.filter((d: any) => d.outcome === 'better').length;
+        const negativeOutcomes = decisionsWithOutcomes.filter((d: any) => d.outcome === 'worse').length;
+        const neutralOutcomes = decisionsWithOutcomes.filter((d: any) => d.outcome === 'as_expected').length;
+
+        // Emotional patterns analysis
+        const emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }> = {};
+        decisionsWithOutcomes.forEach((d: any) => {
+          const emotion = d.emotional_state || 'unknown';
+          if (!emotionalPatterns[emotion]) {
+            emotionalPatterns[emotion] = { better: 0, worse: 0, as_expected: 0 };
+          }
+          if (d.outcome === 'better') emotionalPatterns[emotion].better++;
+          else if (d.outcome === 'worse') emotionalPatterns[emotion].worse++;
+          else if (d.outcome === 'as_expected') emotionalPatterns[emotion].as_expected++;
+        });
+
+        // Calculate decision score (simple formula: total decisions * 2, max 100)
+        const decisionScore = Math.min(100, decisions.length * 2);
+
+        setInsightsData({
+          totalDecisions: decisions.length,
+          decisionsWithOutcomes: decisionsWithOutcomes.length,
+          positiveOutcomes,
+          negativeOutcomes,
+          neutralOutcomes,
+          emotionalPatterns,
+          decisionScore,
+        });
+      } catch (error) {
+        console.error('Error fetching insights:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchInsights();
+  }, []);
+
+  const hasData = insightsData && insightsData.decisionsWithOutcomes >= 3;
+  const decisionScore = insightsData?.decisionScore || 0;
+  const scoreTrend = 0; // Will be calculated from historical data in future
+
+  // Generate patterns from real data
+  const bestEmotionalState = insightsData ? (() => {
+    const emotions = Object.entries(insightsData.emotionalPatterns);
+    if (emotions.length === 0) return 'Not enough data';
+
+    const bestEmotion = emotions.reduce((best, [emotion, outcomes]) => {
+      const successRate = outcomes.better / (outcomes.better + outcomes.worse + outcomes.as_expected || 1);
+      const bestRate = best.rate;
+      return successRate > bestRate ? { emotion, rate: successRate } : best;
+    }, { emotion: 'unknown', rate: 0 });
+
+    return bestEmotion.emotion !== 'unknown' ? `${bestEmotion.emotion} (${Math.round(bestEmotion.rate * 100)}% success)` : 'Not enough data';
+  })() : 'Not enough data';
+
+  const outcomeRate = insightsData && insightsData.decisionsWithOutcomes > 0
+    ? `${Math.round((insightsData.positiveOutcomes / insightsData.decisionsWithOutcomes) * 100)}% positive`
+    : 'Not enough data';
 
   const patterns = [
     {
-      title: 'Timing Pattern',
-      description: 'Your best decision-making hours',
-      value: 'Not enough data',
+      title: 'Outcome Rate',
+      description: 'Your positive outcome percentage',
+      value: outcomeRate,
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -185,8 +277,8 @@ export function InsightsPage() {
     },
     {
       title: 'Emotional Impact',
-      description: 'How emotions affect your choices',
-      value: 'Not enough data',
+      description: 'Your most successful mindset',
+      value: bestEmotionalState,
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
@@ -194,9 +286,9 @@ export function InsightsPage() {
       ),
     },
     {
-      title: 'Category Performance',
-      description: 'Success rates by decision type',
-      value: 'Not enough data',
+      title: 'Decision Count',
+      description: 'Total decisions tracked',
+      value: insightsData ? `${insightsData.totalDecisions} decisions` : 'Not enough data',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />

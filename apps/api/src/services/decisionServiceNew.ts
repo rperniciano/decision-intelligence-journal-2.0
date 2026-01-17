@@ -97,7 +97,10 @@ export class DecisionService {
         })).sort((a: any, b: any) => a.display_order - b.display_order),
         notes: d.description,
         transcription: d.raw_transcript,
-        deleted_at: d.deleted_at
+        deleted_at: d.deleted_at,
+        outcome: d.outcome,
+        outcome_notes: d.outcome_notes,
+        outcome_recorded_at: d.outcome_recorded_at
       }));
 
       return {
@@ -416,7 +419,10 @@ export class DecisionService {
         })).sort((a: any, b: any) => a.display_order - b.display_order),
         notes: d.description,
         transcription: d.raw_transcript,
-        deleted_at: d.deleted_at
+        deleted_at: d.deleted_at,
+        outcome: d.outcome,
+        outcome_notes: d.outcome_notes,
+        outcome_recorded_at: d.outcome_recorded_at
       }));
 
       return {
