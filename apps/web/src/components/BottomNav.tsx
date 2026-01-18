@@ -68,7 +68,7 @@ export function BottomNav() {
         <NavItem to="/history" label="History" icon={HistoryIcon} />
 
         {/* Center Record Button */}
-        <NavLink to="/record" className="flex flex-col items-center justify-center -mt-4">
+        <NavLink to="/record" className="flex flex-col items-center justify-center -mt-4" aria-label="Record a new decision">
           <motion.div
             className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent-strong flex items-center justify-center text-bg-deep shadow-lg"
             whileHover={{ scale: 1.05 }}

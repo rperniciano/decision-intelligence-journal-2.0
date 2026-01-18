@@ -247,8 +247,9 @@ export function CreateDecisionPage() {
           <button
             onClick={handleCancel}
             className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+            aria-label="Go back"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -363,8 +364,9 @@ export function CreateDecisionPage() {
                         type="button"
                         onClick={() => removeOption(option.id)}
                         className="px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        aria-label={`Remove option ${index + 1}`}
                       >
-                        ×
+                        <span aria-hidden="true">×</span>
                       </button>
                     </div>
 
@@ -378,8 +380,9 @@ export function CreateDecisionPage() {
                               type="button"
                               onClick={() => removeProCon(option.id, 'pros', proIndex)}
                               className="text-xs text-red-400 hover:text-red-300"
+                              aria-label={`Remove pro: ${pro}`}
                             >
-                              ×
+                              <span aria-hidden="true">×</span>
                             </button>
                           </div>
                         ))}
@@ -405,8 +408,9 @@ export function CreateDecisionPage() {
                               type="button"
                               onClick={() => removeProCon(option.id, 'cons', conIndex)}
                               className="text-xs text-red-400 hover:text-red-300"
+                              aria-label={`Remove con: ${con}`}
                             >
-                              ×
+                              <span aria-hidden="true">×</span>
                             </button>
                           </div>
                         ))}

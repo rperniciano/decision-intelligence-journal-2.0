@@ -66,9 +66,11 @@ function SettingRow({
 function Toggle({
   enabled,
   onChange,
+  label,
 }: {
   enabled: boolean;
   onChange: (enabled: boolean) => void;
+  label: string;
 }) {
   return (
     <button
@@ -76,6 +78,9 @@ function Toggle({
       className={`relative w-12 h-7 rounded-full transition-colors ${
         enabled ? 'bg-accent' : 'bg-white/10'
       }`}
+      role="switch"
+      aria-checked={enabled}
+      aria-label={label}
     >
       <motion.div
         className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-md"
@@ -290,6 +295,7 @@ export function SettingsPage() {
               <Toggle
                 enabled={notificationsEnabled}
                 onChange={handleNotificationToggle}
+                label="Toggle outcome reminders"
               />
             }
           />
@@ -301,6 +307,7 @@ export function SettingsPage() {
               <Toggle
                 enabled={weeklyDigestEnabled}
                 onChange={handleWeeklyDigestToggle}
+                label="Toggle weekly digest"
               />
             }
           />

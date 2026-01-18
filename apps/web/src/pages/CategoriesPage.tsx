@@ -200,8 +200,9 @@ export function CategoriesPage() {
           <button
             onClick={() => navigate('/settings')}
             className="p-2 glass glass-hover rounded-lg transition-all duration-200"
+            aria-label="Go back to settings"
           >
-            <div className="text-text-secondary">
+            <div className="text-text-secondary" aria-hidden="true">
               <ArrowLeft />
             </div>
           </button>
@@ -259,14 +260,14 @@ export function CategoriesPage() {
                       <button
                         onClick={() => handleEditCategory(category)}
                         className="p-2 glass glass-hover rounded-lg text-text-secondary hover:text-accent transition-all duration-200"
-                        title="Edit category"
+                        aria-label={`Edit category: ${category.name}`}
                       >
                         <Edit />
                       </button>
                       <button
                         onClick={() => handleDeleteCategory(category)}
                         className="p-2 glass glass-hover rounded-lg text-text-secondary hover:text-red-400 transition-all duration-200"
-                        title="Delete category"
+                        aria-label={`Delete category: ${category.name}`}
                       >
                         <Trash />
                       </button>
@@ -310,7 +311,7 @@ export function CategoriesPage() {
               <label className="block text-sm font-medium text-text-secondary mb-2">
                 Select Emoji
               </label>
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-6 gap-2" role="group" aria-label="Select emoji icon">
                 {EMOJI_OPTIONS.map((emoji) => (
                   <button
                     key={emoji}
@@ -320,6 +321,8 @@ export function CategoriesPage() {
                         ? 'bg-accent/20 ring-2 ring-accent'
                         : 'glass glass-hover'
                     }`}
+                    aria-label={`Select ${emoji} emoji`}
+                    aria-pressed={selectedIcon === emoji}
                   >
                     {emoji}
                   </button>
@@ -332,7 +335,7 @@ export function CategoriesPage() {
               <label className="block text-sm font-medium text-text-secondary mb-2">
                 Select Color
               </label>
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-6 gap-2" role="group" aria-label="Select category color">
                 {COLOR_OPTIONS.map((color) => (
                   <button
                     key={color.value}
@@ -343,7 +346,8 @@ export function CategoriesPage() {
                         : 'hover:scale-110'
                     }`}
                     style={{ backgroundColor: color.value }}
-                    title={color.name}
+                    aria-label={`Select ${color.name} color`}
+                    aria-pressed={selectedColor === color.value}
                   />
                 ))}
               </div>
@@ -401,7 +405,7 @@ export function CategoriesPage() {
               <label className="block text-sm font-medium text-text-secondary mb-2">
                 Select Emoji
               </label>
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-6 gap-2" role="group" aria-label="Select emoji icon">
                 {EMOJI_OPTIONS.map((emoji) => (
                   <button
                     key={emoji}
@@ -411,6 +415,8 @@ export function CategoriesPage() {
                         ? 'bg-accent/20 ring-2 ring-accent'
                         : 'glass glass-hover'
                     }`}
+                    aria-label={`Select ${emoji} emoji`}
+                    aria-pressed={selectedIcon === emoji}
                   >
                     {emoji}
                   </button>
@@ -423,7 +429,7 @@ export function CategoriesPage() {
               <label className="block text-sm font-medium text-text-secondary mb-2">
                 Select Color
               </label>
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-6 gap-2" role="group" aria-label="Select category color">
                 {COLOR_OPTIONS.map((color) => (
                   <button
                     key={color.value}
@@ -434,7 +440,8 @@ export function CategoriesPage() {
                         : 'hover:scale-110'
                     }`}
                     style={{ backgroundColor: color.value }}
-                    title={color.name}
+                    aria-label={`Select ${color.name} color`}
+                    aria-pressed={selectedColor === color.value}
                   />
                 ))}
               </div>

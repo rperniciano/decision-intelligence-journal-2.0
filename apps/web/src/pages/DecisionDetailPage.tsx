@@ -334,8 +334,9 @@ export function DecisionDetailPage() {
             <button
               onClick={() => navigate(-1)}
               className="p-2 hover:bg-white/5 rounded-full transition-colors"
+              aria-label="Go back"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -607,7 +608,7 @@ export function DecisionDetailPage() {
               <label className="block text-sm font-medium mb-2">
                 Satisfaction: {outcomeSatisfaction}/5
               </label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" role="group" aria-label="Satisfaction rating">
                 {[1, 2, 3, 4, 5].map((level) => (
                   <button
                     key={level}
@@ -618,8 +619,10 @@ export function DecisionDetailPage() {
                         ? 'text-accent scale-110'
                         : 'text-white/20 hover:text-white/40'
                     }`}
+                    aria-label={`${level} star${level > 1 ? 's' : ''}`}
+                    aria-pressed={level <= outcomeSatisfaction}
                   >
-                    <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                     </svg>
                   </button>

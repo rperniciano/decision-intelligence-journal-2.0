@@ -728,8 +728,9 @@ export function HistoryPage() {
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
                   className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                  aria-label="Go to previous page"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
@@ -754,8 +755,9 @@ export function HistoryPage() {
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
                   className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                  aria-label="Go to next page"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>

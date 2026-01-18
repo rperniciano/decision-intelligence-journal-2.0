@@ -661,8 +661,9 @@ export function EditDecisionPage() {
           <button
             onClick={handleCancel}
             className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+            aria-label="Go back"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -762,7 +763,7 @@ export function EditDecisionPage() {
                 <label className="block text-sm font-medium mb-2 text-accent">
                   Confidence Level: {confidenceLevel}/5
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" role="group" aria-label="Confidence level rating">
                   {[1, 2, 3, 4, 5].map((level) => (
                     <button
                       key={level}
@@ -773,8 +774,10 @@ export function EditDecisionPage() {
                           ? 'text-accent scale-110'
                           : 'text-white/20 hover:text-white/40'
                       }`}
+                      aria-label={`${level} star${level > 1 ? 's' : ''}`}
+                      aria-pressed={level <= confidenceLevel}
                     >
-                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                       </svg>
                     </button>
@@ -894,9 +897,9 @@ export function EditDecisionPage() {
                     <button
                       onClick={() => handleRemoveOption(option.id)}
                       className="p-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-all"
-                      title="Remove option"
+                      aria-label={`Remove option: ${option.text}`}
                     >
-                      <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -923,18 +926,18 @@ export function EditDecisionPage() {
                           <button
                             onClick={() => handleSwitchProCon(pro.id, option.id, 'pro', pro.content, index)}
                             className="p-1.5 hover:bg-blue-500/20 rounded transition-all"
-                            title="Switch to con"
+                            aria-label="Switch to con"
                           >
-                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                             </svg>
                           </button>
                           <button
                             onClick={() => handleDeleteProCon(pro.id, option.id, 'pro', index)}
                             className="p-1.5 hover:bg-red-500/20 rounded transition-all"
-                            title="Remove pro"
+                            aria-label="Remove pro"
                           >
-                            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
@@ -953,9 +956,9 @@ export function EditDecisionPage() {
                         <button
                           onClick={() => handleAddPro(option.id, newProInputs[option.id] || '')}
                           className="p-1.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded transition-all"
-                          title="Add pro"
+                          aria-label="Add pro"
                         >
-                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                         </button>
@@ -984,18 +987,18 @@ export function EditDecisionPage() {
                           <button
                             onClick={() => handleSwitchProCon(con.id, option.id, 'con', con.content, index)}
                             className="p-1.5 hover:bg-blue-500/20 rounded transition-all"
-                            title="Switch to pro"
+                            aria-label="Switch to pro"
                           >
-                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                             </svg>
                           </button>
                           <button
                             onClick={() => handleDeleteProCon(con.id, option.id, 'con', index)}
                             className="p-1.5 hover:bg-red-500/20 rounded transition-all"
-                            title="Remove con"
+                            aria-label="Remove con"
                           >
-                            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
@@ -1014,9 +1017,9 @@ export function EditDecisionPage() {
                         <button
                           onClick={() => handleAddCon(option.id, newConInputs[option.id] || '')}
                           className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded transition-all"
-                          title="Add con"
+                          aria-label="Add con"
                         >
-                          <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                         </button>
@@ -1039,9 +1042,9 @@ export function EditDecisionPage() {
                 <button
                   onClick={handleAddOption}
                   className="p-3 bg-accent/10 hover:bg-accent/20 border border-accent/20 rounded-xl transition-all"
-                  title="Add option"
+                  aria-label="Add option"
                 >
-                  <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
