@@ -8621,3 +8621,89 @@ Continue with Feature #137: Loading spinner during all async ops
 - feature-142-multi-tab-consistency.png
 - feature-143-no-duplicate-after-back.png
 - feature-144-bookmark-deep-link.png
+
+# Session - 2026-01-19
+## Feature #245: Screen reader can navigate main content ✅
+
+### Summary
+Added proper ARIA landmark regions to all pages to ensure screen readers can navigate to main content. This is a critical accessibility feature that allows screen reader users to jump directly to the main content using keyboard shortcuts.
+
+### Changes Made
+
+**App.tsx (LandingPage):**
+- Changed outer `<div>` to `<main>` element with `role="main"` and `aria-label="Welcome to Decisions"`
+- Wrapped buttons in `<nav>` element with `aria-label="Get started"`
+- Added `aria-hidden="true"` to decorative orb animation and grain overlay
+
+**App.tsx (NotFound):**
+- Added `<main>` element with `role="main"` and `aria-label="Page not found"`
+- Added `aria-hidden="true"` to grain overlay
+
+**App.tsx (PlaceholderPage):**
+- Added `<main>` element with `role="main"` and dynamic `aria-label={title}`
+- Added `aria-hidden="true"` to grain overlay
+
+**LoginPage.tsx:**
+- Wrapped content in `<main>` element with `role="main"` and `aria-label="Sign in"`
+- Changed header section to `<header>` element
+- Added `aria-label="Go to homepage"` to logo link
+- Added `aria-hidden="true"` to decorative elements
+
+**RegisterPage.tsx:**
+- Added `<main>` element to both success and form states
+- Success state: `aria-label="Registration success"`
+- Form state: `aria-label="Create account"`
+- Changed header section to `<header>` element
+- Added `aria-label="Go to homepage"` to logo link
+- Added `aria-hidden="true"` to decorative elements
+
+### Verification
+Tested using Playwright accessibility tree snapshots (which mirror what screen readers detect):
+
+**Landing Page:**
+- `main "Welcome to Decisions"` ✅
+- `navigation "Get started"` ✅
+- `heading "Decisions" [level=1]` ✅
+
+**Login Page:**
+- `main "Sign in"` ✅
+- `heading "Welcome Back" [level=1]` ✅
+
+**Register Page:**
+- `main "Create account"` ✅
+- `heading "Create Account" [level=1]` ✅
+
+**Dashboard (already had landmarks):**
+- `banner` (header) ✅
+- `main` ✅
+- `navigation` (bottom nav) ✅
+
+**History, Insights, Settings (already had landmarks):**
+- All have `banner`, `main`, and `navigation` landmarks ✅
+
+### Screenshots
+- feature-245-landing-main-landmark.png
+- feature-245-register-landmarks.png
+- feature-245-dashboard-landmarks.png
+- feature-245-settings-landmarks.png
+
+### Test Account
+- Email: session72test@example.com
+- Password: testpass123
+
+### Session Statistics
+- Feature completed: #245 (Screen reader can navigate main content)
+- Progress: 190/291 features (65.3%)
+
+### Technical Notes
+Screen reader navigation landmarks:
+- `main` - Primary content area (navigable with "D" key in NVDA/VoiceOver)
+- `banner` - Page header (typically contains logo, nav)
+- `navigation` - Navigation links
+- `aria-hidden="true"` - Hides decorative elements from screen readers
+
+The `role="main"` attribute is redundant with `<main>` element but provides extra clarity and backward compatibility with older assistive technologies.
+
+### Commit
+2b1d5cc - Add accessibility landmarks for screen reader navigation - Feature #245
+
