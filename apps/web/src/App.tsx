@@ -23,51 +23,53 @@ import { CategoriesPage } from './pages/CategoriesPage';
 function LandingPage() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <motion.div
-        className="text-center"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
-      >
+      <main className="text-center" role="main" aria-label="Welcome to Decisions">
         <motion.div
-          className="w-24 h-24 mx-auto mb-8 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent-strong"
-          animate={{
-            scale: [1, 1.05, 1],
-            opacity: [0.9, 1, 0.9]
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <h1 className="text-4xl font-semibold mb-4 text-gradient">Decisions</h1>
-        <p className="text-text-secondary text-lg mb-8 max-w-md mx-auto">
-          Your voice-first decision intelligence journal. Speak your decisions, discover your patterns.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/register">
-            <motion.button
-              className="px-8 py-3 bg-accent text-bg-deep font-medium rounded-full hover:bg-accent-400 transition-all duration-200"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Begin Your Journal
-            </motion.button>
-          </Link>
-          <Link to="/login">
-            <motion.button
-              className="px-8 py-3 glass glass-hover rounded-full font-medium transition-all duration-200"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Sign In
-            </motion.button>
-          </Link>
-        </div>
-      </motion.div>
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
+        >
+          <motion.div
+            className="w-24 h-24 mx-auto mb-8 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent-strong"
+            animate={{
+              scale: [1, 1.05, 1],
+              opacity: [0.9, 1, 0.9]
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            aria-hidden="true"
+          />
+          <h1 className="text-4xl font-semibold mb-4 text-gradient">Decisions</h1>
+          <p className="text-text-secondary text-lg mb-8 max-w-md mx-auto">
+            Your voice-first decision intelligence journal. Speak your decisions, discover your patterns.
+          </p>
+          <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Get started">
+            <Link to="/register">
+              <motion.button
+                className="px-8 py-3 bg-accent text-bg-deep font-medium rounded-full hover:bg-accent-400 transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Begin Your Journal
+              </motion.button>
+            </Link>
+            <Link to="/login">
+              <motion.button
+                className="px-8 py-3 glass glass-hover rounded-full font-medium transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Sign In
+              </motion.button>
+            </Link>
+          </nav>
+        </motion.div>
+      </main>
       {/* Grain overlay */}
-      <div className="grain-overlay" />
+      <div className="grain-overlay" aria-hidden="true" />
     </div>
   );
 }
@@ -76,9 +78,11 @@ function LandingPage() {
 function PlaceholderPage({ title }: { title: string }) {
   return (
     <div className="min-h-screen p-8">
-      <h1 className="text-2xl font-semibold mb-4">{title}</h1>
-      <p className="text-text-secondary">This page is coming soon.</p>
-      <div className="grain-overlay" />
+      <main role="main" aria-label={title}>
+        <h1 className="text-2xl font-semibold mb-4">{title}</h1>
+        <p className="text-text-secondary">This page is coming soon.</p>
+      </main>
+      <div className="grain-overlay" aria-hidden="true" />
     </div>
   );
 }
@@ -87,25 +91,26 @@ function PlaceholderPage({ title }: { title: string }) {
 function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <motion.div
-        className="text-center"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
-      >
-        <h1 className="text-6xl font-bold text-accent mb-4">404</h1>
-        <p className="text-text-secondary text-lg mb-8">Page not found</p>
-        <Link to="/">
-          <motion.button
-            className="px-6 py-2 glass glass-hover rounded-full transition-all duration-200"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Go Home
-          </motion.button>
-        </Link>
-      </motion.div>
-      <div className="grain-overlay" />
+      <main className="text-center" role="main" aria-label="Page not found">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+        >
+          <h1 className="text-6xl font-bold text-accent mb-4">404</h1>
+          <p className="text-text-secondary text-lg mb-8">Page not found</p>
+          <Link to="/">
+            <motion.button
+              className="px-6 py-2 glass glass-hover rounded-full transition-all duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Go Home
+            </motion.button>
+          </Link>
+        </motion.div>
+      </main>
+      <div className="grain-overlay" aria-hidden="true" />
     </div>
   );
 }

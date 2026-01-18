@@ -10,7 +10,7 @@ const supabase = createClient(
 );
 
 async function createTestDecisions() {
-  const email = 'session73test@example.com';
+  const email = 'session72test@example.com';
 
   // Get user ID
   const { data: users } = await supabase.auth.admin.listUsers();
@@ -32,7 +32,7 @@ async function createTestDecisions() {
       status: 'decided',
       category_id: null,
       outcome: 'better',
-      outcome_note: 'Great decision! Love the new role.',
+      outcome_notes: 'Great decision! Love the new role.',
     },
     {
       user_id: user.id,
@@ -41,7 +41,7 @@ async function createTestDecisions() {
       status: 'decided',
       category_id: null,
       outcome: 'worse',
-      outcome_note: 'Lost some money, should have researched more.',
+      outcome_notes: 'Lost some money, should have researched more.',
     },
     {
       user_id: user.id,
@@ -50,7 +50,7 @@ async function createTestDecisions() {
       status: 'decided',
       category_id: null,
       outcome: 'better',
-      outcome_note: 'Feeling great! More energy throughout the day.',
+      outcome_notes: 'Feeling great! More energy throughout the day.',
     },
     {
       user_id: user.id,
@@ -59,7 +59,7 @@ async function createTestDecisions() {
       status: 'decided',
       category_id: null,
       outcome: 'as_expected',
-      outcome_note: 'It has been okay, not great but not bad either.',
+      outcome_notes: 'It has been okay, not great but not bad either.',
     },
     {
       user_id: user.id,
@@ -68,7 +68,7 @@ async function createTestDecisions() {
       status: 'decided',
       category_id: null,
       outcome: 'better',
-      outcome_note: 'Amazing! Opens up new opportunities.',
+      outcome_notes: 'Amazing! Opens up new opportunities.',
     },
   ];
 

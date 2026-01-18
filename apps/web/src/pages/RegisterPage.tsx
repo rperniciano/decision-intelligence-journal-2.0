@@ -55,55 +55,57 @@ export function RegisterPage() {
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
-          className="w-full max-w-md text-center"
-        >
-          <div className="glass p-8 rounded-2xl rim-light">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
-              <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+        <main className="w-full max-w-md text-center" role="main" aria-label="Registration success">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+          >
+            <div className="glass p-8 rounded-2xl rim-light">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center" aria-hidden="true">
+                <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Check your email</h2>
+              <p className="text-text-secondary mb-6">
+                We've sent you a confirmation link to <strong className="text-text-primary">{email}</strong>
+              </p>
+              <Link
+                to="/login"
+                className="inline-block px-6 py-2 bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent-400 transition-all duration-200"
+              >
+                Go to Login
+              </Link>
             </div>
-            <h2 className="text-xl font-semibold mb-2">Check your email</h2>
-            <p className="text-text-secondary mb-6">
-              We've sent you a confirmation link to <strong className="text-text-primary">{email}</strong>
-            </p>
-            <Link
-              to="/login"
-              className="inline-block px-6 py-2 bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent-400 transition-all duration-200"
-            >
-              Go to Login
-            </Link>
-          </div>
-        </motion.div>
-        <div className="grain-overlay" />
+          </motion.div>
+        </main>
+        <div className="grain-overlay" aria-hidden="true" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
-        className="w-full max-w-md"
-      >
-        {/* Logo and title */}
-        <div className="text-center mb-8">
-          <Link to="/">
-            <motion.div
-              className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            />
-          </Link>
-          <h1 className="text-2xl font-semibold text-gradient">Create Account</h1>
-          <p className="text-text-secondary mt-2">Begin your decision intelligence journey</p>
-        </div>
+      <main className="w-full max-w-md" role="main" aria-label="Create account">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+        >
+          {/* Logo and title */}
+          <header className="text-center mb-8">
+            <Link to="/" aria-label="Go to homepage">
+              <motion.div
+                className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-hidden="true"
+              />
+            </Link>
+            <h1 className="text-2xl font-semibold text-gradient">Create Account</h1>
+            <p className="text-text-secondary mt-2">Begin your decision intelligence journey</p>
+          </header>
 
         {/* Register card */}
         <div className="glass p-8 rounded-2xl rim-light">
@@ -243,10 +245,11 @@ export function RegisterPage() {
             </Link>
           </p>
         </div>
-      </motion.div>
+        </motion.div>
+      </main>
 
       {/* Grain overlay */}
-      <div className="grain-overlay" />
+      <div className="grain-overlay" aria-hidden="true" />
     </div>
   );
 }

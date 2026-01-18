@@ -41,24 +41,25 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
-        className="w-full max-w-md"
-      >
-        {/* Logo and title */}
-        <div className="text-center mb-8">
-          <Link to="/">
-            <motion.div
-              className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            />
-          </Link>
-          <h1 className="text-2xl font-semibold text-gradient">Welcome Back</h1>
-          <p className="text-text-secondary mt-2">Sign in to continue your journey</p>
-        </div>
+      <main className="w-full max-w-md" role="main" aria-label="Sign in">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+        >
+          {/* Logo and title */}
+          <header className="text-center mb-8">
+            <Link to="/" aria-label="Go to homepage">
+              <motion.div
+                className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-hidden="true"
+              />
+            </Link>
+            <h1 className="text-2xl font-semibold text-gradient">Welcome Back</h1>
+            <p className="text-text-secondary mt-2">Sign in to continue your journey</p>
+          </header>
 
         {/* Login card */}
         <div className="glass p-8 rounded-2xl rim-light">
@@ -168,10 +169,11 @@ export function LoginPage() {
             </Link>
           </p>
         </div>
-      </motion.div>
+        </motion.div>
+      </main>
 
       {/* Grain overlay */}
-      <div className="grain-overlay" />
+      <div className="grain-overlay" aria-hidden="true" />
     </div>
   );
 }

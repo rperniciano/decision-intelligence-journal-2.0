@@ -1116,10 +1116,40 @@ async function registerRoutes() {
     });
 
     // Export
-    api.post('/export/json', async (request) => {
+    api.post('/export/json', async (request, reply) => {
       const userId = request.user?.id;
-      // TODO: Implement JSON export
-      return { message: 'Export JSON - to be implemented', userId };
+      if (!userId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
+
+      try {
+        // Fetch all user's decisions
+        const { data: decisions, error } = await supabase
+          .from('decisions')
+          .select('*')
+          .eq('user_id', userId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        // Create export data
+        const exportData = {
+          exportDate: new Date().toISOString(),
+          totalDecisions: decisions?.length || 0,
+          decisions: decisions || [],
+        };
+
+        // Return JSON data directly (client handles download)
+        return exportData;
+      } catch (error) {
+        console.error('Export JSON error:', error);
+        reply.code(500);
+        return { error: 'Failed to export data' };
+      }
     });
 
     api.post('/export/csv', async (request) => {
@@ -1142,11 +1172,83 @@ async function registerRoutes() {
       return { outcomes: [], decisionId: id, userId };
     });
 
-    api.post('/decisions/:id/outcomes', async (request) => {
+    api.post('/decisions/:id/outcomes', async (request, reply) => {
       const { id } = request.params as { id: string };
       const userId = request.user?.id;
-      // TODO: Implement outcome creation
-      return { message: 'Create outcome - to be implemented', decisionId: id, userId };
+
+      if (!userId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
+
+      try {
+        const body = request.body as { result?: string; satisfaction?: number; notes?: string } | null;
+
+        console.log('Outcome recording - body:', JSON.stringify(body));
+        console.log('Outcome recording - id:', id);
+        console.log('Outcome recording - userId:', userId);
+
+        if (!body) {
+          reply.code(400);
+          return { error: 'Request body is required' };
+        }
+
+        // Map result to outcome value (better, worse, as_expected)
+        let outcome: string | undefined;
+        if (body.result === 'positive' || body.result === 'better') {
+          outcome = 'better';
+        } else if (body.result === 'negative' || body.result === 'worse') {
+          outcome = 'worse';
+        } else if (body.result === 'neutral' || body.result === 'as_expected') {
+          outcome = 'as_expected';
+        } else if (body.result) {
+          outcome = body.result; // Pass through if already valid
+        }
+
+        console.log('Outcome recording - mapped outcome:', outcome);
+
+        // Update the decision with outcome data
+        // Note: Keep existing status, just update outcome fields
+        const { data: updated, error } = await supabase
+          .from('decisions')
+          .update({
+            outcome: outcome,
+            outcome_notes: body.notes || null,
+            outcome_recorded_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .eq('user_id', userId)
+          .is('deleted_at', null)
+          .select()
+          .single();
+
+        console.log('Outcome recording - supabase result:', { updated, error });
+
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        if (!updated) {
+          reply.code(404);
+          return { error: 'Decision not found' };
+        }
+
+        return {
+          success: true,
+          outcome: {
+            id: id,
+            result: updated.outcome,
+            satisfaction: body.satisfaction,
+            notes: updated.outcome_notes,
+            recordedAt: updated.outcome_recorded_at
+          }
+        };
+      } catch (error) {
+        console.error('Error recording outcome:', error);
+        reply.code(500);
+        return { error: 'Failed to record outcome' };
+      }
     });
 
     // Reminders
