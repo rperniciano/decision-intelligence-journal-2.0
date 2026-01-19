@@ -9043,3 +9043,49 @@ All view state is preserved in URL parameters:
 
 Session complete. Feature #186 passing. 193/291 features (66.3%).
 
+
+# Testing Session - lun 19 gen 2026 19:25:38
+## Feature #208: Email format validated on login - VERIFIED ✅
+
+### Verification Steps
+1. ✅ Entered invalid email 'notanemail'
+2. ✅ Clicked Sign In button (triggered validation)
+3. ✅ Browser native email validation showed error: 'Add @ symbol'
+4. ✅ Entered valid email 'valid@example.com'
+5. ✅ Error cleared, form ready to submit
+
+### Screenshots
+- feature-208-invalid-email-step1.png - Shows validation error
+- feature-208-valid-email-step4.png - Error cleared with valid email
+
+### Result: PASSES - No regression detected
+[Testing] Feature #208 verified - still passing
+
+## Session - Feature #249 Implementation
+Date: 2026-01-19 19:34
+
+### Feature #249: Form fields have associated labels
+
+**Status:** COMPLETED ✅
+
+**What was done:**
+- Audited all forms across the application for proper label associations
+- Added htmlFor and id attributes to form inputs in:
+  - CreateDecisionPage.tsx (title, category, emotional state, status, notes, dynamic options)
+  - EditDecisionPage.tsx (title, status, chosen option, abandon reason, notes, category, dynamic options)
+  - CategoriesPage.tsx (category name, emoji selection, color selection)
+- Added screen reader only labels (sr-only) for dynamically generated option inputs
+- Added aria-labelledby for grouped selections (emoji picker, color picker)
+- LoginPage, RegisterPage, ForgotPasswordPage, and EditProfileModal already had proper labels
+
+**Verification:**
+- Used browser automation to verify all form fields have properly associated labels
+- Checked accessibility tree shows correct label associations
+- Tested Login page: `textbox "Email"`, `textbox "Password"` ✓
+- Tested Register page: `textbox "Name"`, `textbox "Email"`, `textbox "Password"`, `textbox "Confirm Password"` ✓
+- Tested Create Decision page: `textbox "Title *"`, `combobox "Category"`, `combobox "How are you feeling?"`, `combobox "Status"`, `textbox "Notes"` ✓
+- Tested dynamic option inputs: `textbox "Option 1 title"`, `textbox "Pros"`, `textbox "Cons"` ✓
+- Tested Categories page: `textbox "Category Name"`, `group "Select Emoji"`, `group "Select Color"` ✓
+
+**Commit:** 9f32ec3 feat(a11y): add proper label associations for all form fields - Feature #249
+
