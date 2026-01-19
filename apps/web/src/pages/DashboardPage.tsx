@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { SkipLink } from '../components/SkipLink';
 import { useState, useEffect } from 'react';
 import { showErrorAlert } from '../utils/errorHandling';
 
@@ -129,6 +130,7 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-screen pb-20">
+      <SkipLink />
       {/* Header */}
       <header className="border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -156,7 +158,7 @@ export function DashboardPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" tabIndex={-1}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

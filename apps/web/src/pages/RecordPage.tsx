@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { SkipLink } from '../components/SkipLink';
 
 export function RecordPage() {
   const navigate = useNavigate();
@@ -204,6 +205,7 @@ export function RecordPage() {
 
   return (
     <div className="fixed inset-0 bg-bg-deep z-50 flex flex-col">
+      <SkipLink />
       {/* Header */}
       <header className="flex items-center justify-between p-6 border-b border-white/5">
         <button
@@ -222,7 +224,7 @@ export function RecordPage() {
       </header>
 
       {/* Main recording area */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6">
+      <main id="main-content" className="flex-1 flex flex-col items-center justify-center p-6" tabIndex={-1}>
         {/* Error message with retry options */}
         {error && savedAudioBlob && (
           <motion.div

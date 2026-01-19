@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { SkipLink } from '../components/SkipLink';
 
 // Icons
 const ArrowLeft = () => (
@@ -194,6 +195,7 @@ export function CategoriesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-bg-deep via-bg-dark to-bg-darker">
+      <SkipLink />
       {/* Header */}
       <header className="glass-header border-b border-white/5">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
@@ -211,7 +213,7 @@ export function CategoriesPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+      <main id="main-content" className="container mx-auto px-4 py-8 max-w-2xl" tabIndex={-1}>
         {/* Create Button */}
         <motion.button
           onClick={() => setShowCreateModal(true)}

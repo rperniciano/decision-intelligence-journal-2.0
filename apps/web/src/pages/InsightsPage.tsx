@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { SkipLink } from '../components/SkipLink';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -303,6 +304,7 @@ export function InsightsPage() {
 
   return (
     <div className="min-h-screen pb-20">
+      <SkipLink />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-bg-deep/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-2xl mx-auto px-4 py-4">
@@ -317,7 +319,7 @@ export function InsightsPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main id="main-content" className="max-w-2xl mx-auto px-4 py-6" tabIndex={-1}>
         {hasData ? (
           <>
             {/* Decision Score */}

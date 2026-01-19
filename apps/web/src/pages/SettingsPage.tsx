@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { BottomNav } from '../components/BottomNav';
+import { SkipLink } from '../components/SkipLink';
 import { EditProfileModal } from '../components/EditProfileModal';
 
 // Setting section component
@@ -255,6 +256,7 @@ export function SettingsPage() {
 
   return (
     <div className="min-h-screen pb-20">
+      <SkipLink />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-bg-deep/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-2xl mx-auto px-4 py-4">
@@ -269,7 +271,7 @@ export function SettingsPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main id="main-content" className="max-w-2xl mx-auto px-4 py-6" tabIndex={-1}>
         {/* Profile Section */}
         <SettingSection title="Profile" delay={0.1} key={profileKey}>
           <button onClick={() => setIsEditProfileOpen(true)} className="w-full">

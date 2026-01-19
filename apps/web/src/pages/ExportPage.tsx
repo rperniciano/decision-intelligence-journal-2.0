@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { SkipLink } from '../components/SkipLink';
 import { supabase } from '../lib/supabase';
 
 export function ExportPage() {
@@ -131,6 +132,7 @@ export function ExportPage() {
 
   return (
     <div className="min-h-screen pb-20">
+      <SkipLink />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-bg-deep/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
@@ -150,7 +152,7 @@ export function ExportPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main id="main-content" className="max-w-2xl mx-auto px-4 py-6" tabIndex={-1}>
         <motion.p
           className="text-text-secondary mb-6"
           initial={{ opacity: 0, y: 10 }}

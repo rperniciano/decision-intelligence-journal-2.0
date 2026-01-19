@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
+import { SkipLink } from '../components/SkipLink';
 
 // Type definitions
 interface ProCon {
@@ -655,6 +656,7 @@ export function EditDecisionPage() {
 
   return (
     <div className="min-h-screen pb-20">
+      <SkipLink />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-bg-deep/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
@@ -672,7 +674,7 @@ export function EditDecisionPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main id="main-content" className="max-w-2xl mx-auto px-4 py-6" tabIndex={-1}>
         <motion.div
           className="space-y-6"
           initial={{ opacity: 0, y: 20 }}

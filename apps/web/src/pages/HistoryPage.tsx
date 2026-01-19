@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { FloatingActionButton } from '../components/FloatingActionButton';
+import { SkipLink } from '../components/SkipLink';
 import { supabase } from '../lib/supabase';
 import { showErrorAlert } from '../utils/errorHandling';
 
@@ -740,6 +741,7 @@ export function HistoryPage() {
 
   return (
     <div className="min-h-screen pb-20">
+      <SkipLink />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-bg-deep/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-2xl mx-auto px-4 py-4">
@@ -754,7 +756,7 @@ export function HistoryPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-2xl mx-auto px-4 py-4">
+      <main id="main-content" className="max-w-2xl mx-auto px-4 py-4" tabIndex={-1}>
         {/* Search bar */}
         <motion.div
           className="relative mb-4"
