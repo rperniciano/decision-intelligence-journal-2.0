@@ -164,6 +164,196 @@ function EmptyState({ searchQuery }: { searchQuery?: string }) {
   );
 }
 
+// Timeline view component - groups decisions by date
+function TimelineView({
+  decisions,
+  selectedDecisions,
+  onToggleSelect,
+}: {
+  decisions: Decision[];
+  selectedDecisions: Set<string>;
+  onToggleSelect: (id: string) => void;
+}) {
+  // Group decisions by date (Today, Yesterday, This Week, This Month, Older)
+  const groupDecisions = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(thisWeekStart.getDate() - 7);
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const groups: { [key: string]: Decision[] } = {
+      Today: [],
+      Yesterday: [],
+      'This Week': [],
+      'This Month': [],
+      Older: [],
+    };
+
+    decisions.forEach((decision) => {
+      const date = new Date(decision.createdAt);
+      const decisionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+      if (decisionDate.getTime() === today.getTime()) {
+        groups['Today'].push(decision);
+      } else if (decisionDate.getTime() === yesterday.getTime()) {
+        groups['Yesterday'].push(decision);
+      } else if (decisionDate >= thisWeekStart) {
+        groups['This Week'].push(decision);
+      } else if (decisionDate >= thisMonthStart) {
+        groups['This Month'].push(decision);
+      } else {
+        groups['Older'].push(decision);
+      }
+    });
+
+    // Return only non-empty groups
+    return Object.entries(groups).filter(([, items]) => items.length > 0);
+  };
+
+  const groupedDecisions = groupDecisions();
+
+  return (
+    <div className="space-y-8">
+      {groupedDecisions.map(([groupName, groupDecisions]) => (
+        <div key={groupName}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-3 h-3 rounded-full bg-accent" />
+            <h2 className="text-lg font-medium text-text-primary">{groupName}</h2>
+            <span className="text-sm text-text-secondary">({groupDecisions.length})</span>
+          </div>
+          <div className="border-l-2 border-white/10 ml-[5px] pl-6 space-y-3">
+            {groupDecisions.map((decision, index) => (
+              <DecisionCard
+                key={decision.id}
+                decision={decision}
+                index={index}
+                isSelected={selectedDecisions.has(decision.id)}
+                onToggleSelect={onToggleSelect}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Calendar view component - shows a heatmap-style calendar
+function CalendarView({
+  decisions,
+}: {
+  decisions: Decision[];
+}) {
+  // Get the current month's days
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay();
+
+  // Count decisions per day
+  const decisionsByDay: { [day: number]: Decision[] } = {};
+  decisions.forEach((decision) => {
+    const date = new Date(decision.createdAt);
+    if (date.getFullYear() === year && date.getMonth() === month) {
+      const day = date.getDate();
+      if (!decisionsByDay[day]) {
+        decisionsByDay[day] = [];
+      }
+      decisionsByDay[day].push(decision);
+    }
+  });
+
+  // Get intensity class based on number of decisions
+  const getIntensityClass = (count: number) => {
+    if (count === 0) return 'bg-white/5';
+    if (count === 1) return 'bg-accent/20';
+    if (count === 2) return 'bg-accent/40';
+    if (count <= 4) return 'bg-accent/60';
+    return 'bg-accent/80';
+  };
+
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  // Generate calendar grid
+  const calendarDays = [];
+  // Add empty cells for days before the first of the month
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarDays.push(null);
+  }
+  // Add days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(day);
+  }
+
+  return (
+    <div className="glass p-6 rounded-xl rim-light">
+      <h2 className="text-lg font-medium text-text-primary mb-4">
+        {monthNames[month]} {year}
+      </h2>
+
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {weekDays.map((day) => (
+          <div key={day} className="text-center text-xs text-text-secondary font-medium py-2">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {calendarDays.map((day, index) => {
+          if (day === null) {
+            return <div key={`empty-${index}`} className="aspect-square" />;
+          }
+
+          const count = decisionsByDay[day]?.length || 0;
+          const isToday = day === now.getDate();
+
+          return (
+            <div
+              key={day}
+              className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all cursor-default
+                ${getIntensityClass(count)}
+                ${isToday ? 'ring-2 ring-accent' : ''}
+              `}
+              title={`${count} decision${count !== 1 ? 's' : ''} on ${monthNames[month]} ${day}`}
+            >
+              <span className={`text-sm ${isToday ? 'font-bold text-accent' : 'text-text-primary'}`}>
+                {day}
+              </span>
+              {count > 0 && (
+                <span className="text-xs text-text-secondary">{count}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center justify-end gap-2 mt-4">
+        <span className="text-xs text-text-secondary">Less</span>
+        <div className="flex gap-1">
+          {[0, 1, 2, 3, 4].map((level) => (
+            <div
+              key={level}
+              className={`w-4 h-4 rounded-sm ${getIntensityClass(level)}`}
+            />
+          ))}
+        </div>
+        <span className="text-xs text-text-secondary">More</span>
+      </div>
+    </div>
+  );
+}
+
 // Filter chips
 const filterOptions = [
   { id: 'all', label: 'All' },
@@ -171,6 +361,22 @@ const filterOptions = [
   { id: 'decided', label: 'Decided' },
   { id: 'trash', label: 'Trash' },
 ];
+
+// View options
+const viewOptions = [
+  { id: 'list', label: 'List', icon: 'list' },
+  { id: 'timeline', label: 'Timeline', icon: 'timeline' },
+  { id: 'calendar', label: 'Calendar', icon: 'calendar' },
+] as const;
+
+type ViewType = typeof viewOptions[number]['id'];
+
+// Sort options that make sense per view
+const viewDefaultSorts: Record<ViewType, string> = {
+  list: 'date_desc',
+  timeline: 'date_desc', // Timeline always shows chronologically
+  calendar: 'date_desc', // Calendar shows by date
+};
 
 const ITEMS_PER_PAGE = 10;
 
@@ -180,11 +386,13 @@ export function HistoryPage() {
   const filterFromUrl = searchParams.get('filter') || 'all';
   const categoryFromUrl = searchParams.get('category') || 'all';
   const sortFromUrl = searchParams.get('sort') || 'date_desc';
+  const viewFromUrl = (searchParams.get('view') || 'list') as ViewType;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(filterFromUrl);
   const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
   const [sortBy, setSortBy] = useState(sortFromUrl);
+  const [activeView, setActiveView] = useState<ViewType>(viewFromUrl);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,12 +402,13 @@ export function HistoryPage() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [isPermanentlyDeleting, setIsPermanentlyDeleting] = useState(false);
 
-  // Update activeFilter, selectedCategory, and sortBy when URL changes (e.g., browser back/forward)
+  // Update activeFilter, selectedCategory, sortBy, and activeView when URL changes (e.g., browser back/forward)
   useEffect(() => {
     setActiveFilter(filterFromUrl);
     setSelectedCategory(categoryFromUrl);
     setSortBy(sortFromUrl);
-  }, [filterFromUrl, categoryFromUrl, sortFromUrl]);
+    setActiveView(viewFromUrl);
+  }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl]);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -330,6 +539,19 @@ export function HistoryPage() {
     newParams.set('page', page.toString());
     setSearchParams(newParams);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle view change - resets sort to view-appropriate default
+  const handleViewChange = (newView: ViewType) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('view', newView);
+    newParams.set('page', '1'); // Reset to page 1 when view changes
+
+    // Reset sort to the default sort for the new view
+    const newSort = viewDefaultSorts[newView];
+    newParams.set('sort', newSort);
+
+    setSearchParams(newParams);
   };
 
   // Toggle decision selection
@@ -555,31 +777,68 @@ export function HistoryPage() {
           />
         </motion.div>
 
-        {/* Filter chips */}
+        {/* Filter and View row */}
         <motion.div
-          className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide"
+          className="flex items-center justify-between gap-4 mb-4"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
         >
-          {filterOptions.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => {
-                const newParams = new URLSearchParams(searchParams);
-                newParams.set('filter', filter.id);
-                newParams.set('page', '1'); // Reset to page 1 when filter changes
-                setSearchParams(newParams);
-              }}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                activeFilter === filter.id
-                  ? 'bg-accent text-bg-deep'
-                  : 'bg-white/5 text-text-secondary hover:bg-white/10'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
+          {/* Filter chips */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-1">
+            {filterOptions.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => {
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', filter.id);
+                  newParams.set('page', '1'); // Reset to page 1 when filter changes
+                  setSearchParams(newParams);
+                }}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                  activeFilter === filter.id
+                    ? 'bg-accent text-bg-deep'
+                    : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          {/* View switcher */}
+          <div className="flex gap-1 bg-white/5 rounded-lg p-1" role="tablist" aria-label="View options">
+            {viewOptions.map((view) => (
+              <button
+                key={view.id}
+                onClick={() => handleViewChange(view.id)}
+                className={`p-2 rounded-md transition-all ${
+                  activeView === view.id
+                    ? 'bg-accent text-bg-deep'
+                    : 'text-text-secondary hover:bg-white/10'
+                }`}
+                role="tab"
+                aria-selected={activeView === view.id}
+                aria-label={`${view.label} view`}
+              >
+                {view.icon === 'list' && (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                )}
+                {view.icon === 'timeline' && (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                {view.icon === 'calendar' && (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
         </motion.div>
 
         {/* Category filter */}
@@ -611,32 +870,34 @@ export function HistoryPage() {
           </motion.div>
         )}
 
-        {/* Sort order */}
-        <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
-          <label className="block text-sm text-text-secondary mb-2">Sort by</label>
-          <select
-            value={sortBy}
-            onChange={(e) => {
-              const newParams = new URLSearchParams(searchParams);
-              newParams.set('sort', e.target.value);
-              newParams.set('page', '1');
-              setSearchParams(newParams);
-            }}
-            className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+        {/* Sort order - only visible in List view (Timeline/Calendar have fixed chronological order) */}
+        {activeView === 'list' && (
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
           >
-            <option value="date_desc">Newest First</option>
-            <option value="date_asc">Oldest First</option>
-            <option value="title_asc">Title (A-Z)</option>
-            <option value="title_desc">Title (Z-A)</option>
-            <option value="category_asc">Category (A-Z)</option>
-            <option value="category_desc">Category (Z-A)</option>
-          </select>
-        </motion.div>
+            <label className="block text-sm text-text-secondary mb-2">Sort by</label>
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set('sort', e.target.value);
+                newParams.set('page', '1');
+                setSearchParams(newParams);
+              }}
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+            >
+              <option value="date_desc">Newest First</option>
+              <option value="date_asc">Oldest First</option>
+              <option value="title_asc">Title (A-Z)</option>
+              <option value="title_desc">Title (Z-A)</option>
+              <option value="category_asc">Category (A-Z)</option>
+              <option value="category_desc">Category (Z-A)</option>
+            </select>
+          </motion.div>
+        )}
 
         {/* Bulk action toolbar */}
         {selectedDecisions.size > 0 && (
@@ -685,8 +946,8 @@ export function HistoryPage() {
           </motion.div>
         )}
 
-        {/* Select all button */}
-        {decisions.length > 0 && (
+        {/* Select all button - only for List and Timeline views (Calendar doesn't support selection) */}
+        {decisions.length > 0 && activeView !== 'calendar' && (
           <motion.div
             className="mb-3 flex justify-end"
             initial={{ opacity: 0 }}
@@ -701,67 +962,86 @@ export function HistoryPage() {
           </motion.div>
         )}
 
-        {/* Decisions list */}
+        {/* Decisions view */}
         {decisions.length > 0 ? (
           <>
-            <div className="space-y-3">
-              {paginatedDecisions.map((decision, index) => (
-                <DecisionCard
-                  key={decision.id}
-                  decision={decision}
-                  index={index}
-                  isSelected={selectedDecisions.has(decision.id)}
-                  onToggleSelect={toggleDecisionSelection}
-                />
-              ))}
-            </div>
-
-            {/* Pagination controls */}
-            {totalPages > 1 && (
-              <motion.div
-                className="flex items-center justify-center gap-2 mt-8"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                <button
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
-                  aria-label="Go to previous page"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-
-                <div className="flex gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => goToPage(page)}
-                      className={`min-w-[40px] px-3 py-2 rounded-lg font-medium transition-all ${
-                        currentPage === page
-                          ? 'bg-accent text-bg-deep'
-                          : 'bg-white/5 text-text-secondary hover:bg-white/10'
-                      }`}
-                    >
-                      {page}
-                    </button>
+            {/* List View */}
+            {activeView === 'list' && (
+              <>
+                <div className="space-y-3">
+                  {paginatedDecisions.map((decision, index) => (
+                    <DecisionCard
+                      key={decision.id}
+                      decision={decision}
+                      index={index}
+                      isSelected={selectedDecisions.has(decision.id)}
+                      onToggleSelect={toggleDecisionSelection}
+                    />
                   ))}
                 </div>
 
-                <button
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
-                  aria-label="Go to next page"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </motion.div>
+                {/* Pagination controls - only for list view */}
+                {totalPages > 1 && (
+                  <motion.div
+                    className="flex items-center justify-center gap-2 mt-8"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                      aria-label="Go to previous page"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    <div className="flex gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => goToPage(page)}
+                          className={`min-w-[40px] px-3 py-2 rounded-lg font-medium transition-all ${
+                            currentPage === page
+                              ? 'bg-accent text-bg-deep'
+                              : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                      aria-label="Go to next page"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </motion.div>
+                )}
+              </>
+            )}
+
+            {/* Timeline View */}
+            {activeView === 'timeline' && (
+              <TimelineView
+                decisions={paginatedDecisions}
+                selectedDecisions={selectedDecisions}
+                onToggleSelect={toggleDecisionSelection}
+              />
+            )}
+
+            {/* Calendar View */}
+            {activeView === 'calendar' && (
+              <CalendarView decisions={decisions} />
             )}
           </>
         ) : (
