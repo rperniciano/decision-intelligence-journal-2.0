@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
@@ -7,11 +7,16 @@ import { supabase } from '../lib/supabase';
 
 export function ExportPage() {
   const [exporting, setExporting] = useState<string | null>(null);
+  const isExportingRef = useRef(false);
 
   const handleExport = async (format: 'json' | 'csv' | 'pdf') => {
-    // Prevent multiple simultaneous exports
-    if (exporting) return;
+    // Prevent multiple simultaneous exports using ref for immediate check
+    if (isExportingRef.current) {
+      console.log('Export already in progress, ignoring duplicate click');
+      return;
+    }
 
+    isExportingRef.current = true;
     setExporting(format);
 
     try {
@@ -19,6 +24,7 @@ export function ExportPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         alert('You must be logged in to export data');
+        isExportingRef.current = false;
         setExporting(null);
         return;
       }
@@ -126,6 +132,7 @@ export function ExportPage() {
       console.error('Export error:', error);
       alert('Failed to export data. Please try again.');
     } finally {
+      isExportingRef.current = false;
       setExporting(null);
     }
   };
