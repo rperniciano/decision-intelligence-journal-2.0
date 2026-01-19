@@ -10,7 +10,6 @@ import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from './middleware/auth';
 import { DecisionService } from './services/decisionServiceNew';
-import { VoiceService } from './services/voiceService';
 import { AsyncVoiceService } from './services/asyncVoiceService';
 import { jobManager } from './services/jobManager';
 import { InsightsService } from './services/insightsService';
@@ -97,9 +96,8 @@ async function registerRoutes() {
         const query = request.query as any;
         const result = await DecisionService.getDecisions(userId, {
           status: query.status,
-          category: query.category,
+          categoryId: query.categoryId,
           search: query.search,
-          sort: query.sort || 'date_desc',
           limit: query.limit ? parseInt(query.limit) : 20,
           offset: query.offset ? parseInt(query.offset) : 0,
         });
@@ -773,7 +771,7 @@ async function registerRoutes() {
       }
     });
 
-    api.post('/recordings/:id/process', async (request, reply) => {
+    api.post('/recordings/:id/process', async (request) => {
       const { id } = request.params as { id: string };
       const userId = request.user?.id;
       // TODO: Implement processing trigger (verify ownership)
@@ -1082,7 +1080,7 @@ async function registerRoutes() {
         };
 
         // Update user metadata with notification preferences
-        const { data, error } = await supabase.auth.admin.updateUserById(
+        const { error } = await supabase.auth.admin.updateUserById(
           userId,
           {
             user_metadata: {

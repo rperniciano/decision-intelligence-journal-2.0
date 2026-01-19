@@ -1,4 +1,4 @@
-import type { ProcessingJob, ProcessingStatus } from '@decision-intelligence/shared/types/decision';
+import type { ProcessingJob, ProcessingStatus } from '@decisions/shared';
 import { randomUUID } from 'crypto';
 
 /**

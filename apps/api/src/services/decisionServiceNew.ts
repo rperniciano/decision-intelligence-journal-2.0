@@ -356,7 +356,7 @@ export class DecisionService {
       }
 
       // Update the decision
-      const { data: updated, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('decisions')
         .update(updateData)
         .eq('id', decisionId)

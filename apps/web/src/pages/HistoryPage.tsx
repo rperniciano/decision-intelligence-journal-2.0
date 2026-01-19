@@ -205,7 +205,7 @@ function EmptyState({ searchQuery }: { searchQuery?: string }) {
   );
 }
 
-// Timeline view component - groups decisions by date
+// Timeline view component - groups decisions by month/year
 function TimelineView({
   decisions,
   selectedDecisions,
@@ -215,43 +215,30 @@ function TimelineView({
   selectedDecisions: Set<string>;
   onToggleSelect: (id: string) => void;
 }) {
-  // Group decisions by date (Today, Yesterday, This Week, This Month, Older)
+  // Group decisions by month/year (e.g., "January 2026", "December 2025")
   const groupDecisions = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const thisWeekStart = new Date(today);
-    thisWeekStart.setDate(thisWeekStart.getDate() - 7);
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const groups: { [key: string]: Decision[] } = {
-      Today: [],
-      Yesterday: [],
-      'This Week': [],
-      'This Month': [],
-      Older: [],
-    };
+    const groups: { [key: string]: Decision[] } = {};
 
     decisions.forEach((decision) => {
       const date = new Date(decision.createdAt);
-      const decisionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      // Create month/year key (e.g., "January 2026")
+      const monthYear = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
 
-      if (decisionDate.getTime() === today.getTime()) {
-        groups['Today'].push(decision);
-      } else if (decisionDate.getTime() === yesterday.getTime()) {
-        groups['Yesterday'].push(decision);
-      } else if (decisionDate >= thisWeekStart) {
-        groups['This Week'].push(decision);
-      } else if (decisionDate >= thisMonthStart) {
-        groups['This Month'].push(decision);
-      } else {
-        groups['Older'].push(decision);
+      if (!groups[monthYear]) {
+        groups[monthYear] = [];
       }
+      groups[monthYear].push(decision);
     });
 
-    // Return only non-empty groups
-    return Object.entries(groups).filter(([, items]) => items.length > 0);
+    // Sort groups by date (newest first) and convert to array
+    const sortedGroups = Object.entries(groups).sort((a, b) => {
+      // Parse dates from group names to sort chronologically
+      const dateA = new Date(a[0]);
+      const dateB = new Date(b[0]);
+      return dateB.getTime() - dateA.getTime(); // Newest first
+    });
+
+    return sortedGroups;
   };
 
   const groupedDecisions = groupDecisions();

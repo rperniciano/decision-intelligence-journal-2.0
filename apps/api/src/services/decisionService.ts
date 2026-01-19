@@ -305,13 +305,23 @@ export class DecisionService {
     const decision = await this.getDecisionById(decisionId, userId);
     if (!decision) return null;
 
-    const updatedOptions = decision.options.map((opt: DecisionOption) => ({
-      ...opt,
-      isChosen: opt.id === optionId,
-    }));
+    // First, set all options for this decision to is_chosen = false
+    await supabase
+      .from('options')
+      .update({ is_chosen: false })
+      .eq('decision_id', decisionId);
 
+    // Then, set the chosen option to is_chosen = true
+    const { error: optionError } = await supabase
+      .from('options')
+      .update({ is_chosen: true })
+      .eq('id', optionId)
+      .eq('decision_id', decisionId);
+
+    if (optionError) throw optionError;
+
+    // Update the decision status and decided_at timestamp
     return await this.updateDecision(decisionId, userId, {
-      options: updatedOptions,
       status: 'decided',
       decided_at: new Date().toISOString(),
     });

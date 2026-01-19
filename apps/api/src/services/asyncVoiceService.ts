@@ -50,6 +50,10 @@ export class AsyncVoiceService {
         audio_duration_seconds: transcriptionResult.duration,
       });
 
+      if (!decision) {
+        throw new Error('Failed to create decision');
+      }
+
       // Mark job as completed
       jobManager.markCompleted(
         jobId,
