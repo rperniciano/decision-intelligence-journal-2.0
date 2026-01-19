@@ -73,6 +73,37 @@ async function registerPlugins() {
   });
 }
 
+// Helper functions for quiet hours
+function parseTimeString(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+function isInQuietHours(currentTimeStr: string, quietStart: string, quietEnd: string): boolean {
+  const currentMinutes = parseTimeString(currentTimeStr);
+  const startMinutes = parseTimeString(quietStart);
+  const endMinutes = parseTimeString(quietEnd);
+
+  if (endMinutes < startMinutes) {
+    // Quiet hours span midnight (e.g., 22:00 to 08:00)
+    return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+  } else {
+    // Quiet hours within same day (e.g., 01:00 to 05:00)
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  }
+}
+
+function getTodayTimeAt(timeStr: string, timezone: string): Date {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const now = new Date();
+
+  // Create a date for today at the specified time in the user's timezone
+  const result = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  result.setHours(hours, minutes, 0, 0);
+
+  return result;
+}
+
 // Register routes
 async function registerRoutes() {
   // Health check (public)
@@ -1067,6 +1098,41 @@ async function registerRoutes() {
       }
     });
 
+    // Get user settings
+    api.get('/profile/settings', async (request, reply) => {
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Fetch user with metadata
+        const { data: { user }, error } = await supabase.auth.admin.getUserById(userId);
+
+        if (error || !user) {
+          server.log.error({ error }, 'Failed to fetch user settings');
+          return reply.code(500).send({ error: 'Failed to fetch settings' });
+        }
+
+        const metadata = user.user_metadata || {};
+
+        return {
+          success: true,
+          settings: {
+            outcome_reminders_enabled: metadata.outcome_reminders_enabled ?? true,
+            weekly_digest_enabled: metadata.weekly_digest_enabled ?? false,
+            quiet_hours_enabled: metadata.quiet_hours_enabled ?? true,
+            quiet_hours_start: metadata.quiet_hours_start || '22:00',
+            quiet_hours_end: metadata.quiet_hours_end || '08:00',
+            timezone: metadata.timezone || 'UTC'
+          }
+        };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
     api.patch('/profile/settings', async (request, reply) => {
       try {
         const userId = request.user?.id;
@@ -1077,16 +1143,47 @@ async function registerRoutes() {
         const body = request.body as {
           outcome_reminders_enabled?: boolean;
           weekly_digest_enabled?: boolean;
+          quiet_hours_enabled?: boolean;
+          quiet_hours_start?: string; // "HH:MM" format
+          quiet_hours_end?: string; // "HH:MM" format
+          timezone?: string;
         };
+
+        // Validate time format if provided
+        const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+        if (body.quiet_hours_start && !timeRegex.test(body.quiet_hours_start)) {
+          return reply.code(400).send({ error: 'Invalid quiet_hours_start format. Use HH:MM' });
+        }
+        if (body.quiet_hours_end && !timeRegex.test(body.quiet_hours_end)) {
+          return reply.code(400).send({ error: 'Invalid quiet_hours_end format. Use HH:MM' });
+        }
+
+        // Build metadata update object with only provided fields
+        const metadataUpdate: Record<string, any> = {};
+        if (body.outcome_reminders_enabled !== undefined) {
+          metadataUpdate.outcome_reminders_enabled = body.outcome_reminders_enabled;
+        }
+        if (body.weekly_digest_enabled !== undefined) {
+          metadataUpdate.weekly_digest_enabled = body.weekly_digest_enabled;
+        }
+        if (body.quiet_hours_enabled !== undefined) {
+          metadataUpdate.quiet_hours_enabled = body.quiet_hours_enabled;
+        }
+        if (body.quiet_hours_start !== undefined) {
+          metadataUpdate.quiet_hours_start = body.quiet_hours_start;
+        }
+        if (body.quiet_hours_end !== undefined) {
+          metadataUpdate.quiet_hours_end = body.quiet_hours_end;
+        }
+        if (body.timezone !== undefined) {
+          metadataUpdate.timezone = body.timezone;
+        }
 
         // Update user metadata with notification preferences
         const { error } = await supabase.auth.admin.updateUserById(
           userId,
           {
-            user_metadata: {
-              outcome_reminders_enabled: body.outcome_reminders_enabled,
-              weekly_digest_enabled: body.weekly_digest_enabled
-            }
+            user_metadata: metadataUpdate
           }
         );
 
@@ -1097,10 +1194,7 @@ async function registerRoutes() {
 
         return {
           success: true,
-          settings: {
-            outcome_reminders_enabled: body.outcome_reminders_enabled,
-            weekly_digest_enabled: body.weekly_digest_enabled
-          }
+          settings: metadataUpdate
         };
       } catch (error) {
         server.log.error(error);
@@ -1462,34 +1556,115 @@ async function registerRoutes() {
           return reply.code(401).send({ error: 'Unauthorized' });
         }
 
-        // Query DecisionsFollowUpReminders table for pending reviews
-        const { data: reminders, error } = await supabase
-          .from('DecisionsFollowUpReminders')
+        // Fetch user settings to get quiet hours preference
+        const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+        const userMetadata = user?.user_metadata || {};
+
+        // Get quiet hours settings (default: 10pm-8am if not set)
+        const quietHoursStart = userMetadata.quiet_hours_start || '22:00';
+        const quietHoursEnd = userMetadata.quiet_hours_end || '08:00';
+        const quietHoursEnabled = userMetadata.quiet_hours_enabled !== false; // default true
+
+        // Get current time in user's timezone (or UTC if not specified)
+        const now = new Date();
+        const userTimezone = userMetadata.timezone || 'UTC';
+
+        // Create formatter for user's timezone
+        const timeZoneFormatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: userTimezone,
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+
+        // Get current time in user's timezone as "HH:MM"
+        const currentTimeStr = timeZoneFormatter.format(now);
+
+        // Check if current time is within quiet hours
+        const isCurrentlyQuietHours = quietHoursEnabled && isInQuietHours(currentTimeStr, quietHoursStart, quietHoursEnd);
+
+        // Query decisions table for pending outcome reviews
+        // A decision needs a review if it has a follow_up_date that has passed
+        // but hasn't been notified yet (or outcome not recorded)
+        const { data: decisions, error } = await supabase
+          .from('decisions')
           .select(`
             id,
-            decision_id,
-            remind_at,
+            title,
             status,
-            created_at,
-            decisions!inner(
-              id,
-              title,
-              status,
-              category,
-              decided_at
-            )
+            decided_at,
+            follow_up_date,
+            follow_up_notified
           `)
           .eq('user_id', userId)
-          .eq('status', 'pending')
-          .lte('remind_at', new Date().toISOString())
-          .order('remind_at', { ascending: true });
+          .not('follow_up_date', 'is', null)
+          .lte('follow_up_date', new Date().toISOString())
+          .order('follow_up_date', { ascending: true });
 
         if (error) {
           server.log.error(error);
           return reply.code(500).send({ error: 'Failed to fetch pending reviews' });
         }
 
-        return { pendingReviews: reminders || [] };
+        // Filter decisions based on quiet hours
+        let filteredDecisions = decisions || [];
+
+        if (isCurrentlyQuietHours && quietHoursEnabled) {
+          // During quiet hours, only show decisions whose follow_up_date was BEFORE quiet hours started today
+
+          // Calculate when quiet hours started today
+          const todayQuietStart = getTodayTimeAt(quietHoursStart, userTimezone);
+          const todayQuietEnd = getTodayTimeAt(quietHoursEnd, userTimezone);
+
+          server.log.info({
+            currentTime: now.toISOString(),
+            currentTimeStr,
+            quietHoursStart,
+            quietHoursEnd,
+            userTimezone,
+            todayQuietStart: todayQuietStart.toISOString(),
+            todayQuietEnd: todayQuietEnd.toISOString(),
+            isCurrentlyQuietHours
+          }, 'Quiet hours filter');
+
+          // If quiet hours end time is before start time (e.g., 22:00 to 08:00),
+          // it means quiet hours span midnight
+          const quietStartTimestamp = parseTimeString(quietHoursStart);
+          const quietEndTimestamp = parseTimeString(quietHoursEnd);
+          const spansMidnight = quietEndTimestamp < quietStartTimestamp;
+
+          filteredDecisions = filteredDecisions.filter(decision => {
+            const followUpAt = new Date(decision.follow_up_date);
+            const shouldShow = spansMidnight
+              ? (followUpAt < todayQuietStart || now >= todayQuietEnd)
+              : (followUpAt < todayQuietStart || now >= todayQuietEnd);
+
+            server.log.info({
+              decisionTitle: decision.title,
+              followUpAt: followUpAt.toISOString(),
+              shouldShow,
+              spansMidnight
+            }, 'Filter decision');
+
+            return shouldShow;
+          });
+        }
+
+        // Transform decisions into pending reviews format
+        const pendingReviews = filteredDecisions.map(decision => ({
+          id: decision.id,
+          decision_id: decision.id,
+          remind_at: decision.follow_up_date,
+          status: 'pending',
+          decisions: {
+            id: decision.id,
+            title: decision.title,
+            status: decision.status,
+            decided_at: decision.decided_at
+          }
+        }));
+
+        return { pendingReviews };
       } catch (error) {
         server.log.error(error);
         return reply.code(500).send({ error: 'Internal server error' });

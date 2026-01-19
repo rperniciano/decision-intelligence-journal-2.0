@@ -10547,3 +10547,57 @@ This session completed two major accomplishments:
 ## Screenshots
 - feature-213-position-bias-verified.png - Position Bias card showing "Position #1: 83%"
 
+
+# Testing Session - 2026-01-19 23:08:00
+## Feature #61: Outcome attached to correct decision - VERIFIED ✅
+
+### Verification Summary
+Tested that outcomes are correctly attached to their associated decisions and do not appear on other decisions.
+
+### Test Results
+
+#### Step 1: Create DECISION_A ✅
+- Title: 'DECISION_A - Test for Feature 61'
+- ID: 10d585cc-d580-4a6c-ad60-828113076c14
+- Status: Decided
+- Created: January 19, 2026 at 11:03 PM
+
+#### Step 2: Create DECISION_B ✅
+- Title: 'DECISION_B - Test for Feature 61'
+- ID: 07965e29-7d71-443d-85d8-3c4bdee89782
+- Status: Decided
+- Created: January 19, 2026 at 11:04 PM
+
+#### Step 3: Record outcome for DECISION_A ✅
+- Result: Better
+- Satisfaction: 3/5 stars
+- Recorded: January 19, 2026 at 11:07 PM
+
+#### Step 4: Navigate to DECISION_A detail ✅
+- Outcome section present: YES
+- Shows: "Better"
+- Timestamp correctly displayed
+
+#### Step 5: Navigate to DECISION_B ✅
+- Outcome section present: NO
+- "Record Outcome" button still visible (not replaced with outcome display)
+- Confirmed: No outcome attached to DECISION_B
+
+### Screenshots
+- feature-61-decision-a-with-outcome.png - Shows DECISION_A with outcome "Better"
+- feature-61-decision-b-no-outcome.png - Shows DECISION_B without outcome
+
+### Console Errors
+- Only 500 errors for reminders endpoint (not related to outcomes feature)
+
+### Result: PASSING ✅
+
+Feature #61 is verified as PASSING. Outcomes are correctly attached to the right decision and do not leak to other decisions.
+
+### Infrastructure Updates
+- API port changed from 4004 to 4005 (port conflict resolution)
+- Vite proxy configuration updated to point to port 4005
+- Both servers restarted successfully
+
+[Testing] Feature #61 verified - still passing
+

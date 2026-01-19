@@ -172,12 +172,12 @@ export class InsightsService {
         const options = decision.options || [];
 
         // Sort options by display_order to get correct positions
-        const sortedOptions = options.sort((a, b) =>
+        const sortedOptions = options.sort((a: any, b: any) =>
           (a.display_order || 0) - (b.display_order || 0)
         );
 
         // Track each position
-        sortedOptions.forEach((option, index) => {
+        sortedOptions.forEach((option: any, index: number) => {
           const position = index + 1; // 1-based position
           if (!positionStats.has(position)) {
             positionStats.set(position, { chosen: 0, total: 0 });
