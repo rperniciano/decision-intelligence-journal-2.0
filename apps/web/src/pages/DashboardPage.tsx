@@ -146,7 +146,7 @@ export function DashboardPage() {
               </span>
               <button
                 onClick={handleSignOut}
-                className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                className="px-4 min-h-[44px] text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
                 Sign out
               </button>

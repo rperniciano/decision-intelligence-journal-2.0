@@ -146,7 +146,7 @@ export function LoginPage() {
             <div className="flex items-center justify-end">
               <Link
                 to="/forgot-password"
-                className="text-sm text-accent hover:text-accent-400 transition-colors"
+                className="text-sm text-accent hover:text-accent-400 transition-colors min-h-[44px] flex items-center px-2 -mr-2"
               >
                 Forgot password?
               </Link>
@@ -162,9 +162,9 @@ export function LoginPage() {
           </form>
 
           {/* Register link */}
-          <p className="mt-6 text-center text-text-secondary text-sm">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-accent hover:text-accent-400 transition-colors">
+          <p className="mt-6 text-center text-text-secondary text-sm flex items-center justify-center gap-1">
+            Don't have an account?
+            <Link to="/register" className="text-accent hover:text-accent-400 transition-colors min-h-[44px] flex items-center px-2">
               Create one
             </Link>
           </p>

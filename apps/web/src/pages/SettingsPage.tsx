@@ -62,7 +62,7 @@ function SettingRow({
   );
 }
 
-// Toggle switch component
+// Toggle switch component with 44px touch target
 function Toggle({
   enabled,
   onChange,
@@ -75,18 +75,20 @@ function Toggle({
   return (
     <button
       onClick={() => onChange(!enabled)}
-      className={`relative w-12 h-7 rounded-full transition-colors ${
-        enabled ? 'bg-accent' : 'bg-white/10'
-      }`}
+      className="min-w-[44px] min-h-[44px] flex items-center justify-center"
       role="switch"
       aria-checked={enabled}
       aria-label={label}
     >
-      <motion.div
-        className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-md"
-        animate={{ left: enabled ? '26px' : '4px' }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-      />
+      <div className={`relative w-12 h-7 rounded-full transition-colors ${
+        enabled ? 'bg-accent' : 'bg-white/10'
+      }`}>
+        <motion.div
+          className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-md"
+          animate={{ left: enabled ? '26px' : '4px' }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        />
+      </div>
     </button>
   );
 }

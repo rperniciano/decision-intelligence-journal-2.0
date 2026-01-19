@@ -199,7 +199,7 @@ export function CategoriesPage() {
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => navigate('/settings')}
-            className="p-2 glass glass-hover rounded-lg transition-all duration-200"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center glass glass-hover rounded-lg transition-all duration-200"
             aria-label="Go back to settings"
           >
             <div className="text-text-secondary" aria-hidden="true">
@@ -259,14 +259,14 @@ export function CategoriesPage() {
                     <>
                       <button
                         onClick={() => handleEditCategory(category)}
-                        className="p-2 glass glass-hover rounded-lg text-text-secondary hover:text-accent transition-all duration-200"
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center glass glass-hover rounded-lg text-text-secondary hover:text-accent transition-all duration-200"
                         aria-label={`Edit category: ${category.name}`}
                       >
                         <Edit />
                       </button>
                       <button
                         onClick={() => handleDeleteCategory(category)}
-                        className="p-2 glass glass-hover rounded-lg text-text-secondary hover:text-red-400 transition-all duration-200"
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center glass glass-hover rounded-lg text-text-secondary hover:text-red-400 transition-all duration-200"
                         aria-label={`Delete category: ${category.name}`}
                       >
                         <Trash />
@@ -316,7 +316,7 @@ export function CategoriesPage() {
                   <button
                     key={emoji}
                     onClick={() => setSelectedIcon(emoji)}
-                    className={`p-3 rounded-lg text-2xl transition-all duration-200 ${
+                    className={`min-h-[44px] flex items-center justify-center rounded-lg text-2xl transition-all duration-200 ${
                       selectedIcon === emoji
                         ? 'bg-accent/20 ring-2 ring-accent'
                         : 'glass glass-hover'
@@ -340,7 +340,7 @@ export function CategoriesPage() {
                   <button
                     key={color.value}
                     onClick={() => setSelectedColor(color.value)}
-                    className={`w-full aspect-square rounded-lg transition-all duration-200 ${
+                    className={`min-h-[44px] rounded-lg transition-all duration-200 ${
                       selectedColor === color.value
                         ? 'ring-2 ring-white ring-offset-2 ring-offset-bg-darker'
                         : 'hover:scale-110'
@@ -357,7 +357,7 @@ export function CategoriesPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="flex-1 glass glass-hover py-3 rounded-xl text-text-secondary font-medium transition-all duration-200"
+                className="flex-1 glass glass-hover min-h-[44px] rounded-xl text-text-secondary font-medium transition-all duration-200"
                 disabled={creating}
               >
                 Cancel
@@ -365,7 +365,7 @@ export function CategoriesPage() {
               <button
                 onClick={handleCreateCategory}
                 disabled={!newCategoryName.trim() || creating}
-                className="flex-1 bg-accent text-bg-deep py-3 rounded-xl font-medium hover:bg-accent-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-accent text-bg-deep min-h-[44px] rounded-xl font-medium hover:bg-accent-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {creating ? 'Creating...' : 'Create'}
               </button>
@@ -410,7 +410,7 @@ export function CategoriesPage() {
                   <button
                     key={emoji}
                     onClick={() => setSelectedIcon(emoji)}
-                    className={`p-3 rounded-lg text-2xl transition-all duration-200 ${
+                    className={`min-h-[44px] flex items-center justify-center rounded-lg text-2xl transition-all duration-200 ${
                       selectedIcon === emoji
                         ? 'bg-accent/20 ring-2 ring-accent'
                         : 'glass glass-hover'
@@ -434,7 +434,7 @@ export function CategoriesPage() {
                   <button
                     key={color.value}
                     onClick={() => setSelectedColor(color.value)}
-                    className={`w-full aspect-square rounded-lg transition-all duration-200 ${
+                    className={`min-h-[44px] rounded-lg transition-all duration-200 ${
                       selectedColor === color.value
                         ? 'ring-2 ring-white ring-offset-2 ring-offset-bg-darker'
                         : 'hover:scale-110'
@@ -457,7 +457,7 @@ export function CategoriesPage() {
                   setSelectedIcon('📁');
                   setSelectedColor('#00d4aa');
                 }}
-                className="flex-1 glass glass-hover py-3 rounded-xl text-text-secondary font-medium transition-all duration-200"
+                className="flex-1 glass glass-hover min-h-[44px] rounded-xl text-text-secondary font-medium transition-all duration-200"
                 disabled={updating}
               >
                 Cancel
@@ -465,7 +465,7 @@ export function CategoriesPage() {
               <button
                 onClick={handleUpdateCategory}
                 disabled={!newCategoryName.trim() || updating}
-                className="flex-1 bg-accent text-bg-deep py-3 rounded-xl font-medium hover:bg-accent-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-accent text-bg-deep min-h-[44px] rounded-xl font-medium hover:bg-accent-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {updating ? 'Updating...' : 'Update'}
               </button>

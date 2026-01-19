@@ -77,14 +77,16 @@ function DecisionCard({
     >
       <div className="glass p-4 rounded-xl rim-light hover:bg-white/[0.03] transition-colors">
         <div className="flex items-start gap-3">
-          {/* Checkbox */}
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={() => onToggleSelect(decision.id)}
-            className="mt-1 w-5 h-5 rounded border-white/20 bg-white/5 text-accent focus:ring-accent focus:ring-offset-0 cursor-pointer"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {/* Checkbox with 44px touch target */}
+          <label className="min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer -m-2">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect(decision.id)}
+              className="w-5 h-5 rounded border-white/20 bg-white/5 text-accent focus:ring-accent focus:ring-offset-0 cursor-pointer"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </label>
 
           {/* Decision content (clickable to navigate) */}
           <Link to={`/decisions/${decision.id}`} className="flex-1 min-w-0">
@@ -152,7 +154,7 @@ function EmptyState({ searchQuery }: { searchQuery?: string }) {
       {!isSearching && (
         <Link to="/record">
           <motion.button
-            className="px-6 py-2.5 bg-accent text-bg-deep font-medium rounded-full hover:bg-accent-400 transition-all"
+            className="px-6 min-h-[44px] bg-accent text-bg-deep font-medium rounded-full hover:bg-accent-400 transition-all"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -795,7 +797,7 @@ export function HistoryPage() {
                   newParams.set('page', '1'); // Reset to page 1 when filter changes
                   setSearchParams(newParams);
                 }}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                className={`px-4 min-h-[44px] rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   activeFilter === filter.id
                     ? 'bg-accent text-bg-deep'
                     : 'bg-white/5 text-text-secondary hover:bg-white/10'
@@ -812,7 +814,7 @@ export function HistoryPage() {
               <button
                 key={view.id}
                 onClick={() => handleViewChange(view.id)}
-                className={`p-2 rounded-md transition-all ${
+                className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md transition-all ${
                   activeView === view.id
                     ? 'bg-accent text-bg-deep'
                     : 'text-text-secondary hover:bg-white/10'
@@ -955,7 +957,7 @@ export function HistoryPage() {
           >
             <button
               onClick={selectAllOnPage}
-              className="text-xs text-accent hover:text-accent-400 transition-colors"
+              className="text-xs text-accent hover:text-accent-400 transition-colors min-h-[44px] px-3 flex items-center"
             >
               Select all on page
             </button>
@@ -991,7 +993,7 @@ export function HistoryPage() {
                     <button
                       onClick={() => goToPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
                       aria-label="Go to previous page"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -1004,7 +1006,7 @@ export function HistoryPage() {
                         <button
                           key={page}
                           onClick={() => goToPage(page)}
-                          className={`min-w-[40px] px-3 py-2 rounded-lg font-medium transition-all ${
+                          className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg font-medium transition-all ${
                             currentPage === page
                               ? 'bg-accent text-bg-deep'
                               : 'bg-white/5 text-text-secondary hover:bg-white/10'
@@ -1018,7 +1020,7 @@ export function HistoryPage() {
                     <button
                       onClick={() => goToPage(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-2 rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 text-text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
                       aria-label="Go to next page"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

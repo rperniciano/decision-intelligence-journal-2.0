@@ -73,7 +73,7 @@ export function RegisterPage() {
               </p>
               <Link
                 to="/login"
-                className="inline-block px-6 py-2 bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent-400 transition-all duration-200"
+                className="inline-flex items-center px-6 min-h-[44px] bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent-400 transition-all duration-200"
               >
                 Go to Login
               </Link>
@@ -238,9 +238,9 @@ export function RegisterPage() {
           </form>
 
           {/* Login link */}
-          <p className="mt-6 text-center text-text-secondary text-sm">
-            Already have an account?{' '}
-            <Link to="/login" className="text-accent hover:text-accent-400 transition-colors">
+          <p className="mt-6 text-center text-text-secondary text-sm flex items-center justify-center gap-1">
+            Already have an account?
+            <Link to="/login" className="text-accent hover:text-accent-400 transition-colors min-h-[44px] flex items-center px-2">
               Sign in
             </Link>
           </p>
