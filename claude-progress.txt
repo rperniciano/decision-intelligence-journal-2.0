@@ -9203,3 +9203,78 @@ Date: 2026-01-19 19:55
 - Progress: 196/291 features (67.4%)
 - Files modified: 8
 - Console errors: 0 (related to feature)
+
+# Testing Session - lun 19 gen 2026 19:47:57
+## Feature #103: Export data as CSV - VERIFIED ✅
+
+### Verification Steps
+1. ✅ Navigated to Export page (/export)
+2. ✅ Selected CSV format button
+3. ✅ Clicked Export - download triggered automatically
+4. ✅ Download started - file: decisions-export-2026-01-19.csv
+5. ✅ Opened file - valid CSV format
+6. ✅ Data rows present - 2 decisions exported
+7. ✅ Column headers correct: Title, Status, Category, Emotional State, Confidence Level, Chosen Option, Options, Notes, Created Date, Decided Date, Abandoned Date
+
+### Infrastructure Note
+- Had to start API server (port 3001 was occupied by Next.js)
+- Used: pnpm --filter @decisions/api dev
+
+### Screenshots
+- feature-103-csv-export-success.png - Export page after successful download
+
+### Result: PASSES - No regression detected
+[Testing] Feature #103 verified - still passing
+
+
+# Session - Feature #251 Implementation
+Date: 2026-01-19 19:55
+
+## Feature #251: Skip to main content link
+
+**Status:** COMPLETED ✅
+
+**Description:** Implement a 'Skip to main content' link for keyboard accessibility that allows users to bypass navigation and jump directly to the main content area.
+
+### Implementation Details
+
+**New Component Created:**
+- apps/web/src/components/SkipLink.tsx
+  - Visually hidden by default using `sr-only` class
+  - Becomes visible on focus using `focus:not-sr-only` classes
+  - Styled with accent color background and focus ring
+  - Links to `#main-content` anchor
+
+**Pages Updated (11 files):**
+1. DashboardPage.tsx - Added SkipLink + id="main-content" on main
+2. HistoryPage.tsx - Added SkipLink + id="main-content" on main
+3. InsightsPage.tsx - Added SkipLink + id="main-content" on main
+4. SettingsPage.tsx - Added SkipLink + id="main-content" on main
+5. RecordPage.tsx - Added SkipLink + id="main-content" on main
+6. CreateDecisionPage.tsx - Added SkipLink + id="main-content" on main
+7. EditDecisionPage.tsx - Added SkipLink + id="main-content" on main
+8. DecisionDetailPage.tsx - Added SkipLink + id="main-content" on main
+9. CategoriesPage.tsx - Added SkipLink + id="main-content" on main
+10. ExportPage.tsx - Added SkipLink + id="main-content" on main
+
+### Verification Steps
+1. ✅ **Press Tab on page load** - Skip link receives focus first
+2. ✅ **Look for 'Skip to main content' link** - Link visible in accessibility tree and on screen when focused
+3. ✅ **If present, verify it works** - Pressing Enter activates the link
+4. ✅ **Verify skips navigation to content** - URL changes to #main-content, focus moves to main element
+
+### Screenshots
+- feature-251-skip-link-focused.png - Skip link visible on Dashboard page
+- feature-251-skip-link-activated.png - After activation, skip link hidden
+- feature-251-skip-link-history-page.png - Skip link on History page
+
+### Commit
+3283764 feat(a11y): add skip to main content link for keyboard navigation - Feature #251
+
+### Session Statistics
+- Feature completed: #251 (Skip to main content link)
+- Progress: 197/291 features (67.7%)
+- Files modified: 11
+- New component: 1 (SkipLink.tsx)
+- Console errors: 0 (related to feature)
+
