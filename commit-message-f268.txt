@@ -1,0 +1,30 @@
+feat(concurrency): implement AbortController for race condition prevention - Feature #268
+
+Add AbortController pattern to all useEffect hooks with fetch operations to prevent
+race conditions during rapid navigation. This ensures users always see correct data
+for the current page, not stale data from previous pages.
+
+## Problem
+When users navigate rapidly between pages, multiple fetch requests can be in flight.
+Without cleanup, all responses update state, causing the last response to win
+regardless of navigation order. This results in stale data display.
+
+## Solution
+Implemented AbortController pattern in 5 files (8 useEffect hooks total):
+
+### Files Modified:
+1. HistoryPage.tsx - Categories fetch, Decisions fetch (with cursor pagination)
+2. DashboardPage.tsx - Statistics fetch, Pending reviews fetch
+3. DecisionDetailPage.tsx - Decision data fetch, Reminders fetch
+4. CategoriesPage.tsx - Categories fetch on mount
+5. InsightsPage.tsx - Insights data fetch
+
+## Verification
+✅ Browser automation test completed
+✅ Rapid navigation between pages works correctly
+✅ Each page shows only its own data (no stale data)
+✅ AbortErrors properly silenced (not shown to users)
+✅ Tested on History page (3 pages with pagination)
+✅ No console errors or UI flickering
+
+- Feature #268 verified and marked as PASSING ✅

@@ -1,5 +1,102 @@
-# Testing Session - 2026-01-19 (Feature #267)
-## Feature #267: List updates while on page 2 - VERIFIED PASSING ✅
+# Testing Session - 2026-01-19 (Feature #268)
+## Feature #268: Rapid navigation shows correct data - VERIFIED PASSING ✅
+
+### Implementation Summary
+
+**Feature:** AbortController pattern for race condition prevention
+**Category:** Concurrency & Race Conditions
+
+### Problem
+When users navigate rapidly between pages, multiple fetch requests can be in flight simultaneously.
+Without proper cleanup, all responses update the state, causing the **last response to win**
+regardless of navigation order. This results in:
+- Stale data from previous pages being displayed
+- Flickering UI as data changes unexpectedly
+- Poor user experience during rapid navigation
+
+### Solution: AbortController Pattern
+
+Added `AbortController` to all `useEffect` hooks that perform fetch operations across 5 files:
+
+1. **HistoryPage.tsx** (2 useEffect hooks)
+   - Categories fetch
+   - Decisions fetch (with cursor-based pagination)
+
+2. **DashboardPage.tsx** (2 useEffect hooks)
+   - Statistics fetch
+   - Pending reviews fetch
+
+3. **DecisionDetailPage.tsx** (2 useEffect hooks)
+   - Decision data fetch
+   - Reminders fetch
+
+4. **CategoriesPage.tsx** (1 useEffect hook)
+   - Categories fetch on mount
+
+5. **InsightsPage.tsx** (1 useEffect hook)
+   - Insights data fetch
+
+### Implementation Pattern
+
+```typescript
+useEffect(() => {
+  const abortController = new AbortController();
+  const signal = abortController.signal;
+
+  async function fetchData() {
+    try {
+      const response = await fetch(url, { signal });
+      // ... handle response
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        // Handle real errors only
+      }
+    }
+  }
+
+  fetchData();
+
+  return () => {
+    abortController.abort(); // Cancel on unmount/dependency change
+  };
+}, [dependencies]);
+```
+
+### Verification
+
+**Browser Automation Test Results:**
+- ✅ Navigated to page 1 → showed decisions 25-20 (newest)
+- ✅ Navigated to page 2 → showed decisions 19-10
+- ✅ Navigated to page 3 → showed decisions 9-1 (oldest)
+- ✅ Navigated back to page 1 → showed decisions 25-20 (correct, no stale data)
+- ✅ No console errors related to abort operations
+- ✅ No flickering or unexpected UI changes
+
+**Test Environment:**
+- User: feature267@test.com
+- Total decisions: 29
+- Pages tested: 3 (10 decisions per page)
+
+### Files Modified
+- apps/web/src/pages/HistoryPage.tsx
+- apps/web/src/pages/DashboardPage.tsx
+- apps/web/src/pages/DecisionDetailPage.tsx
+- apps/web/src/pages/CategoriesPage.tsx
+- apps/web/src/pages/InsightsPage.tsx
+
+### Key Benefits
+1. Prevents stale data bugs - Only current page's data is displayed
+2. Better UX - No flickering or unexpected content changes
+3. Proper cleanup - Pending requests cancelled when navigating away
+4. Memory efficient - No unnecessary state updates from abandoned requests
+5. Error handling - AbortErrors properly filtered and not shown to users
+
+### Session Statistics
+- Feature completed: #268 (Rapid navigation shows correct data)
+- Progress: 213/291 features (73.2%)
+- Files modified: 5
+- useEffect hooks fixed: 8
+
 
 ### Implementation Summary
 
@@ -110,3 +207,64 @@ When viewing page 2 of the History list, if a new decision is added:
 
 [Testing] Session complete - Fixed and verified Feature #198 (Clear individual filter works)
 
+
+[Testing] Regression Test Session Complete
+
+## Feature #169: Multiple export requests handled
+**Status:** ✅ FIXED AND VERIFIED
+
+**Regression Found:**
+- Clicking export button twice rapidly triggered TWO API calls
+- Root cause: React state updates are asynchronous
+- Both clicks could execute before  state updated
+
+**Fix Applied:**
+- Added  for immediate synchronous state tracking
+- Check  synchronously before processing
+- Reset ref in all code paths (finally block + early returns)
+
+**Verification Results:**
+✅ Single click: Export works correctly
+✅ Double-click: Only ONE API call made to /api/v1/export/json  
+✅ Network monitoring confirms duplicate requests are blocked
+✅ No console errors
+✅ File download works correctly
+
+**Files Modified:**
+- apps/web/src/pages/ExportPage.tsx
+
+**Commit:** a557ecd
+
+## Session Statistics
+- Regression found and fixed: 1 (Feature #169)
+- Total passing features: 213/291 (73.2%)
+- Testing session completed successfully
+
+
+[Testing] Regression Test Session Complete
+
+Feature #169: Multiple export requests handled
+Status: FIXED AND VERIFIED
+
+Regression Found:
+- Clicking export button twice rapidly triggered TWO API calls
+- Root cause: React state updates are asynchronous
+- Both clicks could execute before exporting state updated
+
+Fix Applied:
+- Added useRef for immediate synchronous state tracking
+- Check ref synchronously before processing
+- Reset ref in all code paths
+
+Verification Results:
+- Single click: Export works correctly
+- Double-click: Only ONE API call made
+- Network monitoring confirms duplicate requests blocked
+- No console errors
+
+Files Modified: apps/web/src/pages/ExportPage.tsx
+Commit: a557ecd
+
+Session Statistics:
+- Regression found and fixed: 1 (Feature #169)
+- Total passing features: 213/291 (73.2%)

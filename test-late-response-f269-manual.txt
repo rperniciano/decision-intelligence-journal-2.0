@@ -1,0 +1,38 @@
+Feature #269: API response after navigation no crash - Manual Test Plan
+===========================================================================
+
+Test Objective:
+Verify that late API responses (after navigation) don't cause crashes and don't affect the new page.
+
+Preconditions:
+- Servers running (API on port 3001, Web on port 5173)
+- Test user exists: test_f269@example.com / testpass123
+
+Test Steps:
+
+1. Navigate to http://localhost:5173/login
+2. Login as test_f269@example.com
+3. Click on "History" link
+4. IMMEDIATELY (within 200ms) click on "Dashboard" link
+   - This aborts the History page request
+5. Wait 2 seconds for the late response to potentially arrive
+6. Check for:
+   - Any console errors (F12 -> Console)
+   - Any visible crashes or white screens
+   - Dashboard functionality (can you click things?)
+7. Navigate to History again and let it load fully
+8. Verify History page works correctly
+9. Repeat steps 3-8 five times rapidly
+
+Expected Results:
+✓ No console errors
+✓ No crashes or white screens
+✓ Dashboard remains functional after rapid navigation
+✓ History page loads correctly on subsequent tries
+✓ No memory leaks (browser doesn't slow down after multiple rapid navigations)
+
+Actual Results:
+[To be filled during testing]
+
+Browser Automation Test:
+Using Playwright MCP tool for automated verification.
