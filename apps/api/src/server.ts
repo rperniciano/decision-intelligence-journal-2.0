@@ -250,6 +250,15 @@ async function registerRoutes() {
           });
         }
 
+        // Handle deleted decision (Feature #266)
+        if (error.code === 'GONE') {
+          return reply.code(410).send({
+            error: 'Gone',
+            message: error.message || 'This decision has been deleted.',
+            canRedirect: true
+          });
+        }
+
         return reply.code(500).send({ error: 'Internal server error' });
       }
     });
@@ -1357,14 +1366,30 @@ async function registerRoutes() {
               .select()
               .single();
 
+            // Check if decision was deleted (PGRST116 = 0 rows returned)
+            if (error2 && error2.code === 'PGRST116') {
+              // Decision not found or deleted (Feature #266)
+              reply.code(410);
+              return {
+                error: 'Gone',
+                message: 'This decision has been deleted.',
+                canRedirect: true
+              };
+            }
+
             if (error2) {
               console.error('Supabase error:', error2);
               throw error2;
             }
 
             if (!updated2) {
-              reply.code(404);
-              return { error: 'Decision not found' };
+              // Decision not found or deleted (Feature #266)
+              reply.code(410);
+              return {
+                error: 'Gone',
+                message: 'This decision has been deleted.',
+                canRedirect: true
+              };
             }
 
             return {
@@ -1383,8 +1408,83 @@ async function registerRoutes() {
         }
 
         if (!updated) {
-          reply.code(404);
-          return { error: 'Decision not found' };
+          // Decision not found or deleted (Feature #266)
+          reply.code(410);
+          return {
+            error: 'Gone',
+            message: 'This decision has been deleted.',
+            canRedirect: true
+          };
+        }
+
+        console.log('Outcome recording - supabase result:', { updated, error });
+
+        if (error) {
+          // If column doesn't exist yet, try without it
+          if (error.message.includes('outcome_satisfaction')) {
+            console.log('outcome_satisfaction column does not exist, skipping...');
+            const { data: updated2, error: error2 } = await supabase
+              .from('decisions')
+              .update({
+                outcome: outcome,
+                outcome_notes: body.notes || null,
+                outcome_recorded_at: new Date().toISOString()
+              })
+              .eq('id', id)
+              .eq('user_id', userId)
+              .is('deleted_at', null)
+              .select()
+              .single();
+
+            // Check if decision was deleted (PGRST116 = 0 rows returned)
+            if (error2 && error2.code === 'PGRST116') {
+              // Decision not found or deleted (Feature #266)
+              reply.code(410);
+              return {
+                error: 'Gone',
+                message: 'This decision has been deleted.',
+                canRedirect: true
+              };
+            }
+
+            if (error2) {
+              console.error('Supabase error:', error2);
+              throw error2;
+            }
+
+            if (!updated2) {
+              // Decision not found or deleted (Feature #266)
+              reply.code(410);
+              return {
+                error: 'Gone',
+                message: 'This decision has been deleted.',
+                canRedirect: true
+              };
+            }
+
+            return {
+              success: true,
+              outcome: {
+                id: id,
+                result: updated2.outcome,
+                satisfaction: body.satisfaction,
+                notes: updated2.outcome_notes,
+                recordedAt: updated2.outcome_recorded_at
+              }
+            };
+          }
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        if (!updated) {
+          // Decision not found or deleted (Feature #266)
+          reply.code(410);
+          return {
+            error: 'Gone',
+            message: 'This decision has been deleted.',
+            canRedirect: true
+          };
         }
 
         return {
@@ -1459,13 +1559,19 @@ async function registerRoutes() {
         // Verify the decision exists and belongs to user
         const { data: decision, error: decisionError } = await supabase
           .from('decisions')
-          .select('id, user_id')
+          .select('id, user_id, deleted_at')
           .eq('id', id)
           .eq('user_id', userId)
+          .is('deleted_at', null)
           .single();
 
         if (decisionError || !decision) {
-          return reply.code(404).send({ error: 'Decision not found' });
+          // Decision not found or deleted
+          return reply.code(410).send({
+            error: 'Gone',
+            message: 'This decision has been deleted.',
+            canRedirect: true
+          });
         }
 
         // Create the reminder

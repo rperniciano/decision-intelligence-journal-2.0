@@ -138,6 +138,7 @@ export function DecisionDetailPage() {
   const [decision, setDecision] = useState<Decision | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleted, setIsDeleted] = useState(false); // Feature #266: Track if decision was deleted
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -179,6 +180,13 @@ export function DecisionDetailPage() {
 
         if (response.status === 404) {
           setError('Decision not found');
+          return;
+        }
+
+        // Feature #266: Handle 410 Gone (decision deleted)
+        if (response.status === 410) {
+          setIsDeleted(true);
+          setError('This decision has been deleted.');
           return;
         }
 
@@ -261,6 +269,15 @@ export function DecisionDetailPage() {
           timezone: timezone,
         }),
       });
+
+      // Feature #266: Handle 410 Gone (decision deleted by another user)
+      if (response.status === 410) {
+        setIsDeleted(true);
+        const data = await response.json();
+        setError(data.message || 'This decision has been deleted.');
+        setShowReminderModal(false);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to set reminder');
@@ -377,6 +394,15 @@ export function DecisionDetailPage() {
         }),
       });
 
+      // Feature #266: Handle 410 Gone (decision deleted by another user)
+      if (response.status === 410) {
+        setIsDeleted(true);
+        const data = await response.json();
+        setError(data.message || 'This decision has been deleted.');
+        setShowOutcomeModal(false);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to record outcome');
       }
@@ -424,6 +450,11 @@ export function DecisionDetailPage() {
             </svg>
           </div>
           <h2 className="text-lg font-medium mb-2">{error}</h2>
+          {isDeleted && (
+            <p className="text-sm text-text-secondary mb-4">
+              This decision may have been deleted by another user or session.
+            </p>
+          )}
           <Link to="/history">
             <motion.button
               className="px-6 py-2 glass glass-hover rounded-full text-sm font-medium mt-4"

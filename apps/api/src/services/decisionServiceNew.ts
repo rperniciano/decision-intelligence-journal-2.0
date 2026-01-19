@@ -314,6 +314,7 @@ export class DecisionService {
   /**
    * Update a decision with optimistic locking for concurrent edit detection
    * @throws {Error} with code 'CONFLICT' if updated_at doesn't match (concurrent edit detected)
+   * @throws {Error} with code 'GONE' if decision was deleted by another session
    */
   static async updateDecision(decisionId: string, userId: string, dto: any) {
     try {
@@ -327,7 +328,10 @@ export class DecisionService {
         .single();
 
       if (fetchError || !existing) {
-        return null;
+        // Decision not found or deleted - throw GONE error
+        const goneError = new Error('This decision has been deleted.');
+        (goneError as any).code = 'GONE';
+        throw goneError;
       }
 
       // Check for concurrent edit if client provided updated_at
