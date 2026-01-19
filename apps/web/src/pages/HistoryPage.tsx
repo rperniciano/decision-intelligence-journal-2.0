@@ -18,6 +18,7 @@ interface Decision {
   createdAt: string;
   decidedAt?: string;
   chosenOption?: string;
+  decideByDate?: string;
 }
 
 interface Category {
@@ -41,6 +42,40 @@ function StatusBadge({ status }: { status: Decision['status'] }) {
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
       {config.label}
+    </span>
+  );
+}
+
+// Check if a decision is overdue (timezone-aware)
+function isOverdue(decideByDate: string | undefined, status: Decision['status']): boolean {
+  // Only mark as overdue if:
+  // 1. There is a decide_by_date
+  // 2. The status is NOT 'decided' or 'abandoned' (already resolved)
+  // 3. The decide_by_date is in the past (compared to user's local timezone)
+  if (!decideByDate || status === 'decided' || status === 'abandoned') {
+    return false;
+  }
+
+  // Parse the decide_by_date (YYYY-MM-DD format) and compare to today in user's timezone
+  const decideBy = new Date(decideByDate);
+  const today = new Date();
+
+  // Set both to midnight for date-only comparison
+  today.setHours(0, 0, 0, 0);
+  decideBy.setHours(0, 0, 0, 0);
+
+  return decideBy < today;
+}
+
+// Overdue badge component
+function OverdueBadge() {
+  return (
+    <span
+      className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400"
+      role="status"
+      aria-label="Overdue"
+    >
+      Overdue
     </span>
   );
 }
@@ -105,7 +140,10 @@ function DecisionCard({
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1">
-                <StatusBadge status={decision.status} />
+                <div className="flex items-center gap-1">
+                  <StatusBadge status={decision.status} />
+                  {isOverdue(decision.decideByDate, decision.status) && <OverdueBadge />}
+                </div>
                 <span className="text-xs text-text-secondary">{formatDate(decision.createdAt)}</span>
               </div>
             </div>
@@ -513,6 +551,7 @@ export function HistoryPage() {
           emotionalState: d.emotional_state,
           createdAt: d.created_at,
           decidedAt: d.decided_at,
+          decideByDate: d.decide_by_date,
           chosenOption: d.options?.find((opt: any) => opt.isChosen)?.text,
         }));
 

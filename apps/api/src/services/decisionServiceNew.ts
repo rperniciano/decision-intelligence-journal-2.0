@@ -82,6 +82,7 @@ export class DecisionService {
         emotional_state: d.detected_emotional_state,
         created_at: d.created_at,
         decided_at: d.decided_at,
+        decide_by_date: d.decide_by_date,
         options: (d.options || []).map((opt: any) => ({
           id: opt.id,
           text: opt.title,
@@ -155,6 +156,7 @@ export class DecisionService {
         emotionalState: data.detected_emotional_state,
         createdAt: data.created_at,
         decidedAt: data.decided_at,
+        decide_by_date: data.decide_by_date,
         options: (data.options || []).map((opt: any) => ({
           id: opt.id,
           text: opt.title,
@@ -234,6 +236,7 @@ export class DecisionService {
           audio_url: dto.audio_url,
           audio_duration_seconds: dto.audio_duration_seconds,
           decided_at: dto.decided_at,
+          decide_by_date: dto.decide_by_date,
         })
         .select()
         .single();
@@ -336,6 +339,7 @@ export class DecisionService {
       if (dto.chosen_option_id !== undefined) updateData.chosen_option_id = dto.chosen_option_id;
       if (dto.outcome !== undefined) updateData.outcome = dto.outcome;
       if (dto.outcome_notes !== undefined) updateData.outcome_notes = dto.outcome_notes;
+      if (dto.decide_by_date !== undefined) updateData.decide_by_date = dto.decide_by_date;
 
       // If recording an outcome, set outcome_recorded_at timestamp
       if (dto.outcome !== undefined) {
@@ -423,6 +427,7 @@ export class DecisionService {
         emotional_state: d.detected_emotional_state,
         created_at: d.created_at,
         decided_at: d.decided_at,
+        decide_by_date: d.decide_by_date,
         options: (d.options || []).map((opt: any) => ({
           id: opt.id,
           text: opt.title,

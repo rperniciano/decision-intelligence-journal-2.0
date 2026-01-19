@@ -9882,3 +9882,110 @@ e9d7222 feat(forms): add decide-by date picker with validation - Feature #257
 - Files modified: 2
 - Console errors: 0
 
+
+# Testing Session - lun 19 gen 2026 21:09:08
+## Feature #76: Detect mock data in UI - REGRESSION FIXED ✅
+
+### Issue Found
+Test pages /test-modal and /test-edit were accessible in the UI and displayed hardcoded mock data:
+- 'Test Decision for Modal'
+- 'Option A', 'Option B', 'Pro 1', 'Pro 2', 'Con 1', 'Con 2'
+- 'Test Decision for Cancel Testing'
+- 'Original notes before editing.'
+
+### Fix Applied
+Removed test routes and their imports from apps/web/src/App.tsx:
+- Removed import for DecisionDetailPageTest
+- Removed import for EditDecisionPageTest
+- Removed /test-modal route
+- Removed /test-edit route
+
+### Verification Steps
+1. ✅ Browsed through the application (Dashboard, History, Insights, Settings)
+2. ✅ Checked for common mock data patterns - None found in source code
+3. ✅ Verified no suspicious placeholder content - All pages show proper empty states
+4. ✅ All displayed data is user-created or empty state
+5. ✅ 'Test User' comes from Supabase user_metadata, not hardcoded
+6. ✅ /test-modal now returns 404
+7. ✅ /test-edit now returns 404
+
+### Screenshots
+- feature-76-regression-test-modal-page.png - Mock data visible before fix
+- feature-76-regression-test-edit-page.png - Mock data visible before fix
+- feature-76-fix-test-modal-404.png - 404 page after fix
+- feature-76-verification-complete.png - Final verification
+
+### Commit
+f78b1c4 fix(routes): remove test routes exposing mock data - Feature #76
+
+[Testing] Feature #76 regression fixed and verified - now passing
+
+# Session - Feature #258 Implementation
+Date: 2026-01-19
+
+## Feature #258: Overdue items identified correctly
+Category: Temporal & Timezone
+Description: Verify overdue detection
+
+### Implementation Summary
+Implemented complete overdue detection functionality:
+
+1. **Backend Changes (apps/api/src/services/decisionServiceNew.ts)**:
+   - Added `decide_by_date` field to getDecisions() response transformation
+   - Added `decide_by_date` field to getDecisionById() response transformation
+   - Added `decide_by_date` to createDecision() database insert
+   - Added `decide_by_date` to updateDecision() update handling
+   - Added `decide_by_date` to getDeletedDecisions() response transformation
+
+2. **Frontend Changes (apps/web/src/pages/HistoryPage.tsx)**:
+   - Added `decideByDate` field to Decision interface
+   - Implemented `isOverdue()` function for timezone-aware overdue detection:
+     - Returns true only if decide_by_date is in the past
+     - Returns false for 'decided' or 'abandoned' statuses (already resolved)
+     - Uses user's local timezone for date comparison
+   - Added `OverdueBadge` component with red styling (bg-red-500/20 text-red-400)
+   - Updated DecisionCard to display Overdue badge next to status when applicable
+   - Updated API response transformation to include `decideByDate` field
+
+3. **Database Migration (migration-add-decide-by-date.sql)**:
+   - Created SQL migration to add `decide_by_date` DATE column to decisions table
+   - Added index for efficient overdue queries
+
+4. **Environment Configuration**:
+   - Updated .env to use port 4002 (port 4001 was in use)
+
+### Overdue Logic Test Results
+All test cases pass:
+- ✅ Past date + in_progress = overdue
+- ✅ Past date + decided = not overdue
+- ✅ Past date + abandoned = not overdue
+- ✅ Future date + in_progress = not overdue
+- ✅ No date = not overdue
+- ✅ Today = not overdue
+
+### Screenshots
+- history-page-before-overdue.png - History page without overdue badge
+- history-page-with-overdue-badge.png - History page with injected overdue badge (visual verification)
+
+### Blocker: Database Migration Required
+The `decide_by_date` column does not exist in the Supabase database yet.
+The frontend and backend code are complete and ready, but the feature cannot be fully tested
+until the migration is run in Supabase Dashboard.
+
+**Migration File:** migration-add-decide-by-date.sql
+
+**To Complete Feature #258:**
+1. Run `migration-add-decide-by-date.sql` in Supabase SQL Editor
+2. Create a decision with a past decide-by date
+3. Verify the "Overdue" badge appears in History page
+4. Verify timezone-aware calculation works correctly
+
+### Status: BLOCKED - Awaiting Database Migration
+Feature #258 implementation is complete but cannot be marked as passing until:
+- Database migration is run manually in Supabase Dashboard
+- End-to-end verification is completed
+
+### Progress
+- Starting: 203/291 features (69.8%)
+- Ending: 203/291 features (69.8%) - No change due to DB migration blocker
+
