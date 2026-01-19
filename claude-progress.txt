@@ -10000,3 +10000,101 @@ fcca3b4 feat(overdue): implement overdue detection for decisions - Feature #258
 - migration-add-decide-by-date.sql (new)
 - claude-progress.txt
 
+
+
+# Testing Session - lun 19 gen 2026 21:21:46
+## Feature #72: Soft-deleted item in trash is real - VERIFIED ✅
+
+### Verification Steps
+1. ✅ Created decision 'TRASH_TEST_ITEM'
+2. ✅ Deleted it (soft delete) - confirmed modal and redirect to History
+3. ✅ Navigated to Trash view - Trash filter shows deleted items
+4. ✅ Verified 'TRASH_TEST_ITEM' appears in Trash
+5. ✅ Restored it using checkbox selection and 'Restore Selected' button
+6. ✅ Verified it returns to main list (All filter)
+7. ✅ Verified decision detail page loads correctly after restoration
+
+### Console Errors
+- 404 errors for wrong API port (localhost:4001 vs 4002) - not feature-related
+- No feature-related errors
+
+### Test Data Cleanup
+- Test decision 'TRASH_TEST_ITEM' deleted after verification
+
+### Screenshots
+- feature-72-trash-restored.png - Shows restored decision in History list
+
+[Testing] Feature #72 verified - still passing
+
+
+
+# Session - Feature #259 Implementation
+Date: 2026-01-19
+
+## Feature #259: Today filter works for user timezone
+
+**Status:** COMPLETED ✅
+
+**Description:** Verify Today filter - ensure the Today filter works correctly based on the user's local timezone.
+
+### Implementation Details
+
+**Changes to HistoryPage.tsx:**
+
+1. **Time Period Filter UI:**
+   - Added new 'Time Period' dropdown with options: All Time, Today, This Week, This Month
+   - Filter state persisted in URL via query parameter (?time=today)
+   - Proper label associations with htmlFor/id for accessibility
+
+2. **Timezone-Aware Helper Functions:**
+   - `isToday(dateString)`: Compares date to today using user's local timezone
+   - `isThisWeek(dateString)`: Checks if date is within last 7 days
+   - `isThisMonth(dateString)`: Checks if date is in current month
+   - All functions use JavaScript's Date object which automatically handles timezone conversion
+
+3. **Client-Side Filtering:**
+   - Time filtering happens client-side after data is fetched from API
+   - This ensures user's local timezone is respected (not server UTC)
+   - Pagination count adjusts based on filtered results
+
+### Verification Steps
+
+1. ✅ **Create decision today** - Created 'TEST_FEATURE259_TODAY_FILTER' on January 19, 2026
+2. ✅ **Apply 'Today' filter** - Selected 'Today' from Time Period dropdown
+3. ✅ **Verify decision appears** - Decision shown with status 'Decided' and date 'Today'
+4. ✅ **Verify based on user's local today** - Browser confirmed Europe/Rome timezone (UTC+1)
+
+### Browser Verification
+
+JavaScript evaluation in browser confirmed:
+```javascript
+{
+  "timezone": "Europe/Rome",
+  "localTime": "19/01/2026, 21:23:02",
+  "utcTime": "2026-01-19T20:23:02.377Z",
+  "decisionDate": "2026-01-19T20:21:35.048502+00:00",
+  "decisionLocalDate": "19/01/2026, 21:21:35",
+  "isToday": true
+}
+```
+
+### Additional Testing
+- ✅ 'This Week' filter - decision appears (created within last 7 days)
+- ✅ 'This Month' filter - decision appears (created in January 2026)
+- ✅ 'All Time' filter - decision appears (no filtering)
+- ✅ URL persists filter state (?time=today&page=1)
+
+### Screenshots
+- feature-259-history-all-time.png - History page with All Time filter
+- feature-259-today-filter-applied.png - History page with Today filter selected
+
+### Commit
+001875c feat(history): add timezone-aware time period filters - Feature #259
+
+### Session Statistics
+- Feature completed: #259 (Today filter works for user timezone)
+- Progress: 204/291 features (70.1%)
+- Files modified: 1 (HistoryPage.tsx)
+- Lines added: ~116
+- Console errors: 0
+
