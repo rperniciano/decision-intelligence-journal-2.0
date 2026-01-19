@@ -60,6 +60,7 @@ export interface UpdateDecisionDTO {
   emotional_state?: string;
   decided_at?: string;
   notes?: string;
+  updated_at?: string; // For optimistic locking (concurrent edit detection)
 }
 
 export class DecisionService {
@@ -245,24 +246,53 @@ export class DecisionService {
   }
 
   /**
-   * Update a decision
+   * Update a decision with optimistic locking
+   * @throws {Error} with code 'CONFLICT' if updated_at doesn't match (concurrent edit detected)
    */
   static async updateDecision(
     decisionId: string,
     userId: string,
     dto: UpdateDecisionDTO
   ) {
-    const { data, error } = await supabase
+    // Extract updated_at from DTO (it's used for locking, not for updating)
+    const { updated_at: clientUpdatedAt, ...updateData } = dto;
+
+    // Build the update query
+    let query = supabase
       .from('decisions')
-      .update(dto)
+      .update(updateData)
       .eq('id', decisionId)
       .eq('user_id', userId)
-      .is('deleted_at', null)
-      .select()
-      .single();
+      .is('deleted_at', null);
+
+    // If client provided updated_at, use it for optimistic locking
+    if (clientUpdatedAt) {
+      query = query.filter('updated_at', 'eq', clientUpdatedAt);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error) {
       if (error.code === 'PGRST116') {
+        // No rows returned - could be not found or version mismatch
+        if (clientUpdatedAt) {
+          // Check if decision exists at all
+          const { data: existing } = await supabase
+            .from('decisions')
+            .select('id, updated_at')
+            .eq('id', decisionId)
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+            .single();
+
+          if (existing) {
+            // Decision exists but updated_at didn't match = concurrent edit
+            const conflictError = new Error('Decision was modified by another session. Please refresh and try again.');
+            (conflictError as any).code = 'CONFLICT';
+            (conflictError as any).currentData = existing;
+            throw conflictError;
+          }
+        }
         return null;
       }
       throw error;

@@ -238,8 +238,18 @@ async function registerRoutes() {
         }
 
         return decision;
-      } catch (error) {
+      } catch (error: any) {
         server.log.error(error);
+
+        // Handle concurrent edit conflict
+        if (error.code === 'CONFLICT') {
+          return reply.code(409).send({
+            error: 'Conflict',
+            message: error.message,
+            currentData: error.currentData
+          });
+        }
+
         return reply.code(500).send({ error: 'Internal server error' });
       }
     });

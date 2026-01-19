@@ -155,6 +155,7 @@ export class DecisionService {
         category_id: data.category_id,
         emotionalState: data.detected_emotional_state,
         createdAt: data.created_at,
+        updatedAt: data.updated_at, // Include for optimistic locking (concurrent edit detection)
         decidedAt: data.decided_at,
         decide_by_date: data.decide_by_date,
         options: (data.options || []).map((opt: any) => ({
@@ -311,14 +312,15 @@ export class DecisionService {
   }
 
   /**
-   * Update a decision
+   * Update a decision with optimistic locking for concurrent edit detection
+   * @throws {Error} with code 'CONFLICT' if updated_at doesn't match (concurrent edit detected)
    */
   static async updateDecision(decisionId: string, userId: string, dto: any) {
     try {
-      // First verify the decision belongs to the user
+      // First verify the decision belongs to the user and get current version
       const { data: existing, error: fetchError } = await supabase
         .from('decisions')
-        .select('id, decided_at')
+        .select('id, decided_at, updated_at')
         .eq('id', decisionId)
         .eq('user_id', userId)
         .is('deleted_at', null)
@@ -328,7 +330,17 @@ export class DecisionService {
         return null;
       }
 
-      // Prepare update data
+      // Check for concurrent edit if client provided updated_at
+      // Client may send either snake_case (updated_at) or camelCase (updatedAt)
+      const clientUpdatedAt = dto.updated_at || dto.updatedAt;
+      if (clientUpdatedAt && clientUpdatedAt !== existing.updated_at) {
+        const conflictError = new Error('Decision was modified by another session. Please refresh and try again.');
+        (conflictError as any).code = 'CONFLICT';
+        (conflictError as any).currentData = { id: existing.id, updated_at: existing.updated_at };
+        throw conflictError;
+      }
+
+      // Prepare update data (exclude updated_at from the actual update)
       const updateData: any = {};
 
       if (dto.title !== undefined) updateData.title = dto.title;
@@ -370,7 +382,11 @@ export class DecisionService {
 
       // Return the complete decision with all relations
       return await this.getDecisionById(decisionId, userId);
-    } catch (error) {
+    } catch (error: any) {
+      // Re-throw CONFLICT errors as-is
+      if (error.code === 'CONFLICT') {
+        throw error;
+      }
       console.error('Error in updateDecision:', error);
       throw error;
     }
