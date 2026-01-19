@@ -9980,12 +9980,23 @@ until the migration is run in Supabase Dashboard.
 3. Verify the "Overdue" badge appears in History page
 4. Verify timezone-aware calculation works correctly
 
-### Status: BLOCKED - Awaiting Database Migration
+### Status: SKIPPED - Awaiting Database Migration
 Feature #258 implementation is complete but cannot be marked as passing until:
 - Database migration is run manually in Supabase Dashboard
 - End-to-end verification is completed
 
+Feature has been moved to end of queue (priority 347) using feature_skip tool.
+
+### Commit
+fcca3b4 feat(overdue): implement overdue detection for decisions - Feature #258
+
 ### Progress
 - Starting: 203/291 features (69.8%)
 - Ending: 203/291 features (69.8%) - No change due to DB migration blocker
+
+### Files Modified
+- apps/api/src/services/decisionServiceNew.ts
+- apps/web/src/pages/HistoryPage.tsx
+- migration-add-decide-by-date.sql (new)
+- claude-progress.txt
 
