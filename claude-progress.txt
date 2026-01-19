@@ -73,6 +73,86 @@ spansMidnight: true
 
 EOF
 
+# Testing Session - 2026-01-19 (Feature #265)
+## Feature #265: Concurrent Edit Handling - VERIFIED PASSING ✅
+
+### Implementation Summary
+
+**Feature:** Two users edit same decision - last save wins or conflict shown
+**Category:** Concurrency & Race Conditions
+
+**Backend Changes:**
+
+1. **Added `updatedAt` field to API responses** (decisionServiceNew.ts - Line 158)
+   - Modified `getDecisionById` to include `updatedAt` timestamp
+   - Critical for optimistic locking (version tracking)
+
+2. **Implemented optimistic locking in `updateDecision` method** (Lines 333-341)
+   - Accepts both `updated_at` (snake_case) and `updatedAt` (camelCase)
+   - Compares client's version with database version
+   - Throws CONFLICT error on mismatch
+
+3. **Added CONFLICT error handling** (server.ts - Lines 244-251)
+   - Catches CONFLICT errors
+   - Returns HTTP 409 status
+   - Includes helpful message
+
+### How It Works
+
+1. Client reads decision → receives `updatedAt` timestamp
+2. Client modifies decision → includes `updatedAt` in update
+3. Server validates version → compares with database
+4. Match = update succeeds | Mismatch = 409 Conflict
+
+### Test Results
+
+**Database-level test:**
+```
+✓ User1 successfully updated
+✓ User2 update FAILED (expected) - concurrent edit detected
+✓ User2 refreshed and successfully updated
+```
+
+**API-level test:**
+```
+✓ User1 successfully updated
+✓ User2 update got CONFLICT (409) - Expected!
+✓ User2 refreshed and successfully updated
+```
+
+### API Response Examples
+
+**Conflict Response (409):**
+```json
+{
+  "error": "Conflict",
+  "message": "Decision was modified by another session. Please refresh and try again.",
+  "currentData": { "id": "...", "updated_at": "..." }
+}
+```
+
+### Files Modified
+- apps/api/src/services/decisionServiceNew.ts - Optimistic locking
+- apps/api/src/services/decisionService.ts - Updated for consistency
+- apps/api/src/server.ts - CONFLICT error handling
+
+### Session Statistics
+- Feature completed: #265 (Concurrent edit handling)
+- Progress: 210/291 features (72.2%)
+- Lines added: ~50
+- New functionality: Optimistic locking with version checking
+
+### Testing Commands
+```bash
+node test-concurrent-edit-f265.js      # Database-level test
+node test-concurrent-edit-api-f265.js  # API-level test
+node debug-api-response.js             # Debug API responses
+```
+
+[Testing] Feature #265 verified and marked as PASSING ✅
+
+EOF
+
 [Testing] Regression Test Session - lun 19 gen 2026 23:29:15
 ## Feature #95: Bulk delete multiple decisions - VERIFIED PASSING ✅
 
