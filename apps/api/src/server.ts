@@ -1,3 +1,4 @@
+// Feature #262: Reminder timing with timezone support
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
@@ -1252,18 +1253,157 @@ async function registerRoutes() {
     });
 
     // Reminders
-    api.get('/decisions/:id/reminders', async (request) => {
-      const { id } = request.params as { id: string };
-      const userId = request.user?.id;
-      // TODO: Implement reminders list
-      return { reminders: [], decisionId: id, userId };
+    api.get('/decisions/:id/reminders', async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        // Query reminders for this decision
+        const { data: reminders, error } = await supabase
+          .from('DecisionsFollowUpReminders')
+          .select('*')
+          .eq('decision_id', id)
+          .eq('user_id', userId)
+          .order('remind_at', { ascending: true });
+
+        if (error) {
+          server.log.error(error);
+          return reply.code(500).send({ error: 'Failed to fetch reminders' });
+        }
+
+        return { reminders: reminders || [], decisionId: id };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
-    api.post('/decisions/:id/reminders', async (request) => {
-      const { id } = request.params as { id: string };
-      const userId = request.user?.id;
-      // TODO: Implement reminder creation
-      return { message: 'Create reminder - to be implemented', decisionId: id, userId };
+    api.post('/decisions/:id/reminders', async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as {
+          remind_at: string; // ISO timestamp with timezone info
+          timezone?: string; // User's timezone (e.g., 'Europe/Rome')
+        };
+
+        if (!body.remind_at) {
+          return reply.code(400).send({ error: 'remind_at is required' });
+        }
+
+        // Parse the remind_at timestamp
+        const remindAt = new Date(body.remind_at);
+        if (isNaN(remindAt.getTime())) {
+          return reply.code(400).send({ error: 'Invalid remind_at date format' });
+        }
+
+        // Verify the decision exists and belongs to user
+        const { data: decision, error: decisionError } = await supabase
+          .from('decisions')
+          .select('id, user_id')
+          .eq('id', id)
+          .eq('user_id', userId)
+          .single();
+
+        if (decisionError || !decision) {
+          return reply.code(404).send({ error: 'Decision not found' });
+        }
+
+        // Create the reminder
+        // Note: remind_at is stored as UTC ISO timestamp
+        // The frontend sends local time converted to UTC
+        const { data: reminder, error } = await supabase
+          .from('DecisionsFollowUpReminders')
+          .insert({
+            decision_id: id,
+            user_id: userId,
+            remind_at: remindAt.toISOString(),
+            status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          server.log.error(error);
+          return reply.code(500).send({ error: 'Failed to create reminder' });
+        }
+
+        return {
+          success: true,
+          reminder,
+          message: `Reminder set for ${remindAt.toISOString()}`
+        };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
+    // Delete a reminder
+    api.delete('/decisions/:id/reminders/:reminderId', async (request, reply) => {
+      try {
+        const { id, reminderId } = request.params as { id: string; reminderId: string };
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const { error } = await supabase
+          .from('DecisionsFollowUpReminders')
+          .delete()
+          .eq('id', reminderId)
+          .eq('decision_id', id)
+          .eq('user_id', userId);
+
+        if (error) {
+          server.log.error(error);
+          return reply.code(500).send({ error: 'Failed to delete reminder' });
+        }
+
+        return { success: true, message: 'Reminder deleted' };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
+    // Mark a reminder as completed
+    api.patch('/decisions/:id/reminders/:reminderId', async (request, reply) => {
+      try {
+        const { id, reminderId } = request.params as { id: string; reminderId: string };
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as { status?: string };
+
+        const { data: reminder, error } = await supabase
+          .from('DecisionsFollowUpReminders')
+          .update({ status: body.status || 'completed' })
+          .eq('id', reminderId)
+          .eq('decision_id', id)
+          .eq('user_id', userId)
+          .select()
+          .single();
+
+        if (error) {
+          server.log.error(error);
+          return reply.code(500).send({ error: 'Failed to update reminder' });
+        }
+
+        return { success: true, reminder };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
     });
 
     // Pending Reviews - fetch outcome reminders that are due
@@ -1274,9 +1414,9 @@ async function registerRoutes() {
           return reply.code(401).send({ error: 'Unauthorized' });
         }
 
-        // Query outcome_reminders table for pending reviews
+        // Query DecisionsFollowUpReminders table for pending reviews
         const { data: reminders, error } = await supabase
-          .from('outcome_reminders')
+          .from('DecisionsFollowUpReminders')
           .select(`
             id,
             decision_id,

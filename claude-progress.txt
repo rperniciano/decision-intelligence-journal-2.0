@@ -10260,3 +10260,23 @@ Also verified the "This Month" filter works correctly:
 - No code changes required - feature already implemented correctly
 - Console errors: 0 (related to feature)
 
+
+# Testing Session - lun 19 gen 2026 21:46:03
+## Feature #73: Options attached to correct decision - VERIFIED ✅
+
+### Verification Summary
+Tested that options are properly linked to their respective decisions:
+
+1. ✅ Created Decision 1 'Test Decision 1 - Alpha Beta Options' with options 'Option Alpha', 'Option Beta'
+2. ✅ Created Decision 2 'Test Decision 2 - Gamma Option' with option 'Option Gamma'
+3. ✅ Viewed Decision 1 - Shows only Alpha and Beta (2 options)
+4. ✅ Viewed Decision 2 - Shows only Gamma (1 option)
+5. ✅ No console errors
+
+### Screenshots
+- feature-73-decision1-alpha-beta.png
+- feature-73-decision2-gamma.png
+- feature-73-verify-decision1-options.png
+- feature-73-verify-decision2-options.png
+
+[Testing] Feature #73 verified - still passing

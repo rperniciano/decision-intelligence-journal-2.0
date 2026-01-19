@@ -122,6 +122,16 @@ function LoadingSkeleton() {
   );
 }
 
+// Reminder interface
+interface Reminder {
+  id: string;
+  decision_id: string;
+  user_id: string;
+  remind_at: string;
+  status: string;
+  created_at: string;
+}
+
 export function DecisionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -135,6 +145,13 @@ export function DecisionDetailPage() {
   const [outcomeSatisfaction, setOutcomeSatisfaction] = useState<number>(3);
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [isRecordingOutcome, setIsRecordingOutcome] = useState(false);
+
+  // Reminder state
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [reminderDate, setReminderDate] = useState('');
+  const [reminderTime, setReminderTime] = useState('');
+  const [isSettingReminder, setIsSettingReminder] = useState(false);
 
   useEffect(() => {
     async function fetchDecision() {
@@ -181,6 +198,117 @@ export function DecisionDetailPage() {
 
     fetchDecision();
   }, [id, navigate]);
+
+  // Fetch reminders for this decision
+  useEffect(() => {
+    async function fetchReminders() {
+      if (!id) return;
+
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        const token = session.session?.access_token;
+
+        if (!token) return;
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}/reminders`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setReminders(data.reminders || []);
+        }
+      } catch (err) {
+        console.error('Error fetching reminders:', err);
+      }
+    }
+
+    fetchReminders();
+  }, [id]);
+
+  // Handle setting a reminder
+  const handleSetReminder = async () => {
+    if (!id || !reminderDate || !reminderTime || isSettingReminder) return;
+
+    try {
+      setIsSettingReminder(true);
+
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // Combine date and time into a local datetime string
+      // The browser creates this in user's local timezone
+      const localDateTime = new Date(`${reminderDate}T${reminderTime}`);
+
+      // Get user's timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}/reminders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          remind_at: localDateTime.toISOString(),
+          timezone: timezone,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to set reminder');
+      }
+
+      const data = await response.json();
+
+      // Add new reminder to list
+      if (data.reminder) {
+        setReminders(prev => [...prev, data.reminder]);
+      }
+
+      // Close modal and reset form
+      setShowReminderModal(false);
+      setReminderDate('');
+      setReminderTime('');
+    } catch (err) {
+      console.error('Error setting reminder:', err);
+      alert('Failed to set reminder. Please try again.');
+    } finally {
+      setIsSettingReminder(false);
+    }
+  };
+
+  // Handle deleting a reminder
+  const handleDeleteReminder = async (reminderId: string) => {
+    if (!id) return;
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) return;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}/reminders/${reminderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        setReminders(prev => prev.filter(r => r.id !== reminderId));
+      }
+    } catch (err) {
+      console.error('Error deleting reminder:', err);
+    }
+  };
 
   const handleDelete = async () => {
     if (!id) return;
@@ -509,6 +637,85 @@ export function DecisionDetailPage() {
           </motion.div>
         )}
 
+        {/* Reminders Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.3 }}
+          className="mb-6"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider">
+              Reminders
+            </h3>
+            <button
+              onClick={() => setShowReminderModal(true)}
+              className="text-sm text-accent hover:text-accent/80 transition-colors flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Set Reminder
+            </button>
+          </div>
+
+          {reminders.length === 0 ? (
+            <div className="glass p-4 rounded-xl rim-light text-center">
+              <p className="text-text-secondary text-sm">No reminders set</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {reminders.map((reminder) => {
+                const reminderDate = new Date(reminder.remind_at);
+                const now = new Date();
+                const isPast = reminderDate < now;
+                const isToday = reminderDate.toDateString() === now.toDateString();
+
+                return (
+                  <div
+                    key={reminder.id}
+                    className={`glass p-3 rounded-xl ${isPast ? 'border border-amber-500/30' : 'rim-light'} flex items-center justify-between`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg ${isPast ? 'bg-amber-500/20' : 'bg-accent/20'} flex items-center justify-center`}>
+                        <svg className={`w-4 h-4 ${isPast ? 'text-amber-400' : 'text-accent'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {isToday ? 'Today' : reminderDate.toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                          {' at '}
+                          {reminderDate.toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          {isPast ? 'Due' : reminder.status === 'completed' ? 'Completed' : 'Pending'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteReminder(reminder.id)}
+                      className="p-2 hover:bg-white/5 rounded-lg transition-colors text-text-secondary hover:text-rose-400"
+                      aria-label="Delete reminder"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+
         {/* Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -664,6 +871,104 @@ export function DecisionDetailPage() {
                 className="flex-1 px-4 py-2.5 bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isRecordingOutcome ? 'Recording...' : 'Record'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Set Reminder modal */}
+      {showReminderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md glass rounded-2xl p-6 rim-light"
+          >
+            <h3 className="text-xl font-semibold mb-4">Set Reminder</h3>
+            <p className="text-sm text-text-secondary mb-6">
+              Choose when you'd like to be reminded about this decision.
+              The reminder will appear on your dashboard at the specified time.
+            </p>
+
+            {/* Date input */}
+            <div className="mb-4">
+              <label htmlFor="reminder-date" className="block text-sm font-medium mb-2">
+                Date
+              </label>
+              <input
+                id="reminder-date"
+                type="date"
+                value={reminderDate}
+                onChange={(e) => setReminderDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+              />
+            </div>
+
+            {/* Time input */}
+            <div className="mb-4">
+              <label htmlFor="reminder-time" className="block text-sm font-medium mb-2">
+                Time
+              </label>
+              <input
+                id="reminder-time"
+                type="time"
+                value={reminderTime}
+                onChange={(e) => setReminderTime(e.target.value)}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+              />
+            </div>
+
+            {/* Timezone info */}
+            <div className="mb-6 p-3 bg-accent/10 rounded-xl">
+              <p className="text-sm text-accent">
+                <span className="font-medium">Your timezone:</span>{' '}
+                {Intl.DateTimeFormat().resolvedOptions().timeZone}
+              </p>
+              <p className="text-xs text-text-secondary mt-1">
+                The reminder will fire at the selected time in your local timezone.
+              </p>
+            </div>
+
+            {/* Preview */}
+            {reminderDate && reminderTime && (
+              <div className="mb-6 p-3 bg-white/5 rounded-xl">
+                <p className="text-sm text-text-secondary">
+                  <span className="font-medium text-text-primary">Reminder will fire at:</span>
+                </p>
+                <p className="text-lg font-medium text-accent mt-1">
+                  {new Date(`${reminderDate}T${reminderTime}`).toLocaleString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowReminderModal(false);
+                  setReminderDate('');
+                  setReminderTime('');
+                }}
+                className="flex-1 px-4 py-2.5 glass glass-hover rounded-xl text-sm font-medium"
+                disabled={isSettingReminder}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSetReminder}
+                disabled={!reminderDate || !reminderTime || isSettingReminder}
+                className="flex-1 px-4 py-2.5 bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSettingReminder ? 'Setting...' : 'Set Reminder'}
               </button>
             </div>
           </motion.div>
