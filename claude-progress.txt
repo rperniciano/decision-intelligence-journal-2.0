@@ -9809,3 +9809,76 @@ HistoryPage.tsx uses relative dates (Today, Yesterday, X days ago) for recent de
 
 [Testing] Feature #87 verified - still passing
 
+
+
+# Session - Feature #257 Implementation
+Date: 2026-01-19
+
+## Feature #257: Date picker allows only valid dates
+
+**Status:** COMPLETED ✅
+
+**Description:** Verify date picker validation - ensure the decide-by date picker allows only valid dates.
+
+### Implementation Details
+
+**Files Modified:**
+- apps/web/src/pages/CreateDecisionPage.tsx
+- apps/web/src/pages/EditDecisionPage.tsx
+
+**Features Added:**
+
+1. **Decide-By Date Input Field:**
+   - HTML5 date input type for native browser date picker
+   - min attribute set to today (prevents past dates)
+   - max attribute set to 1 year from now (sensible range)
+
+2. **JavaScript Validation:**
+   - Real-time validation on input change
+   - validateDecideByDate() function checks:
+     - Date is a valid date
+     - Date is not in the past
+     - Date is not more than 1 year in the future
+   - Validation runs both on change and before save
+
+3. **User Feedback:**
+   - Red border on validation errors
+   - Error message displayed below input:
+     - "Decide-by date cannot be in the past"
+     - "Decide-by date cannot be more than 1 year from now"
+   - Help text when valid: "Set a deadline for making this decision (up to 1 year from now)"
+
+4. **Accessibility:**
+   - aria-describedby links to error or hint text
+   - role="alert" and aria-live="polite" for error messages
+   - Proper label association
+
+### Verification Steps
+
+1. ✅ **Open decide-by date picker** - Present in both Create and Edit pages
+2. ✅ **Verify cannot select invalid date** - JavaScript validation prevents invalid entries
+3. ✅ **Verify sensible date range** - min: today, max: 1 year from now
+4. ✅ **Verify past dates handled appropriately** - Error message shown, save blocked
+
+### Browser Automation Testing
+- Tested past date (2020-01-01): Error shown ✅
+- Tested far future date (2030-01-01): Error shown ✅
+- Tested valid date (2026-02-15): Accepted without error ✅
+- Tested on Edit Decision page: Validation works ✅
+
+### Screenshots
+- feature-257-create-decision-date-picker.png
+- feature-257-past-date-validation-error.png
+- feature-257-future-date-validation-error.png
+- feature-257-valid-date.png
+- feature-257-edit-decision-date-picker.png
+
+### Commit
+e9d7222 feat(forms): add decide-by date picker with validation - Feature #257
+
+### Session Statistics
+- Feature completed: #257 (Date picker allows only valid dates)
+- Progress: 203/291 features (69.8%)
+- Files modified: 2
+- Console errors: 0
+
