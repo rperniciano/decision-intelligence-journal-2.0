@@ -1,3 +1,88 @@
+# Testing Session - 2026-01-19 (Feature #266)
+## Feature #266: Record deleted while viewing handled gracefully - VERIFIED PASSING ✅
+
+### Implementation Summary
+
+**Feature:** Handle when a decision is deleted while another user is viewing it
+**Category:** Concurrency & Race Conditions
+
+**Backend Changes:**
+
+1. **Modified `updateDecision` in decisionServiceNew.ts** (Lines 314-335)
+   - Changed from returning `null` to throwing GONE error
+   - Error code='GONE' with message "This decision has been deleted."
+   - Enables specific handling vs generic 404
+
+2. **Added 410 Gone handling in server.ts:**
+   - PATCH `/decisions/:id` - Returns 410 when decision deleted (Lines 253-260)
+   - POST `/decisions/:id/outcomes` - Returns 410 with PGRST116 detection (Lines 1374-1395)
+   - POST `/decisions/:id/reminders` - Returns 410 with deleted_at check (Lines 1477-1484)
+
+3. **Response Format:**
+   ```json
+   {
+     "error": "Gone",
+     "message": "This decision has been deleted.",
+     "canRedirect": true
+   }
+   ```
+
+**Frontend Changes:**
+
+1. **Added `isDeleted` state** (Line 141)
+   - Tracks whether decision was deleted during session
+
+2. **Enhanced Error Handling:**
+   - fetchDecision: Handles 410 status (Lines 186-191)
+   - handleRecordOutcome: Handles 410 status (Lines 388-395)
+   - handleSetReminder: Handles 410 status (Lines 273-280)
+
+3. **Improved Error Display:**
+   - Shows context: "This decision may have been deleted by another user or session"
+   - Provides "Back to History" button for redirect
+   - No crashes or console errors
+
+### Verification
+
+**Backend API Tests (6/6 Passed):**
+```
+✓ Fetch decision (before delete)
+✓ Delete decision
+✓ Fetch deleted decision (404/410)
+✓ Update deleted decision → 410 Gone
+✓ Record outcome on deleted decision → 410 Gone
+✓ Set reminder on deleted decision → 410 Gone
+```
+
+**Frontend Tests:**
+```
+✓ User views decision detail page
+✓ Decision deleted via API (simulating another user)
+✓ User clicks "Record Outcome" button
+✓ System shows graceful error message
+✓ No JavaScript errors
+✓ "Back to History" button works
+```
+
+**Screenshot:** `feature266-deleted-error-handling.png`
+
+### Session Statistics
+- Feature completed: #266 (Deleted while viewing handled gracefully)
+- Progress: 211/291 features (72.5%)
+- Lines added: ~100
+- New functionality: 410 Gone status code handling
+
+### Testing Commands
+```bash
+node test-deleted-while-viewing-f266.js  # Backend API tests
+node create-decision-for-frontend-test.js  # Create test decision
+node delete-decision-frontend-test.js  # Delete decision during test
+```
+
+[Testing] Feature #266 verified and marked as PASSING ✅
+
+EOF
+
 # Testing Session - 2026-01-19
 ## Feature #263: Quiet hours respected for notifications - VERIFIED PASSING ✅
 
