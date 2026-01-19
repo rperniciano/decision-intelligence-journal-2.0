@@ -8,11 +8,11 @@ import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
-import { authMiddleware } from './middleware/auth';
-import { DecisionService } from './services/decisionServiceNew';
-import { AsyncVoiceService } from './services/asyncVoiceService';
-import { jobManager } from './services/jobManager';
-import { InsightsService } from './services/insightsService';
+import { authMiddleware } from './middleware/auth.js';
+import { DecisionService } from './services/decisionServiceNew.js';
+import { AsyncVoiceService } from './services/asyncVoiceService.js';
+import { jobManager } from './services/jobManager.js';
+import { InsightsService } from './services/insightsService.js';
 
 // Get directory paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -131,6 +131,7 @@ async function registerRoutes() {
           search: query.search,
           limit: query.limit ? parseInt(query.limit) : 20,
           offset: query.offset ? parseInt(query.offset) : 0,
+          cursor: query.cursor, // Feature #267: cursor-based pagination
         });
 
         return result;
@@ -1407,75 +1408,7 @@ async function registerRoutes() {
           throw error;
         }
 
-        if (!updated) {
-          // Decision not found or deleted (Feature #266)
-          reply.code(410);
-          return {
-            error: 'Gone',
-            message: 'This decision has been deleted.',
-            canRedirect: true
-          };
-        }
-
         console.log('Outcome recording - supabase result:', { updated, error });
-
-        if (error) {
-          // If column doesn't exist yet, try without it
-          if (error.message.includes('outcome_satisfaction')) {
-            console.log('outcome_satisfaction column does not exist, skipping...');
-            const { data: updated2, error: error2 } = await supabase
-              .from('decisions')
-              .update({
-                outcome: outcome,
-                outcome_notes: body.notes || null,
-                outcome_recorded_at: new Date().toISOString()
-              })
-              .eq('id', id)
-              .eq('user_id', userId)
-              .is('deleted_at', null)
-              .select()
-              .single();
-
-            // Check if decision was deleted (PGRST116 = 0 rows returned)
-            if (error2 && error2.code === 'PGRST116') {
-              // Decision not found or deleted (Feature #266)
-              reply.code(410);
-              return {
-                error: 'Gone',
-                message: 'This decision has been deleted.',
-                canRedirect: true
-              };
-            }
-
-            if (error2) {
-              console.error('Supabase error:', error2);
-              throw error2;
-            }
-
-            if (!updated2) {
-              // Decision not found or deleted (Feature #266)
-              reply.code(410);
-              return {
-                error: 'Gone',
-                message: 'This decision has been deleted.',
-                canRedirect: true
-              };
-            }
-
-            return {
-              success: true,
-              outcome: {
-                id: id,
-                result: updated2.outcome,
-                satisfaction: body.satisfaction,
-                notes: updated2.outcome_notes,
-                recordedAt: updated2.outcome_recorded_at
-              }
-            };
-          }
-          console.error('Supabase error:', error);
-          throw error;
-        }
 
         if (!updated) {
           // Decision not found or deleted (Feature #266)

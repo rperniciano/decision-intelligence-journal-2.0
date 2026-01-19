@@ -30,8 +30,35 @@ export class DecisionService {
     search?: string;
     limit?: number;
     offset?: number;
+    cursor?: string; // ISO timestamp for cursor-based pagination (Feature #267)
   }) {
     try {
+      // Build the base query for count (simplified select for better performance)
+      let countQuery = supabase
+        .from('decisions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('deleted_at', null);
+
+      // Apply same filters to count query
+      if (filters?.status) {
+        countQuery = countQuery.eq('status', filters.status);
+      }
+      if (filters?.categoryId) {
+        countQuery = countQuery.eq('category_id', filters.categoryId);
+      }
+      if (filters?.search) {
+        countQuery = countQuery.ilike('title', `%${filters.search}%`);
+      }
+
+      // Get the count
+      const { count, error: countError } = await countQuery;
+      if (countError) {
+        console.error('Supabase count error:', countError);
+        throw countError;
+      }
+
+      // Build the main query for data
       let query = supabase
         .from('decisions')
         .select(`
@@ -61,10 +88,20 @@ export class DecisionService {
       }
 
       const limit = filters?.limit || 20;
-      const offset = filters?.offset || 0;
-      query = query.range(offset, offset + limit - 1);
 
-      const { data, error, count } = await query;
+      // Feature #267: Cursor-based pagination for consistency when data changes
+      // If cursor is provided, use it instead of offset
+      if (filters?.cursor) {
+        // Cursor-based: get items created before the cursor timestamp
+        query = query.lt('created_at', filters.cursor);
+        query = query.limit(limit);
+      } else {
+        // Offset-based: traditional pagination (backward compatible)
+        const offset = filters?.offset || 0;
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Supabase error:', error);
@@ -104,11 +141,20 @@ export class DecisionService {
         outcome_recorded_at: d.outcome_recorded_at
       }));
 
+      // Feature #267: Calculate next cursor for cursor-based pagination
+      // The cursor is the created_at timestamp of the last item on this page
+      const lastDecision = decisions[decisions.length - 1];
+      const nextCursor = lastDecision ? lastDecision.created_at : null;
+      const hasMore = decisions.length === limit;
+
       return {
         decisions,
         total: count || 0,
         limit,
-        offset,
+        offset: filters?.offset || 0,
+        // Cursor-based pagination fields (Feature #267)
+        nextCursor,
+        hasMore,
       };
     } catch (error) {
       console.error('Error in getDecisions:', error);
@@ -405,6 +451,26 @@ export class DecisionService {
     offset?: number;
   }) {
     try {
+      // Build the base query for count (simplified select for better performance)
+      let countQuery = supabase
+        .from('decisions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .not('deleted_at', 'is', null);
+
+      // Apply same filters to count query
+      if (filters?.search) {
+        countQuery = countQuery.ilike('title', `%${filters.search}%`);
+      }
+
+      // Get the count
+      const { count, error: countError } = await countQuery;
+      if (countError) {
+        console.error('Supabase count error:', countError);
+        throw countError;
+      }
+
+      // Build the main query for data
       let query = supabase
         .from('decisions')
         .select(`
@@ -429,7 +495,7 @@ export class DecisionService {
       const offset = filters?.offset || 0;
       query = query.range(offset, offset + limit - 1);
 
-      const { data, error, count } = await query;
+      const { data, error } = await query;
 
       if (error) {
         console.error('Supabase error:', error);

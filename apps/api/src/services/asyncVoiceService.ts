@@ -1,6 +1,6 @@
-import { VoiceService } from './voiceService';
-import { jobManager } from './jobManager';
-import { DecisionService } from './decisionServiceNew';
+import { VoiceService } from './voiceService.js';
+import { jobManager } from './jobManager.js';
+import { DecisionService } from './decisionServiceNew.js';
 
 /**
  * Async voice processing service that updates job status as it progresses

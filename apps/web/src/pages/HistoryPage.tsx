@@ -471,6 +471,11 @@ export function HistoryPage() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [isPermanentlyDeleting, setIsPermanentlyDeleting] = useState(false);
 
+  // Feature #267: Cursor-based pagination state
+  const [pageCursors, setPageCursors] = useState<Map<number, string>>(new Map()); // page -> cursor
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+
   // Update activeFilter, selectedCategory, sortBy, activeView, and timeFilter when URL changes (e.g., browser back/forward)
   useEffect(() => {
     setActiveFilter(filterFromUrl);
@@ -478,6 +483,10 @@ export function HistoryPage() {
     setSortBy(sortFromUrl);
     setActiveView(viewFromUrl);
     setTimeFilter(timeFilterFromUrl);
+
+    // Feature #267: Reset pageCursors when filters change
+    setPageCursors(new Map());
+    setNextCursor(null);
   }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl, timeFilterFromUrl]);
 
   // Fetch categories on mount
@@ -545,9 +554,26 @@ export function HistoryPage() {
 
         // Add pagination parameters
         const itemsPerPage = ITEMS_PER_PAGE;
-        const offset = (currentPage - 1) * itemsPerPage;
-        params.append('limit', itemsPerPage.toString());
-        params.append('offset', offset.toString());
+
+        // Feature #267: Use cursor-based pagination for page > 1
+        // For page 1, no cursor needed
+        // For page > 1, get the cursor from our stored pageCursors
+        if (currentPage === 1) {
+          // First page - no cursor needed
+          params.append('limit', itemsPerPage.toString());
+        } else {
+          // Get cursor for the previous page
+          const cursorForPage = pageCursors.get(currentPage - 1);
+          if (cursorForPage) {
+            params.append('cursor', cursorForPage);
+            params.append('limit', itemsPerPage.toString());
+          } else {
+            // Fallback to offset if cursor not available (shouldn't happen)
+            const offset = (currentPage - 1) * itemsPerPage;
+            params.append('offset', offset.toString());
+            params.append('limit', itemsPerPage.toString());
+          }
+        }
 
         // Use trash endpoint if trash filter is active, otherwise regular endpoint
         const baseUrl = import.meta.env.VITE_API_URL;
@@ -586,6 +612,30 @@ export function HistoryPage() {
 
         setDecisions(transformedDecisions);
         setTotalCount(data.total || 0);
+
+        // Feature #267: Store cursor for this page
+        // Also invalidate cursors for subsequent pages if current page changes
+        if (data.nextCursor) {
+          setPageCursors(prev => {
+            const newMap = new Map(prev);
+            const existingCursor = prev.get(currentPage);
+
+            // If cursor for this page has changed, invalidate all subsequent cursors
+            if (existingCursor !== data.nextCursor) {
+              // Remove all cursors for pages > current page
+              for (const [key] of prev) {
+                if (key > currentPage) {
+                  newMap.delete(key);
+                }
+              }
+            }
+
+            newMap.set(currentPage, data.nextCursor);
+            return newMap;
+          });
+        }
+        setNextCursor(data.nextCursor || null);
+        setHasMore(data.hasMore || false);
       } catch (error) {
         console.error('Error fetching decisions:', error);
         showErrorAlert(error, 'Failed to load decisions');
@@ -595,7 +645,7 @@ export function HistoryPage() {
     }
 
     fetchDecisions();
-  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage]);
+  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage, pageCursors]);
 
   // Apply time-based filtering client-side (to respect user's timezone)
   const timeFilteredDecisions = decisions.filter((decision) => {
