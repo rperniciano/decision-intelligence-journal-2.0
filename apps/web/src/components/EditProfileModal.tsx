@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -15,6 +15,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
   const [name, setName] = useState(currentName);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const isSubmittingRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +26,11 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
       return;
     }
 
+    // Prevent duplicate submissions
+    if (isSubmittingRef.current) {
+      return;
+    }
+    isSubmittingRef.current = true;
     setIsLoading(true);
 
     try {
@@ -51,6 +57,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 

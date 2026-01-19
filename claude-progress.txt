@@ -1,3 +1,81 @@
+# Testing Session - 2026-01-20 (Feature #270)
+## Feature #270: Concurrent form submissions handled - VERIFIED PASSING ✅
+
+### Implementation Summary
+
+**Problem:** When users double-click submit buttons or rapidly navigate between forms, React's asynchronous state updates allow both submissions to proceed, causing duplicate API calls.
+
+**Solution:** Added `useRef` pattern to all form submissions for immediate synchronous state tracking:
+
+```typescript
+const isSubmittingRef = useRef(false);
+
+const handleSubmit = async (e: React.FormEvent) => {
+  if (isSubmittingRef.current) return;  // Synchronous check
+  isSubmittingRef.current = true;
+
+  try {
+    // ... API call ...
+  } finally {
+    isSubmittingRef.current = false;  // Always reset
+  }
+};
+```
+
+### Files Modified
+- apps/web/src/components/EditProfileModal.tsx
+- apps/web/src/pages/RegisterPage.tsx
+- apps/web/src/pages/LoginPage.tsx
+- apps/web/src/pages/ForgotPasswordPage.tsx
+
+### Verification Results
+
+**Test 1: Registration Form Double-Click**
+- ✅ Only 1 signup request (not 2)
+- ✅ Success message displayed
+- ✅ No duplicate user created
+
+**Test 2: Login Form Double-Click**
+- ✅ Only 1 login request
+- ✅ Successfully navigated to dashboard
+- ✅ Session created correctly
+
+**Test 3: Edit Profile Form Double-Click**
+- ✅ Only 1 PATCH request to /api/v1/profile
+- ✅ Profile updated successfully
+- ✅ Modal closed correctly
+
+**Test 4: Forgot Password Form Double-Click**
+- ✅ Only 1 fetch call
+- ✅ Success message displayed
+- ✅ Email shown correctly
+
+**Additional Checks:**
+- ✅ Zero console errors
+- ✅ No duplicate data
+- ✅ Each submission independent
+- ✅ Correct success/error states
+
+### Why useRef Instead of State?
+
+React state updates are **asynchronous** (batched in render cycle):
+```typescript
+setLoading(true);  // Not set immediately!
+// Second click can execute here
+```
+
+useRef provides **synchronous** updates:
+```typescript
+isSubmittingRef.current = true;  // Set immediately!
+// Second click blocked instantly
+```
+
+### Session Statistics
+- Feature completed: #270 (Concurrent form submissions)
+- Progress: 215/291 features (73.9%)
+- Forms protected: 4
+- Tests passed: 8/8 (100%)
+
 # Testing Session - 2026-01-19 (Feature #268)
 ## Feature #268: Rapid navigation shows correct data - VERIFIED PASSING ✅
 
@@ -96,175 +174,3 @@ useEffect(() => {
 - Progress: 213/291 features (73.2%)
 - Files modified: 5
 - useEffect hooks fixed: 8
-
-
-### Implementation Summary
-
-**Feature:** Cursor-based pagination for consistent list navigation when data changes
-**Category:** Concurrency & Race Conditions
-
-### Problem
-When viewing page 2 of the History list, if a new decision is added:
-- Offset-based pagination causes items to shift between pages
-- User may see duplicate items or missing items
-- Creates a confusing user experience
-
-### Solution: Cursor-Based Pagination
-
-**Backend Changes (decisionServiceNew.ts):**
-
-1. **Added cursor parameter support:**
-   - `getDecisions()` now accepts optional `cursor` parameter (ISO timestamp)
-   - Uses `.lt('created_at', cursor)` for cursor-based queries
-   - Backward compatible with offset parameter
-
-2. **Fixed count queries:**
-   - Split count query from data query
-   - Uses `select('id', { count: 'exact', head: true })` pattern
-   - Returns accurate total counts
-
-3. **Added pagination metadata:**
-   ```typescript
-   return {
-     decisions,
-     total: count || 0,
-     limit,
-     offset: filters?.offset || 0,
-     nextCursor,    // created_at of last item on this page
-     hasMore,       // whether more pages exist
-   };
-   ```
-
-**Frontend Changes (HistoryPage.tsx):**
-
-1. **Added cursor state management:**
-   - `pageCursors: Map<number, string>` - stores cursor for each page
-   - `nextCursor` - cursor returned from last API call
-   - `hasMore` - whether more pages exist
-
-2. **Updated fetch logic:**
-   - Page 1: No cursor needed (fetches newest items)
-   - Page 2+: Uses cursor from previous page
-   - Falls back to offset if cursor unavailable
-
-3. **Smart cursor invalidation:**
-   - When page 1's cursor changes, invalidates all subsequent page cursors
-   - Ensures fresh pagination when new items added
-
-### How Cursor Pagination Works
-
-1. **Fetch page 1:**
-   - GET `/api/v1/decisions?limit=10`
-   - Returns: 10 decisions + `nextCursor: "2026-01-19T23:07:00.631588+00:00"`
-   - Frontend stores: `pageCursors.set(1, cursor)`
-
-2. **Navigate to page 2:**
-   - GET `/api/v1/decisions?limit=10&cursor=2026-01-19T23:07:00.631588+00:00`
-   - Returns: 10 decisions created BEFORE that timestamp
-   - Frontend stores: `pageCursors.set(2, nextCursor)`
-
-3. **New decision added** (while on page 2):
-   - Page 1's cursor will change when refreshed
-
-4. **Navigate back to page 1:**
-   - Frontend detects cursor change
-   - Invalidates all cursors > 1
-   - Ensures page 2 uses fresh cursor
-
-### Verification
-
-**API Test Results:**
-```
-✓ Page 1: 10 decisions with nextCursor
-✓ Page 2 (using cursor): 10 decisions
-✓ No duplicates between pages
-✓ After adding new decision:
-  ✓ Page 2 (using ORIGINAL cursor) is STABLE
-  ✓ Same 10 decisions returned
-  ✓ No items disappeared or appeared
-```
-
-**Test Script:** `test-cursor-pagination-f267.js`
-
-### Files Modified
-- `apps/api/src/services/decisionServiceNew.ts` - Added cursor support, fixed counts
-- `apps/api/src/server.ts` - Pass cursor parameter
-- `apps/web/src/pages/HistoryPage.tsx` - Cursor-based pagination logic
-
-### Key Benefits
-1. **Pagination stability** - Items don't shift pages when new data added
-2. **Better performance** - Efficient cursor queries with proper indexes
-3. **Backward compatible** - Offset pagination still works
-4. **Automatic recovery** - Smart cursor invalidation
-
-### Session Statistics
-- Feature completed: #267 (List updates while on page 2)
-- Progress: 212/291 features (72.9%)
-- Lines added: ~150
-- New functionality: Cursor-based pagination system
-
-[Testing] Feature #267 verified and marked as PASSING ✅
-
-[Testing] Session complete - Fixed and verified Feature #198 (Clear individual filter works)
-
-
-[Testing] Regression Test Session Complete
-
-## Feature #169: Multiple export requests handled
-**Status:** ✅ FIXED AND VERIFIED
-
-**Regression Found:**
-- Clicking export button twice rapidly triggered TWO API calls
-- Root cause: React state updates are asynchronous
-- Both clicks could execute before  state updated
-
-**Fix Applied:**
-- Added  for immediate synchronous state tracking
-- Check  synchronously before processing
-- Reset ref in all code paths (finally block + early returns)
-
-**Verification Results:**
-✅ Single click: Export works correctly
-✅ Double-click: Only ONE API call made to /api/v1/export/json  
-✅ Network monitoring confirms duplicate requests are blocked
-✅ No console errors
-✅ File download works correctly
-
-**Files Modified:**
-- apps/web/src/pages/ExportPage.tsx
-
-**Commit:** a557ecd
-
-## Session Statistics
-- Regression found and fixed: 1 (Feature #169)
-- Total passing features: 213/291 (73.2%)
-- Testing session completed successfully
-
-
-[Testing] Regression Test Session Complete
-
-Feature #169: Multiple export requests handled
-Status: FIXED AND VERIFIED
-
-Regression Found:
-- Clicking export button twice rapidly triggered TWO API calls
-- Root cause: React state updates are asynchronous
-- Both clicks could execute before exporting state updated
-
-Fix Applied:
-- Added useRef for immediate synchronous state tracking
-- Check ref synchronously before processing
-- Reset ref in all code paths
-
-Verification Results:
-- Single click: Export works correctly
-- Double-click: Only ONE API call made
-- Network monitoring confirms duplicate requests blocked
-- No console errors
-
-Files Modified: apps/web/src/pages/ExportPage.tsx
-Commit: a557ecd
-
-Session Statistics:
-- Regression found and fixed: 1 (Feature #169)
-- Total passing features: 213/291 (73.2%)

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const { signUpWithEmail, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +32,11 @@ export function RegisterPage() {
       return;
     }
 
+    // Prevent duplicate submissions
+    if (isSubmittingRef.current) {
+      return;
+    }
+    isSubmittingRef.current = true;
     setLoading(true);
 
     const { error } = await signUpWithEmail(email, password, name);
@@ -38,9 +44,11 @@ export function RegisterPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
+      isSubmittingRef.current = false;
     } else {
       setSuccess(true);
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 

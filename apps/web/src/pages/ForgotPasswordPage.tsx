@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,12 +8,19 @@ export function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Prevent duplicate submissions
+    if (isSubmittingRef.current) {
+      return;
+    }
+    isSubmittingRef.current = true;
     setLoading(true);
 
     const { error } = await resetPassword(email);
@@ -21,9 +28,11 @@ export function ForgotPasswordPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
+      isSubmittingRef.current = false;
     } else {
       setSuccess(true);
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 

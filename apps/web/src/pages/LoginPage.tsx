@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +8,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const { signInWithEmail, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -19,6 +20,12 @@ export function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Prevent duplicate submissions
+    if (isSubmittingRef.current) {
+      return;
+    }
+    isSubmittingRef.current = true;
     setLoading(true);
 
     const { error } = await signInWithEmail(email, password);
@@ -26,6 +33,7 @@ export function LoginPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
+      isSubmittingRef.current = false;
     } else {
       navigate(from, { replace: true });
     }
