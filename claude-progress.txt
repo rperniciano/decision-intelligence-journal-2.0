@@ -10430,3 +10430,73 @@ a0dbeef feat(history): implement month/year grouping for Timeline view - Feature
 - Lines changed: ~40 lines
 - Console errors: 0
 
+
+[Testing] Session complete - Feature #213 regression fixed
+
+## Regression Found and Fixed
+**Feature #213:** Satisfaction rating within range
+**Issue:** No backend validation, not stored in database
+
+## Fix Applied
+1. Added validation: satisfaction must be integer 1-5
+2. Added database storage for satisfaction
+3. Added graceful fallback if column missing
+4. Returns stored value instead of request value
+
+## Files Modified
+- apps/api/src/server.ts
+- migration-add-outcome-satisfaction.sql (created)
+
+## Commit
+acfc09f - fix(api): validate and store satisfaction rating
+
+## Session Statistics
+- Regression found: 1 (#213)
+- Regression fixed: 1
+- Time spent: Build issues + regression testing
+- Backend now running on port 4002
+
+
+# Testing Session - 2026-01-19 22:46:37
+## Feature #63: Timestamps are real and accurate - VERIFIED ✅
+
+### Verification Summary
+Tested that decision created_at timestamps reflect actual time (not fake/hardcoded dates).
+
+### Test Results
+
+#### Decision 1
+- Title: '2026-01-19_22-44-34'
+- Created at: January 19, 2026 at 10:44 PM
+- Current time when created: 21:44:00 UTC (22:44 local)
+- Difference: 1 minute
+- Result: ✅ ACCURATE
+
+#### Decision 2  
+- Title: 'TEST_FEATURE63_TIMESTAMP_2'
+- Created at: January 19, 2026 at 10:45 PM
+- Current time when created: 21:45:19 UTC (22:45 local)
+- Difference: 33 seconds
+- Result: ✅ ACCURATE
+
+### Verification Steps
+1. ✅ Noted current time before creating decisions
+2. ✅ Created two test decisions via /decisions/new page
+3. ✅ Checked created_at timestamps on decision detail pages
+4. ✅ Verified timestamps are within minutes of current time
+5. ✅ Confirmed timestamps are not fake/hardcoded dates
+6. ✅ Cleaned up test decisions
+
+### Console Errors
+- None related to timestamp functionality
+- Some 500 errors for pending-reviews endpoint (non-critical to this feature)
+
+### Screenshot
+- feature-63-timestamp-verification.png
+
+### Result: PASSING ✅
+
+Feature #63 is verified as PASSING. Timestamps are real, accurate, and reflect actual creation time.
+
+[Testing] Feature #63 verified - still passing
+

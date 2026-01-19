@@ -36,6 +36,13 @@ export interface CategoryPattern {
   positiveRate: number;
 }
 
+export interface PositionBiasPattern {
+  position: number;
+  chosenCount: number;
+  totalCount: number;
+  percentage: number;
+}
+
 export interface InsightsData {
   totalDecisions: number;
   decisionsWithOutcomes: number;
@@ -48,6 +55,7 @@ export interface InsightsData {
   scoreTrend: number;
   bestEmotionalState: EmotionalPattern | null;
   topCategories: CategoryPattern[];
+  positionBias: PositionBiasPattern | null;
 }
 
 export class InsightsService {
@@ -55,10 +63,14 @@ export class InsightsService {
    * Calculate insights for a user based on their decisions
    */
   static async getInsights(userId: string): Promise<InsightsData> {
-    // Fetch all decisions for the user (not deleted)
+    // Fetch all decisions for the user (not deleted) with their options
+    // Use explicit relationship name to avoid ambiguity (decisions has two relationships to options table)
     const { data: decisions, error } = await supabase
       .from('decisions')
-      .select('*')
+      .select(`
+        *,
+        options!options_decision_id_fkey (id, display_order)
+      `)
       .eq('user_id', userId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
@@ -144,6 +156,64 @@ export class InsightsService {
 
     const topCategories = categoryStats.sort((a, b) => b.count - a.count).slice(0, 5);
 
+    // Calculate option position bias (primacy bias detection)
+    let positionBias: PositionBiasPattern | null = null;
+
+    // Get decided decisions with options that have a chosen option
+    const decidedDecisionsWithOptions = allDecisions.filter(d =>
+      d.chosen_option_id && d.options && d.options.length > 1
+    );
+
+    if (decidedDecisionsWithOptions.length >= 3) {
+      // Track position statistics
+      const positionStats: Map<number, { chosen: number; total: number }> = new Map();
+
+      decidedDecisionsWithOptions.forEach(decision => {
+        const options = decision.options || [];
+
+        // Sort options by display_order to get correct positions
+        const sortedOptions = options.sort((a, b) =>
+          (a.display_order || 0) - (b.display_order || 0)
+        );
+
+        // Track each position
+        sortedOptions.forEach((option, index) => {
+          const position = index + 1; // 1-based position
+          if (!positionStats.has(position)) {
+            positionStats.set(position, { chosen: 0, total: 0 });
+          }
+          const stats = positionStats.get(position)!;
+          stats.total++;
+
+          // Check if this option was chosen
+          if (decision.chosen_option_id === option.id) {
+            stats.chosen++;
+          }
+        });
+      });
+
+      // Find the position with the highest selection rate (potential bias)
+      let highestBias: PositionBiasPattern | null = null;
+
+      positionStats.forEach((stats, position) => {
+        const percentage = stats.total > 0 ? (stats.chosen / stats.total) * 100 : 0;
+
+        // Only consider significant bias: at least 30% selection rate and at least 3 instances
+        if (stats.chosen >= 3 && percentage >= 30) {
+          if (!highestBias || percentage > highestBias.percentage) {
+            highestBias = {
+              position,
+              chosenCount: stats.chosen,
+              totalCount: stats.total,
+              percentage: Math.round(percentage),
+            };
+          }
+        }
+      });
+
+      positionBias = highestBias;
+    }
+
     return {
       totalDecisions,
       decisionsWithOutcomes: decisionsWithOutcomes.length,
@@ -156,6 +226,7 @@ export class InsightsService {
       scoreTrend,
       bestEmotionalState,
       topCategories,
+      positionBias,
     };
   }
 }

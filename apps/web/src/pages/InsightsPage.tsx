@@ -178,6 +178,12 @@ interface InsightsData {
   emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }>;
   categoryDistribution: Record<string, number>;
   decisionScore: number;
+  positionBias: {
+    position: number;
+    chosenCount: number;
+    totalCount: number;
+    percentage: number;
+  } | null;
 }
 
 export function InsightsPage() {
@@ -212,6 +218,7 @@ export function InsightsPage() {
           emotionalPatterns: insights.emotionalPatterns,
           categoryDistribution: insights.categoryDistribution,
           decisionScore: insights.decisionScore,
+          positionBias: insights.positionBias,
         });
       } catch (error) {
         console.error('Error fetching insights:', error);
@@ -258,6 +265,13 @@ export function InsightsPage() {
     return topCategory.count > 0 ? `${topCategory.name}: ${topCategory.count} decisions` : 'Not enough data';
   })() : 'Not enough data';
 
+  // Position Bias (Primacy Bias) - detect if user tends to choose first option
+  const positionBiasPattern = insightsData?.positionBias
+    ? `Position #${insightsData.positionBias.position}: ${insightsData.positionBias.percentage}%`
+    : 'No bias detected';
+
+  const hasPositionBias = insightsData?.positionBias !== null;
+
   const patterns = [
     {
       title: 'Outcome Rate',
@@ -300,6 +314,21 @@ export function InsightsPage() {
         </svg>
       ),
     },
+    ...(hasPositionBias ? [{
+      title: 'Position Bias',
+      description: hasPositionBias && insightsData?.positionBias?.position === 1
+        ? 'You tend to choose the first option'
+        : `Your most chosen option position`,
+      value: positionBiasPattern,
+      trend: hasPositionBias && insightsData?.positionBias?.percentage && insightsData.positionBias.percentage >= 50
+        ? { direction: 'up' as const, value: 'Primacy bias' }
+        : undefined,
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+        </svg>
+      ),
+    }] : []),
   ];
 
   return (
