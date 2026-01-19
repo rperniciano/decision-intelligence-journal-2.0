@@ -265,7 +265,11 @@ export function CreateDecisionPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           {error && (
-            <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400"
+            >
               {error}
             </div>
           )}

@@ -104,6 +104,8 @@ export function LoginPage() {
           <form onSubmit={handleEmailLogin} className="space-y-4">
             {error && (
               <motion.div
+                role="alert"
+                aria-live="assertive"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm"

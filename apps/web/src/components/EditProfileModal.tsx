@@ -106,7 +106,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
                     disabled={isLoading}
                   />
                   {error && (
-                    <p className="mt-2 text-sm text-red-400">{error}</p>
+                    <p role="alert" aria-live="assertive" className="mt-2 text-sm text-red-400">{error}</p>
                   )}
                 </div>
 

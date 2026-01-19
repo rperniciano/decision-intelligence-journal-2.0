@@ -700,7 +700,7 @@ export function EditDecisionPage() {
               placeholder="Enter decision title"
             />
             {errors.title && (
-              <p className="mt-1 text-sm text-red-400">{errors.title}</p>
+              <p role="alert" aria-live="polite" className="mt-1 text-sm text-red-400">{errors.title}</p>
             )}
           </div>
 
@@ -758,7 +758,7 @@ export function EditDecisionPage() {
                   ))}
                 </select>
                 {errors.chosenOption && (
-                  <p className="mt-1 text-sm text-red-400">{errors.chosenOption}</p>
+                  <p role="alert" aria-live="polite" className="mt-1 text-sm text-red-400">{errors.chosenOption}</p>
                 )}
               </div>
 
@@ -830,7 +830,7 @@ export function EditDecisionPage() {
                   <option value="Other">Other</option>
                 </select>
                 {errors.abandonReason && (
-                  <p className="mt-1 text-sm text-red-400">{errors.abandonReason}</p>
+                  <p role="alert" aria-live="polite" className="mt-1 text-sm text-red-400">{errors.abandonReason}</p>
                 )}
               </div>
 

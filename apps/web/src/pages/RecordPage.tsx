@@ -226,6 +226,8 @@ export function RecordPage() {
         {/* Error message with retry options */}
         {error && savedAudioBlob && (
           <motion.div
+            role="alert"
+            aria-live="assertive"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8 p-6 glass rounded-lg border border-red-500/20 bg-red-500/10 max-w-md"
@@ -257,6 +259,8 @@ export function RecordPage() {
         )}
         {error && !savedAudioBlob && (
           <motion.div
+            role="alert"
+            aria-live="assertive"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8 p-6 glass rounded-lg border border-red-500/20 bg-red-500/10 max-w-md"
