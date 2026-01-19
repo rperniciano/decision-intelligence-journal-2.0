@@ -10098,3 +10098,79 @@ JavaScript evaluation in browser confirmed:
 - Lines added: ~116
 - Console errors: 0
 
+
+
+# Testing Session - lun 19 gen 2026 21:31:14
+## Feature #75: Profile shows actual user info - REGRESSION FIXED ✅
+
+### Issue Found
+Multiple files had hardcoded 'http://localhost:3001' instead of using VITE_API_URL environment variable:
+- EditProfileModal.tsx (1 occurrence)
+- CategoriesPage.tsx (4 occurrences)
+- SettingsPage.tsx (2 occurrences)
+
+### Root Cause
+The VITE_API_URL is set to localhost:4001 but these files were using port 3001, causing API calls to fail with CORS/connection errors.
+
+### Fix Applied
+Replaced all hardcoded URLs with ${import.meta.env.VITE_API_URL} template strings.
+
+### Verification Steps
+1. ✅ Created test user (regression75@example.com)
+2. ✅ Logged in and navigated to Settings > Profile
+3. ✅ Verified original name displayed: 'Regression Test User 75'
+4. ✅ Updated name to 'Updated Profile Name 75'
+5. ✅ Verified update succeeded (no errors)
+6. ✅ Navigated away and back - update persisted
+7. ✅ Dashboard shows updated name in greeting
+
+### Console Errors
+- No console errors after fix
+
+### Screenshots
+- feature-75-profile-updated.png - Shows successful profile update
+
+### Commit
+806c878 fix(api): use VITE_API_URL instead of hardcoded port 3001
+
+[Testing] Feature #75 regression fixed and verified - now passing
+
+
+# Session - Feature #260 Verification
+Date: 2026-01-19
+
+## Feature #260: This Week filter works correctly
+
+**Status:** VERIFIED PASSING
+
+### Verification Steps
+1. Created test decision TEST_FEATURE260_THIS_WEEK_FILTER on January 19, 2026
+2. Applied This Week filter from Time Period dropdown
+3. Verified decision appeared correctly with Today date
+4. Verified week boundaries via JavaScript evaluation:
+   - Today (Jan 19): included
+   - Yesterday: included
+   - 5 days ago: included
+   - 7 days ago (Jan 12): included (boundary)
+   - 8 days ago: excluded (correct)
+
+### Implementation Analysis
+The isThisWeek function in HistoryPage.tsx correctly:
+- Uses user local timezone for date comparison
+- Includes dates from last 7 days (midnight boundary)
+- URL persists filter state as ?time=this_week
+
+### Additional Fixes
+- Fixed hardcoded localhost:3001 URLs in EditProfileModal.tsx
+- Fixed hardcoded localhost:3001 URLs in CategoriesPage.tsx
+- Fixed hardcoded localhost:3001 URLs in SettingsPage.tsx
+- Now uses import.meta.env.VITE_API_URL for proper configuration
+
+### Screenshots
+- feature-260-this-week-filter-applied.png
+
+### Session Statistics
+- Feature verified: #260 (This Week filter works correctly)
+- Progress: 205/291 features (70.4%)
+- Console errors: 0
+
