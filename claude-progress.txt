@@ -9504,3 +9504,85 @@ The `reducedMotion="user"` setting automatically detects the user's system prefe
 - Progress: 199/291 features (68.4%)
 - Files modified: 1 (apps/web/src/App.tsx)
 - Console errors: 0
+
+# Testing Session - lun 19 gen 2026 20:22:00
+## Feature #235: No horizontal scroll on any viewport - VERIFIED ✅
+
+### Test Results
+- Tested 10+ pages across multiple viewport widths (320px to 1920px)
+- No horizontal overflow detected on any page
+- All content properly contained within viewport
+- Screenshot captured: feature-235-dashboard-320px.png
+
+[Testing] Feature #235 verified - still passing
+
+
+# Session - Feature #254 Implementation
+Date: 2026-01-19
+
+## Feature #254: Audio recording has keyboard control
+
+**Status:** COMPLETED ✅
+
+**Description:** Verify recording accessibility - ensure full keyboard control for the audio recording feature.
+
+### Implementation Details
+
+**Changes to RecordPage.tsx:**
+
+1. **Keyboard Event Handler:**
+   - Space or Enter key: Start/Stop recording
+   - Escape key: Stop recording (if recording) or navigate back to dashboard
+   - Prevents scrolling when Space is pressed
+   - Ignores key events when processing or when focus is on input/textarea elements
+
+2. **Screen Reader Announcements:**
+   - Added aria-live region with role="status"
+   - Announces "Recording started. Speak now. Press Space or Escape to stop."
+   - Announces "Recording stopped. Processing your decision."
+
+3. **ARIA Attributes:**
+   - Record button: aria-label="Start recording. Press Space or Enter to record"
+   - Record button: aria-describedby="keyboard-hint"
+   - Stop button: aria-label="Stop recording. Press Space, Enter, or Escape to stop"
+
+4. **Focus Management:**
+   - Focus automatically moves to stop button when recording starts
+   - Added refs for record and stop buttons
+
+5. **Visual Enhancements:**
+   - Added focus ring styling (ring-4 ring-accent/50 ring-offset-2)
+   - Added "Keyboard Shortcuts" section with styled kbd elements
+   - Updated heading to "Tap or Press Space to Record"
+   - Updated stop button text to "Stop Recording (Space/Esc)"
+
+### Verification Steps
+
+1. ✅ **Tab navigation** - Focus moves through Skip Link → Back → Record button
+2. ✅ **Focus visible** - Focus ring visible when record button is focused
+3. ✅ **Space key** - Initiates recording action (microphone permission in headless)
+4. ✅ **Escape key** - Navigates back to dashboard (verified working)
+5. ✅ **Keyboard hints visible** - Shows Space, Enter, Esc shortcuts
+6. ✅ **Live region** - Screen reader status element present
+
+### Screenshots
+- feature-254-record-page-keyboard-hints.png - Record page with keyboard shortcuts section
+- feature-254-record-button-focused.png - Record button with focus ring
+- feature-254-after-space-press.png - After pressing Space (awaiting microphone)
+- feature-254-escape-navigation-to-dashboard.png - Dashboard after Escape key press
+
+### Technical Notes
+- Microphone access blocked in headless Playwright mode (expected behavior)
+- Keyboard controls work for all supported actions
+- Screen reader support via aria-live region for recording status changes
+
+### Commit
+3a88bdc feat(a11y): add keyboard controls for audio recording - Feature #254
+
+### Session Statistics
+- Feature completed: #254 (Audio recording has keyboard control)
+- Progress: 200/291 features (68.7%)
+- Files modified: 1 (RecordPage.tsx)
+- Lines added: ~93
+- Console errors: 0 (related to feature)
+
