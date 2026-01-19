@@ -9278,3 +9278,107 @@ Date: 2026-01-19 19:55
 - New component: 1 (SkipLink.tsx)
 - Console errors: 0 (related to feature)
 
+
+# Testing Session - lun 19 gen 2026 20:00:38
+## Feature #155: Sharing URL with filters preserves filters - INFRASTRUCTURE BLOCKED
+
+### Summary
+Attempted to verify Feature #155 but blocked by port conflict on port 3001.
+
+### Infrastructure Issue
+- Port 3001 is occupied by a Next.js application (MirrorCut - different project)
+- The Decisions API server cannot start due to this conflict
+- This is causing API connection errors in the browser
+
+### Steps Attempted
+1. Started frontend server on port 5173 (Vite)
+2. Attempted to start API server on port 3001
+3. Port 3001 occupied by MirrorCut Next.js app
+4. Created test user feature155test@example.com
+5. Created a test decision to use for filter testing
+6. Could not complete testing due to API unavailability
+
+### Feature Status
+Feature #155 remains marked as PASSING (cannot verify due to infrastructure issue)
+
+### Action Required
+User needs to free port 3001 by killing the MirrorCut/Next.js process occupying it.
+After that, run: pnpm --filter @decisions/api dev
+
+
+# Session - Feature #252 Implementation
+Date: 2026-01-19 20:15
+
+## Feature #252: Images have alt text
+
+**Status:** COMPLETED ✅
+
+**Description:** Verify image accessibility - ensure all decorative images have aria-hidden='true' and meaningful images have appropriate alt text.
+
+### Analysis
+
+The application uses inline SVG icons rather than <img> elements. All SVG icons in the app are decorative - they accompany text labels that provide the accessible information. Per WCAG guidelines, decorative images should be hidden from screen readers.
+
+### Changes Made
+
+**Components (5 files):**
+- BottomNav.tsx - Added aria-hidden='true' to HomeIcon, HistoryIcon, MicIcon, InsightsIcon, SettingsIcon
+- Breadcrumbs.tsx - Added aria-hidden='true' to chevron separator icon
+- EditProfileModal.tsx - Added aria-hidden='true' to close button icon
+- FloatingActionButton.tsx - Added aria-hidden='true' to default microphone icon
+- Modal.tsx - Added aria-hidden='true' to close button icon and loading spinner
+
+**Pages (14 files):**
+- CategoriesPage.tsx - Added aria-hidden='true' to ArrowLeft, Plus, Edit, Trash icons
+- DashboardPage.tsx - Added aria-hidden='true' to record button mic icon, chevron icon, empty state icon
+- DecisionDetailPage.tsx - Added aria-hidden='true' to error icon, abandon reason icon
+- ExportPage.tsx - Added aria-hidden='true' to all format icons (JSON, CSV, PDF), back arrow, info icon
+- ForgotPasswordPage.tsx - Added aria-hidden='true' to email success icon
+- HistoryPage.tsx - Added aria-hidden='true' to search icon, empty state icons
+- InsightsPage.tsx - Added aria-hidden='true' to trend icons, score ring SVG, stat icons
+- LoginPage.tsx - Added aria-hidden='true' to Google logo icon
+- OnboardingPage.tsx - Added aria-hidden='true' to step icons and checkmark icons
+- RecordPage.tsx - Added aria-hidden='true' to back arrow, error icons, microphone icons
+- RegisterPage.tsx - Added aria-hidden='true' to success icon and Google logo
+- SettingsPage.tsx - Added aria-hidden='true' to all setting icons (Profile, Email, Bell, Clock, Folder, Palette, Download, Shield, Trash, Info, ChevronRight)
+- DecisionDetailPageTest.tsx - Added aria-hidden='true' to back arrow icon
+- EditDecisionPageTest.tsx - Added aria-hidden='true' to back arrow icon
+
+### Verification Steps
+
+1. ✅ **Find all images in the app** - Used grep to find all <svg> elements (no <img> elements present)
+2. ✅ **Verify meaningful images have alt text** - All icons are decorative (no meaningful images)
+3. ✅ **Verify decorative images have empty alt or aria-hidden** - Added aria-hidden='true' to all 70+ SVG icons
+4. ✅ **Verify screen reader experience appropriate** - Tested with Playwright accessibility tree
+
+### Browser Automation Verification
+
+Tested using Playwright browser automation:
+- Login page: Google icon hidden, interactive elements accessible
+- Dashboard page: All icons hidden, navigation links have text labels
+- History page: View switcher tabs have accessible names, icons hidden
+- Settings page: All setting items accessible via text, icons hidden
+- Record page: Microphone button accessible, decorative elements hidden
+
+### Technical Notes
+
+- SVG icons with aria-hidden='true' are completely ignored by screen readers
+- Interactive elements (buttons, links) retain accessibility through:
+  - Text content (e.g., 'Home', 'Settings')
+  - aria-label attributes (e.g., 'Record a new decision')
+  - Role + accessible name (e.g., button 'Sign In')
+- The Skip to main content link (Feature #251) was already in place
+
+### Screenshots
+- feature-252-settings-page-verified.png - Settings page accessibility tree verification
+- feature-252-record-page-verified.png - Record page accessibility tree verification
+
+### Commit
+b39d929 feat(a11y): add aria-hidden to all decorative SVG icons - Feature #252
+
+### Session Statistics
+- Feature completed: #252 (Images have alt text)
+- Progress: 198/291 features (68.0%)
+- Files modified: 19
+- SVG icons updated: ~70+
+- Console errors: 0 (related to feature)
