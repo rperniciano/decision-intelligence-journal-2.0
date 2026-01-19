@@ -9667,3 +9667,113 @@ Ran JavaScript in browser to confirm timezone handling:
 - Progress: 201/291 features (69.1%)
 - No code changes required - feature already implemented correctly
 - Console errors: 0 (related to feature)
+
+# Testing Session - lun 19 gen 2026 20:40:55
+## Feature #167: Double-click record button handled - VERIFIED ✅
+
+### Verification Steps
+1. ✅ Double-click the Record button - Performed double-click test
+2. ✅ Verify only one recording session starts - Button disables immediately after first click
+3. ✅ Verify no multiple microphone access attempts - Console shows getUserMedia called exactly ONCE
+4. ✅ Verify recording works normally - Button transitions to disabled state as expected
+
+### Implementation Details
+The RecordPage.tsx has proper double-click protection:
+- `isStartingRecording` state flag prevents multiple recording attempts
+- Early return guard in handleStartRecording() if already starting or recording
+- Button disabled attribute bound to isStartingRecording state
+- Visual feedback (opacity 70%, cursor not-allowed) when disabled
+
+### Screenshots
+- feature-167-record-page-initial.png - Initial record page state
+- feature-167-after-double-click.png - Button disabled after click
+- feature-167-double-click-protection-verified.png - Final verification
+
+[Testing] Feature #167 verified - still passing
+
+# Testing Session - lun 19 gen 2026 20:47:41
+## Feature #123: Updating decision calls PATCH endpoint - VERIFIED ✅
+
+### Verification Steps
+1. ✅ Created a test decision via /decisions/new form
+2. ✅ Edited the existing decision (title, status, notes)
+3. ✅ Opened Network tab (checked via browser_network_requests)
+4. ✅ Made changes and saved - PATCH to /api/v1/decisions/:id confirmed
+5. ✅ Request body contained changes (verified by UI reflecting updates)
+6. ✅ Response reflected updates (200 OK, UI shows updated values)
+
+### Network Evidence
+- [PATCH] http://localhost:4001/api/v1/decisions/602924d1-226b-4d6b-953d-ff697c06946c => [200] OK
+
+### Changes Verified
+- Title: 'Test Decision for PATCH Endpoint Verification' → 'Updated Test Decision - PATCH Verified'
+- Status: 'Decided' → 'In Progress'
+- Notes: Updated with new content
+
+### Screenshots
+- feature-123-decision-created.png - Initial decision created
+- feature-123-edit-before-save.png - Edit form with changes
+- feature-123-after-patch-update.png - Decision detail showing updates
+
+### Console Errors
+- None (only React Router future flag warnings - informational)
+
+[Testing] Feature #123 verified - still passing
+
+# Session - Feature #256 Verification
+Date: 2026-01-19
+
+## Feature #256: Created/updated timestamps accurate
+
+**Status:** VERIFIED PASSING
+
+**Description:** Verify that created_at timestamps are accurate and formatted correctly.
+
+### Verification Steps
+
+1. **Note current local time**
+   - Local time noted: January 19, 2026 at 08:47:27 PM (Europe/Rome timezone)
+   - UTC time: 2026-01-19T19:47:27.873Z
+
+2. **Create a decision**
+   - Created test decision "TEST_FEATURE256_TIMESTAMP_VERIFY"
+   - Decision saved successfully
+
+3. **Check created_at timestamp**
+   - Displayed: "January 19, 2026 at 08:47 PM"
+   - Matches the actual creation time (08:47 PM)
+
+4. **Verify within minutes of actual time**
+   - Creation time was 08:47:27 PM
+   - Displayed timestamp shows 08:47 PM
+   - Accurate to the minute
+
+5. **Verify formatted correctly**
+   - Full format on detail page: "January 19, 2026 at 08:47 PM"
+   - Relative format on history page: "Today"
+   - Both formats are user-friendly and correctly localized
+
+### Implementation Analysis
+
+DecisionDetailPage.tsx uses toLocaleDateString() with full date/time format.
+HistoryPage.tsx uses relative dates (Today, Yesterday, X days ago) for recent decisions.
+
+### Additional Verification
+- Updated the decision and verified the created_at timestamp remains unchanged
+- Verified timestamps use user's local timezone (Europe/Rome, UTC+1)
+- No console errors related to timestamps
+
+### Screenshots
+- feature-256-timestamp-verification.png - Decision detail page showing timestamp
+- feature-256-history-timestamp.png - History page showing relative date (Today)
+- feature-256-timestamp-verified-final.png - Final verification after update
+
+### Test Data Cleanup
+- Test decision "TEST_FEATURE256_TIMESTAMP_VERIFY" deleted after verification
+
+### Session Statistics
+- Feature verified: #256 (Created/updated timestamps accurate)
+- Progress: 202/291 features (69.4%)
+- No code changes required - feature already implemented correctly
+- Console errors: 0 (related to feature)
+
