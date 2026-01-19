@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 async function confirmUser() {
-  const email = 'session73test@example.com';
+  const email = 'feature186test@example.com';
 
   const { data: users, error: listError } = await supabase.auth.admin.listUsers();
   if (listError) {
