@@ -490,7 +490,11 @@ export function HistoryPage() {
   }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl, timeFilterFromUrl]);
 
   // Fetch categories on mount
+  // Feature #268: Add AbortController to prevent race conditions
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     async function fetchCategories() {
       try {
         const { data: session } = await supabase.auth.getSession();
@@ -502,23 +506,37 @@ export function HistoryPage() {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
+          signal, // Feature #268: Pass abort signal
         });
 
         if (response.ok) {
           const data = await response.json();
           setCategories(data.categories || []);
         }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
+      } catch (error: any) {
+        // Feature #268: Silently ignore abort errors
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching categories:', error);
+        }
         // Silently fail for categories as it's not critical for viewing decisions
       }
     }
 
     fetchCategories();
+
+    // Feature #268: Cleanup function
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   // Fetch decisions from API
+  // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {
+    // Create abort controller for this effect
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     async function fetchDecisions() {
       try {
         setLoading(true);
@@ -588,6 +606,7 @@ export function HistoryPage() {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
+          signal, // Feature #268: Pass abort signal to fetch
         });
 
         if (!response.ok) {
@@ -636,15 +655,23 @@ export function HistoryPage() {
         }
         setNextCursor(data.nextCursor || null);
         setHasMore(data.hasMore || false);
-      } catch (error) {
-        console.error('Error fetching decisions:', error);
-        showErrorAlert(error, 'Failed to load decisions');
+      } catch (error: any) {
+        // Feature #268: Don't show error if request was aborted (user navigated away)
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching decisions:', error);
+          showErrorAlert(error, 'Failed to load decisions');
+        }
       } finally {
         setLoading(false);
       }
     }
 
     fetchDecisions();
+
+    // Feature #268: Cleanup function - abort fetch on component unmount or dependency change
+    return () => {
+      abortController.abort();
+    };
   }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage, pageCursors]);
 
   // Apply time-based filtering client-side (to respect user's timezone)
@@ -909,6 +936,113 @@ export function HistoryPage() {
             className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary placeholder-text-secondary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
           />
         </motion.div>
+
+        {/* Active filter chips - Feature #198 */}
+        {(activeFilter !== 'all' || selectedCategory !== 'all' || timeFilter !== 'all_time' || searchQuery.trim()) && (
+          <motion.div
+            className="flex flex-wrap gap-2 mb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+          >
+            {/* Status filter chip */}
+            {activeFilter !== 'all' && (
+              <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent/20 text-accent rounded-full text-sm">
+                <span>{filterOptions.find(f => f.id === activeFilter)?.label || activeFilter}</span>
+                <button
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.set('filter', 'all');
+                    newParams.set('page', '1');
+                    setSearchParams(newParams);
+                  }}
+                  className="ml-1 hover:bg-accent/30 rounded-full p-0.5 transition-colors"
+                  aria-label={`Remove ${activeFilter} filter`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* Category filter chip */}
+            {selectedCategory !== 'all' && (
+              <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent/20 text-accent rounded-full text-sm">
+                <span>{categories.find(c => c.id === selectedCategory)?.name || selectedCategory}</span>
+                <button
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('category');
+                    newParams.set('page', '1');
+                    setSearchParams(newParams);
+                  }}
+                  className="ml-1 hover:bg-accent/30 rounded-full p-0.5 transition-colors"
+                  aria-label="Remove category filter"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* Time filter chip */}
+            {timeFilter !== 'all_time' && (
+              <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent/20 text-accent rounded-full text-sm">
+                <span>{timeFilterOptions.find(t => t.id === timeFilter)?.label || timeFilter}</span>
+                <button
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('time');
+                    newParams.set('page', '1');
+                    setSearchParams(newParams);
+                  }}
+                  className="ml-1 hover:bg-accent/30 rounded-full p-0.5 transition-colors"
+                  aria-label="Remove time filter"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* Search query chip */}
+            {searchQuery.trim() && (
+              <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent/20 text-accent rounded-full text-sm">
+                <span>Search: "{searchQuery}"</span>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                  }}
+                  className="ml-1 hover:bg-accent/30 rounded-full p-0.5 transition-colors"
+                  aria-label="Clear search"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* Clear all filters button */}
+            <button
+              onClick={() => {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.delete('filter');
+                newParams.delete('category');
+                newParams.delete('time');
+                newParams.set('page', '1');
+                setSearchParams(newParams);
+                setSearchQuery('');
+              }}
+              className="px-3 py-1.5 bg-white/10 text-text-secondary rounded-full text-sm hover:bg-white/20 transition-colors"
+            >
+              Clear all
+            </button>
+          </motion.div>
+        )}
 
         {/* Filter and View row */}
         <motion.div
