@@ -43,6 +43,8 @@ export function CreateDecisionPage() {
   const [categoryId, setCategoryId] = useState<string>('');
   const [emotionalState, setEmotionalState] = useState<string>('');
   const [options, setOptions] = useState<Option[]>([]);
+  const [decideByDate, setDecideByDate] = useState<string>('');
+  const [dateError, setDateError] = useState<string>('');
 
   // Fetch categories
   useEffect(() => {
@@ -123,11 +125,71 @@ export function CreateDecisionPage() {
     }));
   };
 
+  // Get minimum date (today) for date picker
+  const getMinDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // Get maximum date (1 year from now) for sensible date range
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 1);
+    return maxDate.toISOString().split('T')[0];
+  };
+
+  // Validate the decide-by date
+  const validateDecideByDate = (dateString: string): string => {
+    if (!dateString) {
+      return ''; // Empty is valid (optional field)
+    }
+
+    const selectedDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if date is valid
+    if (isNaN(selectedDate.getTime())) {
+      return 'Please enter a valid date';
+    }
+
+    // Check if date is in the past
+    if (selectedDate < today) {
+      return 'Decide-by date cannot be in the past';
+    }
+
+    // Check if date is too far in the future (more than 1 year)
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 1);
+    if (selectedDate > maxDate) {
+      return 'Decide-by date cannot be more than 1 year from now';
+    }
+
+    return '';
+  };
+
+  // Handle date change with validation
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setDecideByDate(newDate);
+    const error = validateDecideByDate(newDate);
+    setDateError(error);
+  };
+
   const handleSave = async () => {
     try {
       if (!title.trim()) {
         setError('Please enter a decision title');
         return;
+      }
+
+      // Validate decide-by date if provided
+      if (decideByDate) {
+        const dateValidationError = validateDecideByDate(decideByDate);
+        if (dateValidationError) {
+          setDateError(dateValidationError);
+          return;
+        }
       }
 
       setSaving(true);
@@ -163,6 +225,7 @@ export function CreateDecisionPage() {
           status,
           category: categoryName,
           emotional_state: emotionalState || undefined,
+          decide_by_date: decideByDate || undefined,
         }),
       });
 
@@ -339,6 +402,36 @@ export function CreateDecisionPage() {
               <option value="decided">Decided</option>
               <option value="abandoned">Abandoned</option>
             </select>
+          </div>
+
+          {/* Decide-by Date */}
+          <div>
+            <label htmlFor="decision-decide-by-date" className="block text-sm font-medium mb-2">
+              Decide By (optional)
+            </label>
+            <input
+              id="decision-decide-by-date"
+              type="date"
+              value={decideByDate}
+              onChange={handleDateChange}
+              min={getMinDate()}
+              max={getMaxDate()}
+              className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-text-primary focus:outline-none transition-all ${
+                dateError
+                  ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                  : 'border-white/10 focus:border-accent/50 focus:ring-1 focus:ring-accent/50'
+              }`}
+              aria-describedby={dateError ? 'decide-by-date-error' : 'decide-by-date-hint'}
+            />
+            {dateError ? (
+              <p id="decide-by-date-error" role="alert" aria-live="polite" className="mt-1 text-sm text-red-400">
+                {dateError}
+              </p>
+            ) : (
+              <p id="decide-by-date-hint" className="mt-1 text-sm text-text-secondary">
+                Set a deadline for making this decision (up to 1 year from now)
+              </p>
+            )}
           </div>
 
           {/* Options */}

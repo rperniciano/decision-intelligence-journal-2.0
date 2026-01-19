@@ -59,7 +59,8 @@ export function EditDecisionPage() {
   const [abandonReason, setAbandonReason] = useState<string>('');
   const [abandonNote, setAbandonNote] = useState<string>('');
   const [draggedProCon, setDraggedProCon] = useState<{id: string; type: 'pro' | 'con'; sourceOptionId: string} | null>(null);
-  const [errors, setErrors] = useState<{title?: string; chosenOption?: string; abandonReason?: string}>({});
+  const [errors, setErrors] = useState<{title?: string; chosenOption?: string; abandonReason?: string; decideByDate?: string}>({});
+  const [decideByDate, setDecideByDate] = useState<string>('');
 
   // Fetch decision data
   useEffect(() => {
@@ -92,6 +93,11 @@ export function EditDecisionPage() {
         setOptions(data.options || []);
         setAbandonReason(data.abandon_reason || '');
         setAbandonNote(data.abandon_note || '');
+        // Set decide_by_date if present (convert from ISO to YYYY-MM-DD format)
+        if (data.decide_by_date) {
+          const date = new Date(data.decide_by_date);
+          setDecideByDate(date.toISOString().split('T')[0]);
+        }
       } catch (error) {
         console.error('Error fetching decision:', error);
       } finally {
@@ -539,12 +545,63 @@ export function EditDecisionPage() {
     }
   };
 
+  // Get minimum date (today) for date picker
+  const getMinDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // Get maximum date (1 year from now) for sensible date range
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 1);
+    return maxDate.toISOString().split('T')[0];
+  };
+
+  // Validate the decide-by date
+  const validateDecideByDate = (dateString: string): string => {
+    if (!dateString) {
+      return ''; // Empty is valid (optional field)
+    }
+
+    const selectedDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if date is valid
+    if (isNaN(selectedDate.getTime())) {
+      return 'Please enter a valid date';
+    }
+
+    // Check if date is in the past
+    if (selectedDate < today) {
+      return 'Decide-by date cannot be in the past';
+    }
+
+    // Check if date is too far in the future (more than 1 year)
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 1);
+    if (selectedDate > maxDate) {
+      return 'Decide-by date cannot be more than 1 year from now';
+    }
+
+    return '';
+  };
+
+  // Handle date change with validation
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setDecideByDate(newDate);
+    const error = validateDecideByDate(newDate);
+    setErrors(prev => ({ ...prev, decideByDate: error || undefined }));
+  };
+
   const handleSave = async () => {
     // Reset errors
     setErrors({});
 
     // Validation: Title is required and minimum length
-    const newErrors: {title?: string; chosenOption?: string; abandonReason?: string} = {};
+    const newErrors: {title?: string; chosenOption?: string; abandonReason?: string; decideByDate?: string} = {};
 
     if (!title.trim()) {
       newErrors.title = 'Title is required';
@@ -560,6 +617,14 @@ export function EditDecisionPage() {
     // Validation: Abandon reason is required when status is "abandoned"
     if (status === 'abandoned' && !abandonReason) {
       newErrors.abandonReason = 'Please select a reason for abandoning this decision';
+    }
+
+    // Validation: Decide-by date
+    if (decideByDate) {
+      const dateError = validateDecideByDate(decideByDate);
+      if (dateError) {
+        newErrors.decideByDate = dateError;
+      }
     }
 
     // If there are validation errors, set them and return
@@ -581,6 +646,7 @@ export function EditDecisionPage() {
         title: title.trim(),
         description: notes,
         status,
+        decide_by_date: decideByDate || null,
       };
 
       // If status is "decided", include chosen_option_id
@@ -720,6 +786,36 @@ export function EditDecisionPage() {
               <option value="decided">Decided</option>
               <option value="abandoned">Abandoned</option>
             </select>
+          </div>
+
+          {/* Decide-by Date */}
+          <div>
+            <label htmlFor="edit-decision-decide-by-date" className="block text-sm font-medium mb-2">
+              Decide By (optional)
+            </label>
+            <input
+              id="edit-decision-decide-by-date"
+              type="date"
+              value={decideByDate}
+              onChange={handleDateChange}
+              min={getMinDate()}
+              max={getMaxDate()}
+              className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-text-primary focus:outline-none transition-all ${
+                errors.decideByDate
+                  ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                  : 'border-white/10 focus:border-accent/50 focus:ring-1 focus:ring-accent/50'
+              }`}
+              aria-describedby={errors.decideByDate ? 'edit-decide-by-date-error' : 'edit-decide-by-date-hint'}
+            />
+            {errors.decideByDate ? (
+              <p id="edit-decide-by-date-error" role="alert" aria-live="polite" className="mt-1 text-sm text-red-400">
+                {errors.decideByDate}
+              </p>
+            ) : (
+              <p id="edit-decide-by-date-hint" className="mt-1 text-sm text-text-secondary">
+                Set a deadline for making this decision (up to 1 year from now)
+              </p>
+            )}
           </div>
 
           {/* Conditional UI for Decided status */}

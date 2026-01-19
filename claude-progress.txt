@@ -9777,3 +9777,35 @@ HistoryPage.tsx uses relative dates (Today, Yesterday, X days ago) for recent de
 - No code changes required - feature already implemented correctly
 - Console errors: 0 (related to feature)
 
+
+# Testing Session - lun 19 gen 2026 20:55:26
+## Feature #87: Transition to Decided status - VERIFIED ✅
+
+### Verification Steps
+1. ✅ Have a deliberating decision - Created decision with 'In Progress' status
+2. ✅ Click 'Make Decision' or similar - Used Edit Decision and changed status to 'Decided'
+3. ✅ Select which option was chosen - Selected 'Option A - First Choice' from dropdown
+4. ✅ Set confidence level - Set to 5/5 stars
+5. ✅ Save - Clicked 'Save Changes' button
+6. ✅ Verify status is Decided - Status badge shows 'Decided'
+7. ✅ Verify chosen option marked - 'Option A - First Choice' shows 'Chosen' badge
+
+### Implementation Details
+- When status is changed to 'Decided' in the edit form, new fields appear:
+  - 'Which option did you choose?' dropdown (required)
+  - 'Confidence Level' star rating (1-5)
+- Chosen option is displayed with a 'Chosen' badge in the decision detail page
+- UI correctly transitions and saves all data
+
+### Screenshots
+- feature-87-decided-status-verified.png - Decision detail showing Decided status and Chosen option
+
+### Console Errors
+- Vite HMR connection errors only (development server issues, not feature-related)
+- No feature-related errors
+
+### Test Data Cleanup
+- Test decision 'TEST_FEATURE87_TRANSITION_TO_DECIDED' deleted after verification
+
+[Testing] Feature #87 verified - still passing
+
