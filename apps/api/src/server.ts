@@ -1192,6 +1192,18 @@ async function registerRoutes() {
           return { error: 'Request body is required' };
         }
 
+        // Validate satisfaction rating (must be 1-5 if provided)
+        if (body.satisfaction !== undefined) {
+          if (typeof body.satisfaction !== 'number' || !Number.isInteger(body.satisfaction)) {
+            reply.code(400);
+            return { error: 'Satisfaction must be an integer' };
+          }
+          if (body.satisfaction < 1 || body.satisfaction > 5) {
+            reply.code(400);
+            return { error: 'Satisfaction must be between 1 and 5' };
+          }
+        }
+
         // Map result to outcome value (better, worse, as_expected)
         let outcome: string | undefined;
         if (body.result === 'positive' || body.result === 'better') {
@@ -1213,6 +1225,7 @@ async function registerRoutes() {
           .update({
             outcome: outcome,
             outcome_notes: body.notes || null,
+            outcome_satisfaction: body.satisfaction ?? null,
             outcome_recorded_at: new Date().toISOString()
           })
           .eq('id', id)
@@ -1224,6 +1237,43 @@ async function registerRoutes() {
         console.log('Outcome recording - supabase result:', { updated, error });
 
         if (error) {
+          // If column doesn't exist yet, try without it
+          if (error.message.includes('outcome_satisfaction')) {
+            console.log('outcome_satisfaction column does not exist, skipping...');
+            const { data: updated2, error: error2 } = await supabase
+              .from('decisions')
+              .update({
+                outcome: outcome,
+                outcome_notes: body.notes || null,
+                outcome_recorded_at: new Date().toISOString()
+              })
+              .eq('id', id)
+              .eq('user_id', userId)
+              .is('deleted_at', null)
+              .select()
+              .single();
+
+            if (error2) {
+              console.error('Supabase error:', error2);
+              throw error2;
+            }
+
+            if (!updated2) {
+              reply.code(404);
+              return { error: 'Decision not found' };
+            }
+
+            return {
+              success: true,
+              outcome: {
+                id: id,
+                result: updated2.outcome,
+                satisfaction: body.satisfaction,
+                notes: updated2.outcome_notes,
+                recordedAt: updated2.outcome_recorded_at
+              }
+            };
+          }
           console.error('Supabase error:', error);
           throw error;
         }
@@ -1238,7 +1288,7 @@ async function registerRoutes() {
           outcome: {
             id: id,
             result: updated.outcome,
-            satisfaction: body.satisfaction,
+            satisfaction: updated.outcome_satisfaction,
             notes: updated.outcome_notes,
             recordedAt: updated.outcome_recorded_at
           }
