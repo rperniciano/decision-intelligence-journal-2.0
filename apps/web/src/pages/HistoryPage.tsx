@@ -395,6 +395,14 @@ function CalendarView({
   );
 }
 
+// Time-based filter options
+const timeFilterOptions = [
+  { id: 'all_time', label: 'All Time' },
+  { id: 'today', label: 'Today' },
+  { id: 'this_week', label: 'This Week' },
+  { id: 'this_month', label: 'This Month' },
+];
+
 // Filter chips
 const filterOptions = [
   { id: 'all', label: 'All' },
@@ -421,6 +429,37 @@ const viewDefaultSorts: Record<ViewType, string> = {
 
 const ITEMS_PER_PAGE = 10;
 
+// Helper function to check if a date is today in user's local timezone
+function isToday(dateString: string): boolean {
+  const date = new Date(dateString);
+  const today = new Date();
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  );
+}
+
+// Helper function to check if a date is within this week (last 7 days) in user's local timezone
+function isThisWeek(dateString: string): boolean {
+  const date = new Date(dateString);
+  const today = new Date();
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  weekAgo.setHours(0, 0, 0, 0);
+  return date >= weekAgo;
+}
+
+// Helper function to check if a date is within this month in user's local timezone
+function isThisMonth(dateString: string): boolean {
+  const date = new Date(dateString);
+  const today = new Date();
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth()
+  );
+}
+
 export function HistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
@@ -428,12 +467,14 @@ export function HistoryPage() {
   const categoryFromUrl = searchParams.get('category') || 'all';
   const sortFromUrl = searchParams.get('sort') || 'date_desc';
   const viewFromUrl = (searchParams.get('view') || 'list') as ViewType;
+  const timeFilterFromUrl = searchParams.get('time') || 'all_time';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(filterFromUrl);
   const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
   const [sortBy, setSortBy] = useState(sortFromUrl);
   const [activeView, setActiveView] = useState<ViewType>(viewFromUrl);
+  const [timeFilter, setTimeFilter] = useState(timeFilterFromUrl);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -443,13 +484,14 @@ export function HistoryPage() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [isPermanentlyDeleting, setIsPermanentlyDeleting] = useState(false);
 
-  // Update activeFilter, selectedCategory, sortBy, and activeView when URL changes (e.g., browser back/forward)
+  // Update activeFilter, selectedCategory, sortBy, activeView, and timeFilter when URL changes (e.g., browser back/forward)
   useEffect(() => {
     setActiveFilter(filterFromUrl);
     setSelectedCategory(categoryFromUrl);
     setSortBy(sortFromUrl);
     setActiveView(viewFromUrl);
-  }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl]);
+    setTimeFilter(timeFilterFromUrl);
+  }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl, timeFilterFromUrl]);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -568,12 +610,22 @@ export function HistoryPage() {
     fetchDecisions();
   }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage]);
 
-  // API now handles filtering and pagination, so we use decisions directly
-  // (No need for client-side filtering or pagination since server does it)
-  const paginatedDecisions = decisions;
+  // Apply time-based filtering client-side (to respect user's timezone)
+  const timeFilteredDecisions = decisions.filter((decision) => {
+    if (timeFilter === 'all_time') return true;
+    if (timeFilter === 'today') return isToday(decision.createdAt);
+    if (timeFilter === 'this_week') return isThisWeek(decision.createdAt);
+    if (timeFilter === 'this_month') return isThisMonth(decision.createdAt);
+    return true;
+  });
 
-  // Pagination calculations using API total
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  // Use time-filtered decisions for display
+  const paginatedDecisions = timeFilteredDecisions;
+
+  // Pagination calculations using filtered count for time filter
+  // Note: When time filter is applied, we use client-side count
+  const effectiveCount = timeFilter === 'all_time' ? totalCount : timeFilteredDecisions.length;
+  const totalPages = Math.ceil(effectiveCount / ITEMS_PER_PAGE);
 
   // Handle page change
   const goToPage = (page: number) => {
@@ -885,16 +937,44 @@ export function HistoryPage() {
           </div>
         </motion.div>
 
+        {/* Time filter */}
+        <motion.div
+          className="mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <label htmlFor="time-filter" className="block text-sm text-text-secondary mb-2">Time Period</label>
+          <select
+            id="time-filter"
+            value={timeFilter}
+            onChange={(e) => {
+              const newParams = new URLSearchParams(searchParams);
+              newParams.set('time', e.target.value);
+              newParams.set('page', '1');
+              setSearchParams(newParams);
+            }}
+            className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+          >
+            {timeFilterOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </motion.div>
+
         {/* Category filter */}
         {categories.length > 0 && (
           <motion.div
-            className="mb-6"
+            className="mb-4"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <label className="block text-sm text-text-secondary mb-2">Category</label>
+            <label htmlFor="category-filter" className="block text-sm text-text-secondary mb-2">Category</label>
             <select
+              id="category-filter"
               value={selectedCategory}
               onChange={(e) => {
                 const newParams = new URLSearchParams(searchParams);
@@ -922,8 +1002,9 @@ export function HistoryPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            <label className="block text-sm text-text-secondary mb-2">Sort by</label>
+            <label htmlFor="sort-filter" className="block text-sm text-text-secondary mb-2">Sort by</label>
             <select
+              id="sort-filter"
               value={sortBy}
               onChange={(e) => {
                 const newParams = new URLSearchParams(searchParams);
