@@ -154,7 +154,11 @@ export function DecisionDetailPage() {
   const [reminderTime, setReminderTime] = useState('');
   const [isSettingReminder, setIsSettingReminder] = useState(false);
 
+  // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     async function fetchDecision() {
       if (!id) return;
 
@@ -176,6 +180,7 @@ export function DecisionDetailPage() {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
+          signal, // Feature #268: Pass abort signal
         });
 
         if (response.status === 404) {
@@ -196,19 +201,31 @@ export function DecisionDetailPage() {
 
         const data = await response.json();
         setDecision(data);
-      } catch (err) {
-        console.error('Error fetching decision:', err);
-        setError('Failed to load decision');
+      } catch (err: any) {
+        // Feature #268: Don't show error if request was aborted
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching decision:', err);
+          setError('Failed to load decision');
+        }
       } finally {
         setLoading(false);
       }
     }
 
     fetchDecision();
+
+    // Feature #268: Cleanup function - abort fetch on unmount or id change
+    return () => {
+      abortController.abort();
+    };
   }, [id, navigate]);
 
   // Fetch reminders for this decision
+  // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     async function fetchReminders() {
       if (!id) return;
 
@@ -222,18 +239,27 @@ export function DecisionDetailPage() {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
+          signal, // Feature #268: Pass abort signal
         });
 
         if (response.ok) {
           const data = await response.json();
           setReminders(data.reminders || []);
         }
-      } catch (err) {
-        console.error('Error fetching reminders:', err);
+      } catch (err: any) {
+        // Feature #268: Silently ignore abort errors
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching reminders:', err);
+        }
       }
     }
 
     fetchReminders();
+
+    // Feature #268: Cleanup function - abort fetch on unmount or id change
+    return () => {
+      abortController.abort();
+    };
   }, [id]);
 
   // Handle setting a reminder

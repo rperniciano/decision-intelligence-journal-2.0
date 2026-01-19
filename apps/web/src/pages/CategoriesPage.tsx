@@ -61,10 +61,40 @@ export function CategoriesPage() {
   const [creating, setCreating] = useState(false);
   const [updating, setUpdating] = useState(false);
 
+  // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    const abortController = new AbortController();
+    const signal = abortController.signal;
 
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          signal, // Feature #268: Pass abort signal
+        });
+        const data = await response.json();
+        setCategories(data.categories || []);
+      } catch (error: any) {
+        // Feature #268: Silently ignore abort errors
+        if (error.name !== 'AbortError') {
+          console.error('Failed to fetch categories:', error);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+
+    // Feature #268: Cleanup function - abort fetch on unmount
+    return () => {
+      abortController.abort();
+    };
+  }, [session?.access_token]);
+
+  // Feature #268: Separate fetch function for use in handlers (no abort needed for user-triggered actions)
   const fetchCategories = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, {
@@ -76,8 +106,6 @@ export function CategoriesPage() {
       setCategories(data.categories || []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

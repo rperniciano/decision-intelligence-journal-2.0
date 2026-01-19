@@ -107,3 +107,6 @@ When viewing page 2 of the History list, if a new decision is added:
 - New functionality: Cursor-based pagination system
 
 [Testing] Feature #267 verified and marked as PASSING ✅
+
+[Testing] Session complete - Fixed and verified Feature #198 (Clear individual filter works)
+

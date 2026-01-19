@@ -190,7 +190,11 @@ export function InsightsPage() {
   const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     async function fetchInsights() {
       try {
         const session = await supabase.auth.getSession();
@@ -203,6 +207,7 @@ export function InsightsPage() {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
+          signal, // Feature #268: Pass abort signal
         });
 
         if (!response.ok) throw new Error('Failed to fetch insights');
@@ -220,14 +225,22 @@ export function InsightsPage() {
           decisionScore: insights.decisionScore,
           positionBias: insights.positionBias,
         });
-      } catch (error) {
-        console.error('Error fetching insights:', error);
+      } catch (error: any) {
+        // Feature #268: Silently ignore abort errors
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching insights:', error);
+        }
       } finally {
         setLoading(false);
       }
     }
 
     fetchInsights();
+
+    // Feature #268: Cleanup function - abort fetch on unmount
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   const hasData = insightsData && insightsData.decisionsWithOutcomes >= 3;

@@ -39,7 +39,11 @@ export function DashboardPage() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
 
   // Fetch statistics on mount
+  // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     const fetchStatistics = async () => {
       try {
         const token = localStorage.getItem('sb-doqojfsldvajmlscpwhu-auth-token');
@@ -55,6 +59,7 @@ export function DashboardPage() {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
           },
+          signal, // Feature #268: Pass abort signal
         });
 
         if (!response.ok) {
@@ -63,19 +68,31 @@ export function DashboardPage() {
 
         const stats = await response.json();
         setStatistics(stats);
-      } catch (error) {
-        console.error('Error fetching statistics:', error);
-        showErrorAlert(error, 'Failed to load statistics');
+      } catch (error: any) {
+        // Feature #268: Don't show error if request was aborted
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching statistics:', error);
+          showErrorAlert(error, 'Failed to load statistics');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchStatistics();
+
+    // Feature #268: Cleanup function - abort fetch on unmount
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   // Fetch pending reviews on mount
+  // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     const fetchPendingReviews = async () => {
       try {
         const token = localStorage.getItem('sb-doqojfsldvajmlscpwhu-auth-token');
@@ -91,6 +108,7 @@ export function DashboardPage() {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
           },
+          signal, // Feature #268: Pass abort signal
         });
 
         if (!response.ok) {
@@ -99,8 +117,11 @@ export function DashboardPage() {
 
         const data = await response.json();
         setPendingReviews(data.pendingReviews || []);
-      } catch (error) {
-        console.error('Error fetching pending reviews:', error);
+      } catch (error: any) {
+        // Feature #268: Silently ignore abort errors
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching pending reviews:', error);
+        }
         // Silently fail for pending reviews as it's not critical
         // Only show alert for network errors to avoid spamming user
         // (pending-reviews endpoint has known issues)
@@ -110,6 +131,11 @@ export function DashboardPage() {
     };
 
     fetchPendingReviews();
+
+    // Feature #268: Cleanup function - abort fetch on unmount
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   const handleSignOut = async () => {
