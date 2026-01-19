@@ -272,8 +272,9 @@ export function CreateDecisionPage() {
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium mb-2">Title *</label>
+            <label htmlFor="decision-title" className="block text-sm font-medium mb-2">Title *</label>
             <input
+              id="decision-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -284,8 +285,9 @@ export function CreateDecisionPage() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium mb-2">Category</label>
+            <label htmlFor="decision-category" className="block text-sm font-medium mb-2">Category</label>
             <select
+              id="decision-category"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
@@ -301,8 +303,9 @@ export function CreateDecisionPage() {
 
           {/* Emotional State */}
           <div>
-            <label className="block text-sm font-medium mb-2">How are you feeling?</label>
+            <label htmlFor="decision-emotional-state" className="block text-sm font-medium mb-2">How are you feeling?</label>
             <select
+              id="decision-emotional-state"
               value={emotionalState}
               onChange={(e) => setEmotionalState(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
@@ -318,8 +321,9 @@ export function CreateDecisionPage() {
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
+            <label htmlFor="decision-status" className="block text-sm font-medium mb-2">Status</label>
             <select
+              id="decision-status"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
@@ -353,7 +357,9 @@ export function CreateDecisionPage() {
                 {options.map((option, index) => (
                   <div key={option.id} className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
                     <div className="flex gap-2">
+                      <label htmlFor={`option-title-${option.id}`} className="sr-only">Option {index + 1} title</label>
                       <input
+                        id={`option-title-${option.id}`}
                         type="text"
                         value={option.title}
                         onChange={(e) => updateOption(option.id, 'title', e.target.value)}
@@ -372,7 +378,7 @@ export function CreateDecisionPage() {
 
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <div className="text-green-400 mb-1">Pros</div>
+                        <label htmlFor={`add-pro-${option.id}`} className="text-green-400 mb-1 block">Pros</label>
                         {option.pros.map((pro, proIndex) => (
                           <div key={proIndex} className="flex items-center gap-1 mb-1">
                             <span className="flex-1 text-text-secondary">• {pro}</span>
@@ -387,6 +393,7 @@ export function CreateDecisionPage() {
                           </div>
                         ))}
                         <input
+                          id={`add-pro-${option.id}`}
                           type="text"
                           className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-xs"
                           placeholder="Add a pro..."
@@ -400,7 +407,7 @@ export function CreateDecisionPage() {
                         />
                       </div>
                       <div>
-                        <div className="text-red-400 mb-1">Cons</div>
+                        <label htmlFor={`add-con-${option.id}`} className="text-red-400 mb-1 block">Cons</label>
                         {option.cons.map((con, conIndex) => (
                           <div key={conIndex} className="flex items-center gap-1 mb-1">
                             <span className="flex-1 text-text-secondary">• {con}</span>
@@ -415,6 +422,7 @@ export function CreateDecisionPage() {
                           </div>
                         ))}
                         <input
+                          id={`add-con-${option.id}`}
                           type="text"
                           className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-xs"
                           placeholder="Add a con..."
@@ -436,8 +444,9 @@ export function CreateDecisionPage() {
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium mb-2">Notes</label>
+            <label htmlFor="decision-notes" className="block text-sm font-medium mb-2">Notes</label>
             <textarea
+              id="decision-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}

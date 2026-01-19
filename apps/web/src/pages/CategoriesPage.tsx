@@ -293,10 +293,11 @@ export function CategoriesPage() {
 
             {/* Name Input */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <label htmlFor="create-category-name" className="block text-sm font-medium text-text-secondary mb-2">
                 Category Name
               </label>
               <input
+                id="create-category-name"
                 type="text"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
@@ -308,10 +309,10 @@ export function CategoriesPage() {
 
             {/* Icon Selection */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <span id="create-emoji-label" className="block text-sm font-medium text-text-secondary mb-2">
                 Select Emoji
-              </label>
-              <div className="grid grid-cols-6 gap-2" role="group" aria-label="Select emoji icon">
+              </span>
+              <div className="grid grid-cols-6 gap-2" role="group" aria-labelledby="create-emoji-label">
                 {EMOJI_OPTIONS.map((emoji) => (
                   <button
                     key={emoji}
@@ -332,10 +333,10 @@ export function CategoriesPage() {
 
             {/* Color Selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <span id="create-color-label" className="block text-sm font-medium text-text-secondary mb-2">
                 Select Color
-              </label>
-              <div className="grid grid-cols-6 gap-2" role="group" aria-label="Select category color">
+              </span>
+              <div className="grid grid-cols-6 gap-2" role="group" aria-labelledby="create-color-label">
                 {COLOR_OPTIONS.map((color) => (
                   <button
                     key={color.value}
@@ -387,10 +388,11 @@ export function CategoriesPage() {
 
             {/* Name Input */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <label htmlFor="edit-category-name" className="block text-sm font-medium text-text-secondary mb-2">
                 Category Name
               </label>
               <input
+                id="edit-category-name"
                 type="text"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
@@ -402,10 +404,10 @@ export function CategoriesPage() {
 
             {/* Icon Selection */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <span id="edit-emoji-label" className="block text-sm font-medium text-text-secondary mb-2">
                 Select Emoji
-              </label>
-              <div className="grid grid-cols-6 gap-2" role="group" aria-label="Select emoji icon">
+              </span>
+              <div className="grid grid-cols-6 gap-2" role="group" aria-labelledby="edit-emoji-label">
                 {EMOJI_OPTIONS.map((emoji) => (
                   <button
                     key={emoji}
@@ -426,10 +428,10 @@ export function CategoriesPage() {
 
             {/* Color Selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <span id="edit-color-label" className="block text-sm font-medium text-text-secondary mb-2">
                 Select Color
-              </label>
-              <div className="grid grid-cols-6 gap-2" role="group" aria-label="Select category color">
+              </span>
+              <div className="grid grid-cols-6 gap-2" role="group" aria-labelledby="edit-color-label">
                 {COLOR_OPTIONS.map((color) => (
                   <button
                     key={color.value}

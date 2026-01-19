@@ -680,8 +680,9 @@ export function EditDecisionPage() {
         >
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium mb-2">Title</label>
+            <label htmlFor="edit-decision-title" className="block text-sm font-medium mb-2">Title</label>
             <input
+              id="edit-decision-title"
               type="text"
               value={title}
               onChange={(e) => {
@@ -705,8 +706,9 @@ export function EditDecisionPage() {
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
+            <label htmlFor="edit-decision-status" className="block text-sm font-medium mb-2">Status</label>
             <select
+              id="edit-decision-status"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
@@ -728,10 +730,11 @@ export function EditDecisionPage() {
               className="space-y-4 glass p-4 rounded-xl border border-accent/20"
             >
               <div>
-                <label className="block text-sm font-medium mb-2 text-accent">
+                <label htmlFor="edit-chosen-option" className="block text-sm font-medium mb-2 text-accent">
                   Which option did you choose? *
                 </label>
                 <select
+                  id="edit-chosen-option"
                   value={chosenOptionId}
                   onChange={(e) => {
                     setChosenOptionId(e.target.value);
@@ -797,10 +800,11 @@ export function EditDecisionPage() {
               className="space-y-4 glass p-4 rounded-xl border border-red-500/20"
             >
               <div>
-                <label className="block text-sm font-medium mb-2 text-red-400">
+                <label htmlFor="edit-abandon-reason" className="block text-sm font-medium mb-2 text-red-400">
                   Why are you abandoning this decision? *
                 </label>
                 <select
+                  id="edit-abandon-reason"
                   value={abandonReason}
                   onChange={(e) => {
                     setAbandonReason(e.target.value);
@@ -831,10 +835,11 @@ export function EditDecisionPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-red-400">
+                <label htmlFor="edit-abandon-note" className="block text-sm font-medium mb-2 text-red-400">
                   Additional notes (optional)
                 </label>
                 <textarea
+                  id="edit-abandon-note"
                   value={abandonNote}
                   onChange={(e) => setAbandonNote(e.target.value)}
                   rows={3}
@@ -847,8 +852,9 @@ export function EditDecisionPage() {
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium mb-2">Notes</label>
+            <label htmlFor="edit-decision-notes" className="block text-sm font-medium mb-2">Notes</label>
             <textarea
+              id="edit-decision-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
@@ -859,8 +865,9 @@ export function EditDecisionPage() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium mb-2">Category</label>
+            <label htmlFor="edit-decision-category" className="block text-sm font-medium mb-2">Category</label>
             <select
+              id="edit-decision-category"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
@@ -876,8 +883,8 @@ export function EditDecisionPage() {
 
           {/* Options (editable) */}
           <div>
-            <label className="block text-sm font-medium mb-2">Options ({options.length})</label>
-            <div className="space-y-4">
+            <span className="block text-sm font-medium mb-2" id="edit-options-label">Options ({options.length})</span>
+            <div className="space-y-4" role="region" aria-labelledby="edit-options-label">
               {options.map((option) => (
                 <div
                   key={option.id}
@@ -887,7 +894,9 @@ export function EditDecisionPage() {
                 >
                   {/* Option name */}
                   <div className="flex gap-2 items-center mb-3">
+                    <label htmlFor={`edit-option-${option.id}`} className="sr-only">Option name</label>
                     <input
+                      id={`edit-option-${option.id}`}
                       type="text"
                       value={option.text}
                       onChange={(e) => handleUpdateOption(option.id, e.target.value)}
@@ -907,7 +916,7 @@ export function EditDecisionPage() {
 
                   {/* Pros */}
                   <div className="mb-3">
-                    <div className="text-xs text-green-400 font-medium mb-2">Pros ({option.pros.length})</div>
+                    <label htmlFor={`edit-add-pro-${option.id}`} className="text-xs text-green-400 font-medium mb-2 block">Pros ({option.pros.length})</label>
                     <div className="space-y-1">
                       {option.pros.map((pro, index) => (
                         <div
@@ -916,7 +925,9 @@ export function EditDecisionPage() {
                           draggable
                           onDragStart={() => handleDragStart(pro.id, 'pro', option.id)}
                         >
+                          <label htmlFor={`edit-pro-${pro.id}`} className="sr-only">Edit pro</label>
                           <input
+                            id={`edit-pro-${pro.id}`}
                             type="text"
                             value={pro.content}
                             onChange={(e) => handleUpdateProCon(pro.id, e.target.value, option.id, 'pro', index)}
@@ -946,6 +957,7 @@ export function EditDecisionPage() {
                       {/* Add pro input */}
                       <div className="flex gap-2 items-center">
                         <input
+                          id={`edit-add-pro-${option.id}`}
                           type="text"
                           value={newProInputs[option.id] || ''}
                           onChange={(e) => setNewProInputs({ ...newProInputs, [option.id]: e.target.value })}
@@ -968,7 +980,7 @@ export function EditDecisionPage() {
 
                   {/* Cons */}
                   <div>
-                    <div className="text-xs text-red-400 font-medium mb-2">Cons ({option.cons.length})</div>
+                    <label htmlFor={`edit-add-con-${option.id}`} className="text-xs text-red-400 font-medium mb-2 block">Cons ({option.cons.length})</label>
                     <div className="space-y-1">
                       {option.cons.map((con, index) => (
                         <div
@@ -977,7 +989,9 @@ export function EditDecisionPage() {
                           draggable
                           onDragStart={() => handleDragStart(con.id, 'con', option.id)}
                         >
+                          <label htmlFor={`edit-con-${con.id}`} className="sr-only">Edit con</label>
                           <input
+                            id={`edit-con-${con.id}`}
                             type="text"
                             value={con.content}
                             onChange={(e) => handleUpdateProCon(con.id, e.target.value, option.id, 'con', index)}
@@ -1007,6 +1021,7 @@ export function EditDecisionPage() {
                       {/* Add con input */}
                       <div className="flex gap-2 items-center">
                         <input
+                          id={`edit-add-con-${option.id}`}
                           type="text"
                           value={newConInputs[option.id] || ''}
                           onChange={(e) => setNewConInputs({ ...newConInputs, [option.id]: e.target.value })}
@@ -1031,7 +1046,9 @@ export function EditDecisionPage() {
 
               {/* Add new option */}
               <div className="flex gap-2 items-center">
+                <label htmlFor="edit-add-option" className="sr-only">Add new option</label>
                 <input
+                  id="edit-add-option"
                   type="text"
                   value={newOptionText}
                   onChange={(e) => setNewOptionText(e.target.value)}
