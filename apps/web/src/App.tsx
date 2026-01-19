@@ -14,8 +14,6 @@ import { RecordPage } from './pages/RecordPage';
 import { DecisionDetailPage } from './pages/DecisionDetailPage';
 import { EditDecisionPage } from './pages/EditDecisionPage';
 import { CreateDecisionPage } from './pages/CreateDecisionPage';
-import { DecisionDetailPageTest } from './pages/DecisionDetailPageTest';
-import { EditDecisionPageTest } from './pages/EditDecisionPageTest';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 
@@ -217,23 +215,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/test-modal"
-            element={
-              <ProtectedRoute>
-                <DecisionDetailPageTest />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/test-edit"
-            element={
-              <ProtectedRoute>
-                <EditDecisionPageTest />
-              </ProtectedRoute>
-            }
-          />
-
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
           </Routes>
