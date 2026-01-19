@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -15,6 +15,9 @@ export function RecordPage() {
   const timerRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordButtonRef = useRef<HTMLButtonElement>(null);
+  const stopButtonRef = useRef<HTMLButtonElement>(null);
+  const [statusAnnouncement, setStatusAnnouncement] = useState<string>('');
 
   const handleStartRecording = async () => {
     // Prevent double-clicks - guard against multiple simultaneous recording attempts
@@ -55,6 +58,7 @@ export function RecordPage() {
       setIsRecording(true);
       setIsStartingRecording(false);
       setRecordingTime(0);
+      setStatusAnnouncement('Recording started. Speak now. Press Space or Escape to stop.');
 
       // Start timer
       timerRef.current = window.setInterval(() => {
@@ -69,6 +73,7 @@ export function RecordPage() {
 
   const handleStopRecording = () => {
     setIsRecording(false);
+    setStatusAnnouncement('Recording stopped. Processing your decision.');
 
     // Clear timer
     if (timerRef.current) {
@@ -197,6 +202,51 @@ export function RecordPage() {
     navigate('/dashboard');
   };
 
+  // Keyboard event handler for recording controls
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // Ignore key events when processing or when focus is on an input/textarea
+    if (isProcessing) return;
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+    // Spacebar or Enter to start/stop recording
+    if (event.key === ' ' || event.key === 'Enter') {
+      // Prevent scrolling when pressing spacebar
+      event.preventDefault();
+
+      if (isRecording) {
+        handleStopRecording();
+      } else if (!isStartingRecording && !error) {
+        handleStartRecording();
+      }
+    }
+
+    // Escape to stop recording or go back
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (isRecording) {
+        handleStopRecording();
+      } else {
+        handleClose();
+      }
+    }
+  }, [isRecording, isStartingRecording, isProcessing, error]);
+
+  // Add keyboard event listener
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  // Focus management: focus stop button when recording starts
+  useEffect(() => {
+    if (isRecording && stopButtonRef.current) {
+      stopButtonRef.current.focus();
+    }
+  }, [isRecording]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -206,6 +256,17 @@ export function RecordPage() {
   return (
     <div className="fixed inset-0 bg-bg-deep z-50 flex flex-col">
       <SkipLink />
+
+      {/* Screen reader announcements for recording status */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {statusAnnouncement}
+      </div>
+
       {/* Header */}
       <header className="flex items-center justify-between p-6 border-b border-white/5">
         <button
@@ -326,9 +387,12 @@ export function RecordPage() {
               className="text-center"
             >
               <motion.button
+                ref={recordButtonRef}
                 onClick={handleStartRecording}
                 disabled={isStartingRecording}
-                className={`w-40 h-40 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent-strong flex items-center justify-center mb-8 ${isStartingRecording ? 'opacity-70 cursor-not-allowed' : ''}`}
+                aria-label="Start recording. Press Space or Enter to record"
+                aria-describedby="keyboard-hint"
+                className={`w-40 h-40 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent-strong flex items-center justify-center mb-8 focus:outline-none focus:ring-4 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-bg-deep ${isStartingRecording ? 'opacity-70 cursor-not-allowed' : ''}`}
                 whileHover={isStartingRecording ? {} : { scale: 1.05 }}
                 whileTap={isStartingRecording ? {} : { scale: 0.95 }}
                 transition={{ type: 'spring', mass: 1, damping: 15 }}
@@ -340,7 +404,7 @@ export function RecordPage() {
               </motion.button>
 
               <h2 className="text-2xl font-semibold mb-2 text-gradient">
-                Tap to Record
+                Tap or Press Space to Record
               </h2>
               <p className="text-text-secondary max-w-md">
                 Speak naturally about your decision. Describe what you're deciding, your options, and how you're feeling about it.
@@ -401,17 +465,19 @@ export function RecordPage() {
               </p>
 
               <button
+                ref={stopButtonRef}
                 onClick={handleStopRecording}
-                className="px-8 py-3 glass glass-hover rounded-full font-medium transition-all duration-200"
+                aria-label="Stop recording. Press Space, Enter, or Escape to stop"
+                className="px-8 py-3 glass glass-hover rounded-full font-medium transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-bg-deep"
               >
-                Stop Recording
+                Stop Recording (Space/Esc)
               </button>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Instructions at bottom */}
-        {!isRecording && (
+        {!isRecording && !isProcessing && (
           <motion.div
             className="mt-16 glass p-6 rounded-2xl max-w-lg"
             initial={{ opacity: 0, y: 20 }}
@@ -439,6 +505,27 @@ export function RecordPage() {
                 <span>How are you feeling about this decision?</span>
               </li>
             </ul>
+
+            {/* Keyboard shortcuts hint */}
+            <div id="keyboard-hint" className="mt-4 pt-4 border-t border-white/10">
+              <h4 className="font-medium mb-2 text-xs uppercase tracking-wide text-text-secondary">
+                Keyboard Shortcuts
+              </h4>
+              <div className="flex flex-wrap gap-3 text-xs text-text-secondary">
+                <div className="flex items-center gap-1.5">
+                  <kbd className="px-2 py-1 bg-white/10 rounded text-text-primary font-mono">Space</kbd>
+                  <span>Start/Stop</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <kbd className="px-2 py-1 bg-white/10 rounded text-text-primary font-mono">Enter</kbd>
+                  <span>Start/Stop</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <kbd className="px-2 py-1 bg-white/10 rounded text-text-primary font-mono">Esc</kbd>
+                  <span>Stop/Back</span>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
       </main>
