@@ -212,7 +212,7 @@ export function RecordPage() {
           onClick={handleClose}
           className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           <span className="text-sm">Back</span>
@@ -235,7 +235,7 @@ export function RecordPage() {
             className="mb-8 p-6 glass rounded-lg border border-red-500/20 bg-red-500/10 max-w-md"
           >
             <div className="flex items-start gap-3 mb-4">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <div className="flex-1">
@@ -268,7 +268,7 @@ export function RecordPage() {
             className="mb-8 p-6 glass rounded-lg border border-red-500/20 bg-red-500/10 max-w-md"
           >
             <div className="flex items-start gap-3 mb-4">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <div className="flex-1">
@@ -305,7 +305,7 @@ export function RecordPage() {
                   ease: 'linear',
                 }}
               >
-                <svg className="w-16 h-16 text-bg-deep" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 text-bg-deep" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                 </svg>
               </motion.div>
@@ -333,7 +333,7 @@ export function RecordPage() {
                 whileTap={isStartingRecording ? {} : { scale: 0.95 }}
                 transition={{ type: 'spring', mass: 1, damping: 15 }}
               >
-                <svg className="w-16 h-16 text-bg-deep" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 text-bg-deep" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                   <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                 </svg>
@@ -371,7 +371,7 @@ export function RecordPage() {
                   ease: 'easeInOut',
                 }}
               >
-                <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                   <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                 </svg>

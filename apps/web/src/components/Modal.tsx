@@ -81,6 +81,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md' }: Mod
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -158,6 +159,7 @@ export function ConfirmModal({
                 className="animate-spin h-4 w-4"
                 viewBox="0 0 24 24"
                 fill="none"
+                aria-hidden="true"
               >
                 <circle
                   className="opacity-25"
