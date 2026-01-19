@@ -67,7 +67,7 @@ export function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/v1/categories', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, {
         headers: {
           'Authorization': `Bearer ${session?.access_token}`
         }
@@ -86,7 +86,7 @@ export function CategoriesPage() {
 
     setCreating(true);
     try {
-      const response = await fetch('http://localhost:3001/api/v1/categories', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
@@ -131,7 +131,7 @@ export function CategoriesPage() {
 
     setUpdating(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/v1/categories/${editingCategory.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories/${editingCategory.id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
@@ -170,7 +170,7 @@ export function CategoriesPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/v1/categories/${category.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories/${category.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`

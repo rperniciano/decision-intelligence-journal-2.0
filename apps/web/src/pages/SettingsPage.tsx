@@ -192,7 +192,7 @@ export function SettingsPage() {
     setNotificationsEnabled(newValue);
 
     try {
-      const response = await fetch('http://localhost:3001/api/v1/profile/settings', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/settings`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
@@ -227,7 +227,7 @@ export function SettingsPage() {
     setWeeklyDigestEnabled(newValue);
 
     try {
-      const response = await fetch('http://localhost:3001/api/v1/profile/settings', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/settings`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,

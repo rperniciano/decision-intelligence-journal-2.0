@@ -28,7 +28,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/v1/profile', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
