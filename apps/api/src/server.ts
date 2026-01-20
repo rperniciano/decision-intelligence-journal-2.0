@@ -24,12 +24,17 @@ config({ path: path.resolve(__dirname, '../../../.env') });
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
 
-if (!supabaseUrl || !supabaseServiceKey) {
+if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
+// Admin client with service role (bypasses RLS)
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Regular auth client for password verification
+const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
 
 const server = Fastify({
   logger: {
@@ -1252,10 +1257,74 @@ async function registerRoutes() {
       }
     });
 
-    api.delete('/profile', async (request) => {
-      const userId = request.user?.id;
-      // TODO: Implement account deletion
-      return { message: 'Account deletion - to be implemented', userId };
+    // Feature #19: Account deletion requires password confirmation
+    api.delete('/profile', async (request, reply) => {
+      try {
+        const userId = request.user?.id;
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        const body = request.body as { password: string; confirm: string };
+
+        // Validate password is provided
+        if (!body.password || typeof body.password !== 'string') {
+          return reply.code(400).send({ error: 'Password is required' });
+        }
+
+        // Validate "DELETE" confirmation
+        if (!body.confirm || body.confirm !== 'DELETE') {
+          return reply.code(400).send({ error: 'Please type DELETE to confirm' });
+        }
+
+        // Get user to verify password
+        const { data: { user }, error: getUserError } = await supabase.auth.admin.getUserById(userId);
+
+        if (getUserError || !user || !user.email) {
+          server.log.error({ error: getUserError }, 'Failed to fetch user for deletion');
+          return reply.code(500).send({ error: 'Failed to verify password' });
+        }
+
+        // Verify password by attempting to sign in with the auth client
+        const { error: passwordError } = await supabaseAuth.auth.signInWithPassword({
+          email: user.email,
+          password: body.password
+        });
+
+        if (passwordError) {
+          server.log.warn({ userId, error: passwordError }, 'Password verification failed for account deletion');
+          return reply.code(401).send({ error: 'Incorrect password' });
+        }
+
+        // Password verified - schedule account for deletion (30-day grace period)
+        // We set deleted_at timestamp but don't actually delete yet
+        const { error: updateError } = await supabase.auth.admin.updateUserById(
+          userId,
+          {
+            user_metadata: {
+              ...user.user_metadata,
+              deleted_at: new Date().toISOString(),
+              deletion_requested_at: new Date().toISOString()
+            }
+          }
+        );
+
+        if (updateError) {
+          server.log.error({ error: updateError }, 'Failed to mark account for deletion');
+          return reply.code(500).send({ error: 'Failed to process deletion request' });
+        }
+
+        // Log out all sessions for this user
+        await supabase.auth.admin.signOut(userId);
+
+        return {
+          success: true,
+          message: 'Account marked for deletion. You have 30 days to cancel this request by contacting support.'
+        };
+      } catch (error) {
+        server.log.error({ error }, 'Error processing account deletion');
+        return reply.code(500).send({ error: 'Failed to process account deletion' });
+      }
     });
 
     // Export

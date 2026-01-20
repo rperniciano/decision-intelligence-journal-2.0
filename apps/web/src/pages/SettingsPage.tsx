@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import { BottomNav } from '../components/BottomNav';
 import { SkipLink } from '../components/SkipLink';
 import { EditProfileModal } from '../components/EditProfileModal';
+import { DeleteAccountModal } from '../components/DeleteAccountModal';
 
 // Setting section component
 function SettingSection({
@@ -172,6 +173,7 @@ export function SettingsPage() {
     user?.user_metadata?.weekly_digest_enabled ?? false
   );
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
   const [profileKey, setProfileKey] = useState(0); // Force re-render after profile update
 
   // Get display name from user metadata or email
@@ -387,13 +389,15 @@ export function SettingsPage() {
               description="Log out of your account"
             />
           </button>
-          <SettingRow
-            icon={<TrashIcon />}
-            label="Delete Account"
-            description="Permanently delete your account"
-            danger
-            action={<ChevronRightIcon />}
-          />
+          <button onClick={() => setIsDeleteAccountOpen(true)} className="w-full">
+            <SettingRow
+              icon={<TrashIcon />}
+              label="Delete Account"
+              description="Permanently delete your account"
+              danger
+              action={<ChevronRightIcon />}
+            />
+          </button>
         </SettingSection>
       </main>
 
@@ -406,6 +410,12 @@ export function SettingsPage() {
         onClose={() => setIsEditProfileOpen(false)}
         currentName={displayName}
         onSuccess={handleProfileUpdate}
+      />
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={isDeleteAccountOpen}
+        onClose={() => setIsDeleteAccountOpen(false)}
       />
 
       {/* Grain overlay */}
