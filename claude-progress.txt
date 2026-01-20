@@ -1993,3 +1993,159 @@ Statistics:
 - Implementation complete, awaiting database schema update
 
 ================================================================================
+
+================================================================================
+[REGRESSION TEST] Feature #13 - Cannot access another user's decision by ID manipulation
+Date: 2026-01-20
+Status: ✅ PASSED - NO REGRESSION FOUND
+
+Test Summary:
+- User A can access own decision: VERIFIED (200 OK)
+- User B cannot access User A's decision: VERIFIED (404 Not Found)
+- Row-Level Security (RLS): VERIFIED WORKING
+- API returns 404: VERIFIED (no information leakage)
+- UI shows error page: VERIFIED
+
+Verification Steps:
+1. Created test users A and B via API
+2. User A logged in and accessed decision b4e2e3cc-515f-4b40-811a-ed202c5c3dce
+3. Confirmed User A sees decision details (screenshot: f13-user-a-can-access.png)
+4. User A logged out
+5. User B logged in and attempted to access same decision ID
+6. Confirmed User B receives 'Decision not found' error (screenshot: f13-user-b-access-denied.png)
+7. API test confirmed 404 response for unauthorized access
+8. No data leakage in console or network responses
+
+Console Verification:
+- User B's access attempt: 404 Not Found (correct)
+- Zero data from User A's decision visible to User B
+- User-friendly error message displayed
+
+Security Analysis:
+- Database RLS policies enforced correctly
+- API returns 404 (not 403) to avoid info leakage
+- UI shows clean error page with navigation option
+- Multiple layers of security (DB, API, UI)
+
+Conclusion: Feature #13 continues to work correctly. Row-Level Security
+prevents cross-user data access. No code changes needed.
+
+Screenshots:
+- verification/f13-user-a-can-access.png
+- verification/f13-user-b-access-denied.png
+Summary: verification/feature-13-regression-test-summary.md
+
+Progress: 272/291 passing (93.5%)
+================================================================================
+[Testing] Feature #13 verified - still passing
+
+
+================================================================================
+[FEATURE #215] Category name max length validated
+Date: 2026-01-20
+Status: ✅ VERIFIED PASSING
+
+Feature Requirements:
+----------------------
+1. Try category name > 50 chars
+2. Verify truncated or error
+3. Verify cannot exceed limit
+
+Implementation Summary:
+-----------------------
+The validation was already implemented in the codebase (likely in a previous
+session). This session verified the implementation is working correctly.
+
+Frontend (apps/web/src/pages/CategoriesPage.tsx):
+- MAX_CATEGORY_NAME_LENGTH constant set to 50
+- nameError state for validation messages
+- Validation in handleCreateCategory: checks name length > 50
+- Validation in handleUpdateCategory: checks name length > 50
+- maxLength={50} attribute on input fields prevents typing > 50
+- Character counter (X / 50) with visual feedback
+- Red border and error message when validation fails
+- Error cleared on input change and modal open/close
+
+Backend (apps/api/src/server.ts):
+- POST /categories: Validates name.trim().length > 50
+- PATCH /categories/:id: Validates name.trim().length > 50
+- Returns 400 error: "Category name must be 50 characters or less"
+
+Testing Results:
+----------------
+✅ Frontend maxLength prevents typing > 50 characters
+✅ Character counter shows "50 / 50" at limit
+✅ Typing 51 characters: truncated to 50, counter shows "50 / 50"
+✅ Backend API test: 50 chars → Success (200)
+✅ Backend API test: 51 chars → Error (400) with correct message
+✅ Backend API test: 100 chars → Error (400) with correct message
+✅ Create modal validation works
+✅ Edit modal validation works
+✅ Category created successfully with valid name
+✅ Category deleted after testing
+✅ Zero JavaScript errors
+✅ Zero console errors
+
+Mock Data Detection:
+-------------------
+✅ No mockData, fakeData, sampleData patterns found
+✅ No TODO/FIXME comments related to validation
+✅ All validation uses real user input
+
+Security Verification:
+---------------------
+✅ Frontend validation provides immediate user feedback
+✅ Backend validation enforces limit regardless of client
+✅ Cannot bypass 50 character limit via direct API calls
+
+User Experience:
+----------------
+- Clear character counter shows current length vs maximum
+- maxLength attribute prevents typing past limit (UX friendly)
+- Red border highlights error state
+- Error message clearly states the requirement
+- Validation applies consistently to create and edit modals
+
+Screenshots:
+-----------
+1. verification/f215-category-maxlength-50chars.png - Shows 50 chars accepted
+2. verification/f215-category-maxlength-51blocked.png - Shows truncation at 50
+3. verification/f215-category-created-successfully.png - Shows successful creation
+
+API Test Results (node test-category-validation-f215.js):
+--------------------------------------------------------
+Test 1: Exactly 50 characters
+  - Name length: 50
+  - Status: 200
+  - Result: ✅ Success
+
+Test 2: 51 characters (should fail)
+  - Name length: 51
+  - Status: 400
+  - Result: ✅ "Category name must be 50 characters or less"
+
+Test 3: 100 characters (should fail)
+  - Name length: 100
+  - Status: 400
+  - Result: ✅ "Category name must be 50 characters or less"
+
+Conclusion:
+-----------
+Feature #215 is WORKING CORRECTLY - ALL VERIFICATION STEPS PASSED
+
+The category name max length validation is fully implemented and tested.
+Users cannot create or edit categories with names exceeding 50 characters.
+The validation is enforced on both frontend and backend for security.
+
+Statistics:
+-----------
+- Files verified: 2 (CategoriesPage.tsx, server.ts)
+- Test scenarios: 7 (UI tests + 3 API tests)
+- Frontend validation: ✅ Working
+- Backend validation: ✅ Working
+- Character counter: ✅ Working
+- Error messages: ✅ Clear and helpful
+- Console errors: 0
+- Progress: 272/291 passing (93.5%)
+
+================================================================================

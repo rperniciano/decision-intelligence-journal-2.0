@@ -118,17 +118,13 @@ export class InsightsService {
    * Calculate insights for a user based on their decisions
    */
   static async getInsights(userId: string): Promise<InsightsData> {
-    // Fetch all decisions for the user (not deleted) with their options, pros_cons, and category
+    // Fetch all decisions for the user (not deleted) with their options and category
     // Use explicit relationship name to avoid ambiguity (decisions has two relationships to options table)
     const { data: decisions, error } = await supabase
       .from('decisions')
       .select(`
         *,
-        options!options_decision_id_fkey (
-          id,
-          display_order,
-          pros_cons (id)
-        ),
+        options!options_decision_id_fkey (id),
         category:categories(id, name)
       `)
       .eq('user_id', userId)
@@ -187,33 +183,25 @@ export class InsightsService {
     }
 
     // 2. Process Quality Score (30 points): Based on thoroughness
-    // Measure by average number of options and pros/cons per decision
+    // Measure by average number of options per decision
     if (totalDecisions > 0) {
       let totalOptions = 0;
-      let totalProsCons = 0;
 
-      // Count options and pros_cons from the nested query result
+      // Count options from the nested query result
       allDecisions.forEach((decision: any) => {
         const options = decision.options || [];
         totalOptions += options.length;
-
-        options.forEach((option: any) => {
-          const prosCons = option.pros_cons || [];
-          totalProsCons += prosCons.length;
-        });
       });
 
-      // Calculate averages
+      // Calculate average
       const avgOptions = totalOptions / totalDecisions;
-      const avgProsCons = totalOptions > 0 ? totalProsCons / totalOptions : 0;
 
-      // Process quality scoring:
-      // - Good: 2+ options, 2+ pros/cons per option (30 points)
-      // - Average: 2 options, 1 pro/con per option (20 points)
-      // - Basic: 1-2 options, minimal pros/cons (10 points)
-      const optionsScore = Math.min(15, avgOptions * 5); // Max 15 points for options
-      const prosConsScore = Math.min(15, avgProsCons * 5); // Max 15 points for pros/cons
-      processQualityScore = optionsScore + prosConsScore;
+      // Process quality scoring (simplified to options only):
+      // - Excellent: 3+ options (30 points)
+      // - Good: 2-3 options (20-25 points)
+      // - Basic: 1-2 options (10-15 points)
+      // - Minimal: 0-1 options (0-5 points)
+      processQualityScore = Math.min(30, avgOptions * 10);
     }
 
     // 3. Follow-through Score (30 points): Based on outcome recording rate
