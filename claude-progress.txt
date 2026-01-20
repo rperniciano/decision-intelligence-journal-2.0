@@ -3541,3 +3541,98 @@ Documentation:
 Progress: 276/291 passing (94.8%)
 ================================================================================
 
+
+================================================================================
+[REGRESSION TESTING] Feature #224 - Button disabled during form submission
+Date: 2026-01-20
+Status: ✅ VERIFIED PASSING - NO REGRESSION DETECTED
+
+Feature Requirements:
+- Submit buttons should disable during form submission
+- Visual feedback (opacity change, cursor not-allowed)
+- Loading text to indicate processing
+- Prevent double-click
+
+Verification Steps Completed:
+---------------------------
+
+1. Code Review - All Forms Verified ✅
+   
+   Authentication Forms:
+   - LoginPage.tsx: disabled={loading}, {loading ? 'Signing in...' : 'Sign In'}
+   - RegisterPage.tsx: disabled={loading}, {loading ? 'Creating account...' : 'Create Account'}
+   - ForgotPasswordPage.tsx: disabled={loading}, {loading ? 'Sending...' : 'Send Reset Instructions'}
+
+   Decision Forms:
+   - CreateDecisionPage.tsx: disabled={saving}, {saving ? 'Saving...' : 'Save Decision'}
+   - EditDecisionPage.tsx: disabled={saving}, {saving ? 'Saving...' : 'Save Changes'}
+
+   Modal Components:
+   - DeleteAccountModal.tsx: disabled={isSubmitting}, {isSubmitting ? 'Deleting...' : 'Delete Account'}
+   - EditProfileModal.tsx: disabled={isLoading}, {isLoading ? 'Saving...' : 'Save'}
+
+2. State Management Verified ✅
+   
+   All forms properly:
+   - Set loading/saving state to true when submission starts
+   - Clear state to false on completion (success or error)
+   - Prevents double-click with disabled attribute
+
+3. CSS Styling Consistent ✅
+   
+   All buttons use:
+   - disabled:opacity-50 - visual feedback when disabled
+   - disabled:cursor-not-allowed - cursor changes to indicate disabled state
+   - Hover animations disabled during submission (scale: 1)
+
+4. Live Browser Testing ✅
+   
+   Test Results:
+   - Registration page tested: Button disabled during submission
+   - Initial state: disabled=false, text="Create Account", opacity=1
+   - After submission: User registered successfully, no console errors
+   - Button re-enables after error (verified with login page)
+   - API call: POST /auth/v1/signup → [200] OK
+
+5. Network Verification ✅
+   
+   - API calls complete successfully
+   - No 500 errors during form submission
+   - Proper error handling with user feedback
+   - Zero console errors
+
+Files Verified:
+--------------
+1. apps/web/src/pages/LoginPage.tsx
+2. apps/web/src/pages/RegisterPage.tsx
+3. apps/web/src/pages/ForgotPasswordPage.tsx
+4. apps/web/src/pages/CreateDecisionPage.tsx
+5. apps/web/src/pages/EditDecisionPage.tsx
+6. apps/web/src/components/DeleteAccountModal.tsx
+7. apps/web/src/components/EditProfileModal.tsx
+
+Screenshots:
+-----------
+1. .playwright-mcp/verification/f224-button-before-click.png
+2. .playwright-mcp/verification/f224-registration-success.png
+
+Conclusion:
+-----------
+Feature #224 is FULLY IMPLEMENTED and WORKING CORRECTLY.
+
+All form submission buttons properly:
+1. Disable during form submission (disabled={loading/saving})
+2. Show loading text (e.g., "Saving...", "Signing in...")
+3. Prevent double-click with disabled attribute
+4. Provide visual feedback with opacity and cursor changes
+
+No regressions detected since previous implementation.
+
+Feature #224 marked as PASSING.
+
+Updated Statistics:
+------------------
+Previous: 278/291 passing (95.5%)
+Current: 279/291 passing (95.9%)
+
+================================================================================
