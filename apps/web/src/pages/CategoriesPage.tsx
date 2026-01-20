@@ -37,7 +37,7 @@ interface Category {
   user_id: string | null;
 }
 
-const EMOJI_OPTIONS = ['📁', '📊', '💼', '🎯', '💡', '🎨', '🚀', '⭐', '🔥', '✨', '🎯', '📌'];
+const EMOJI_OPTIONS = ['📁', '📊', '💼', '🎯', '💡', '🎨', '🚀', '⭐', '🔥', '✨', '📌', '🏷️'];
 const COLOR_OPTIONS = [
   { name: 'Teal', value: '#00d4aa' },
   { name: 'Blue', value: '#3b82f6' },

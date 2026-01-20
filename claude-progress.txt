@@ -372,3 +372,147 @@ Code Review:
 
 Conclusion: Feature #162 is WORKING CORRECTLY - NO REGRESSION DETECTED
 ================================================================================
+
+================================================================================
+[FEATURE #159] "Not quite right?" section with re-record and manual entry options
+Date: 2026-01-20 15:48:00
+Status: ✅ VERIFIED PASSING
+
+Feature Requirements (app_spec.txt line 159):
+- "Not quite right?" section with re-record and manual entry options
+
+Implementation Verified:
+-------------------------
+Component: DecisionExtractionCard.tsx (lines 475-499)
+Route: /decisions/:id/review (ExtractionReviewPage)
+
+1. "Not quite right?" Section:
+   - Staggered reveal animation (0.6s delay)
+   - Glassmorphism card with luminous border
+   - Heading: "Not quite right?"
+   - Two action buttons displayed side-by-side
+
+2. Re-record Button:
+   - Navigates to /record page
+   - Glassmorphism styling with hover effect
+   - Proper accessibility labels
+
+3. Enter Manually Button:
+   - Navigates to /decisions/new page
+   - Glassmorphism styling consistent with Re-record
+   - Proper accessibility labels
+
+Browser Automation Testing:
+--------------------------
+✅ Created test decision: "TEST_F159_Decision for Testing"
+✅ Navigated to extraction review page
+✅ Verified "Not quite right?" section displays correctly
+✅ Clicked "Re-record" → Navigated to /record page
+✅ Clicked "Enter Manually" → Navigated to /decisions/new page
+✅ Zero console errors
+✅ Screenshots captured
+
+Design System Compliance:
+------------------------
+✅ Glassmorphism (glass class)
+✅ Luminous borders (border-white/10)
+✅ Staggered animations (0.6s delay via Framer Motion)
+✅ Spring physics for smooth transitions
+✅ Off-white text (text-white/90)
+✅ Proper spacing and padding
+
+User Experience:
+----------------
+- Clear fallback options when AI extraction is inaccurate
+- No dead ends - user can always proceed
+- Consistent with app's "voice-first but manual fallback" philosophy
+- Accessible button labels
+
+Screenshots:
+-----------
+1. verification/f159-extraction-review-page.png - Review page with section
+2. verification/f159-manual-entry-page.png - Manual entry page
+
+Conclusion:
+-----------
+Feature #159 is WORKING CORRECTLY - NO REGRESSIONS DETECTED
+
+The "Not quite right?" section provides users with clear options when the
+AI extraction doesn't match their intent. Both buttons navigate correctly
+and the implementation follows the app's design system perfectly.
+
+Statistics:
+-----------
+- Files verified: 1 (DecisionExtractionCard.tsx)
+- Test scenarios: 2 (Re-record, Enter Manually)
+- Navigation flows: 2
+- Screenshots: 2
+- Progress: 262/291 passing (90.0%)
+
+================================================================================
+
+================================================================================
+[REGRESSION TESTING] Feature #278: CSV export all records present
+Date: 2026-01-20 15:54:58
+Status: ✅ VERIFIED PASSING
+
+Feature Requirements (app_spec.txt):
+- Verify CSV completeness
+
+Verification Steps:
+1. ✅ Count decisions in app (15 decisions created)
+2. ✅ Export as CSV (via Export page → CSV Format button)
+3. ✅ Count rows in CSV (15 data rows + 1 header = 16 total)
+4. ✅ Verify counts match (15 = 15 ✓)
+5. ✅ Verify no missing data (all titles present, all descriptions present)
+
+Test Execution:
+---------------
+1. Created test user: testuser278@example.com
+2. Created 15 test decisions in database
+3. Logged into application
+4. Navigated to Settings → Data → Export
+5. Clicked "CSV Format" button
+6. File downloaded: decisions-export-2026-01-20.csv
+7. Analyzed CSV contents
+
+CSV Analysis Results:
+---------------------
+- Total lines: 16 (1 header + 15 data rows)
+- Decision titles: 15 unique titles (Test Decision 1-15)
+- Missing titles: 0
+- Missing descriptions: 0
+- Duplicates: 0
+- API call: GET /api/v1/decisions?limit=1000 → [200] OK
+
+Data Completeness:
+------------------
+✓ All 15 decisions exported
+✓ No missing titles
+✓ No missing descriptions
+✓ No duplicate records
+✓ Proper CSV format with headers
+✓ All required columns present (Title, Status, Category, Emotional State, etc.)
+
+Screenshots:
+-----------
+1. verification/f278-export-page.png - Export page with CSV button
+2. verification/f278-csv-exported.png - After CSV download
+
+Conclusion:
+-----------
+Feature #278 is WORKING CORRECTLY - NO REGRESSION DETECTED
+
+The CSV export functionality successfully exports ALL records from the
+database with no missing data. The feature correctly fetches all decisions
+(limit=1000) and formats them as a downloadable CSV file.
+
+Statistics:
+-----------
+- Files verified: 1 (decisions-export-2026-01-20.csv)
+- Test decisions: 15
+- Exported decisions: 15
+- Missing data: 0
+- Progress: 262/291 passing (90.0%)
+
+================================================================================
