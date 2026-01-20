@@ -12,6 +12,7 @@ export function RecordPage() {
   const [error, setError] = useState<string | null>(null);
   const [savedAudioBlob, setSavedAudioBlob] = useState<Blob | null>(null);
   const [isStartingRecording, setIsStartingRecording] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const timerRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -172,6 +173,7 @@ export function RecordPage() {
     try {
       setIsProcessing(true);
       setError(null);
+      setUploadProgress(0); // Reset upload progress
 
       // Create audio blob if not provided (initial recording)
       const blob = audioBlob || new Blob(audioChunksRef.current, { type: 'audio/webm' });
@@ -195,21 +197,52 @@ export function RecordPage() {
       const formData = new FormData();
       formData.append('file', blob, `recording-${Date.now()}.webm`);
 
-      // Upload to API
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/recordings/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: formData,
+      // Upload to API with progress tracking using XMLHttpRequest
+      const uploadPromise = new Promise<{ jobId: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable && isMountedRef.current) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        });
+
+        // Handle completion
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 202 && isMountedRef.current) {
+            const result = JSON.parse(xhr.responseText);
+            resolve(result);
+          } else if (isMountedRef.current) {
+            const errorData = JSON.parse(xhr.responseText);
+            reject(new Error(errorData.message || 'Upload failed. Please try again or enter manually.'));
+          }
+        });
+
+        // Handle errors
+        xhr.addEventListener('error', () => {
+          if (isMountedRef.current) {
+            reject(new Error('Network error during upload. Please try again.'));
+          }
+        });
+
+        xhr.addEventListener('abort', () => {
+          if (isMountedRef.current) {
+            reject(new Error('Upload cancelled.'));
+          }
+        });
+
+        // Open and send request
+        xhr.open('POST', `${import.meta.env.VITE_API_URL}/recordings/upload`);
+        xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+        xhr.send(formData);
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed. Please try again or enter manually.');
-      }
+      const result = await uploadPromise;
 
-      const result = await response.json();
+      // Upload complete, now start polling for job completion
+      setUploadProgress(100);
 
       // Start polling for job completion (will fetch fresh tokens automatically)
       const decisionId = await pollJobStatus(result.jobId);
@@ -230,6 +263,7 @@ export function RecordPage() {
           setError(errorMessage || 'Transcription failed. Please try again or enter manually.');
         }
         setIsProcessing(false);
+        setUploadProgress(0);
       }
     }
   };
@@ -437,10 +471,37 @@ export function RecordPage() {
               </motion.div>
 
               <h2 className="text-2xl font-semibold mb-2 text-gradient">
-                Processing Your Decision...
+                {uploadProgress < 100 ? 'Uploading Audio...' : 'Processing Your Decision...'}
               </h2>
+
+              {/* Upload progress bar */}
+              {uploadProgress < 100 && uploadProgress > 0 && (
+                <div className="mb-6 max-w-md mx-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-text-secondary">Uploading</span>
+                    <span className="text-sm font-medium text-accent" aria-live="polite">
+                      {uploadProgress}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-accent to-accent-600"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${uploadProgress}%` }}
+                      transition={{ duration: 0.3 }}
+                      role="progressbar"
+                      aria-valuenow={uploadProgress}
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    />
+                  </div>
+                </div>
+              )}
+
               <p className="text-text-secondary max-w-md">
-                Transcribing audio and extracting decision insights with AI
+                {uploadProgress < 100
+                  ? 'Uploading your audio recording...'
+                  : 'Transcribing audio and extracting decision insights with AI'}
               </p>
             </motion.div>
           ) : !isRecording ? (
