@@ -1600,10 +1600,12 @@ async function registerRoutes() {
 
         if (outcomesError) {
           // Feature #77: Check if outcomes table doesn't exist (various error codes)
-          // 42P01 = relation does not exist, PGRST204 = table not found in cache
-          if (outcomesError.code === 'PGRST204' || outcomesError.code === '42P01' ||
+          // PGRST205/PGRST204 = table not found, 42P01 = relation does not exist
+          if (outcomesError.code === 'PGRST204' || outcomesError.code === 'PGRST205' ||
+              outcomesError.code === '42P01' ||
               outcomesError.message?.includes('does not exist') ||
-              outcomesError.message?.includes('relation')) {
+              outcomesError.message?.includes('relation') ||
+              outcomesError.message?.includes('table')) {
             // Outcomes table doesn't exist, fall back to old method (single outcome on decision)
             server.log.warn('Outcomes table not found, using legacy single outcome format');
 
@@ -1766,7 +1768,11 @@ async function registerRoutes() {
             .single();
 
           if (insertError) {
-            if (insertError.code === 'PGRST204') {
+            // Feature #77: Check if outcomes table doesn't exist
+            if (insertError.code === 'PGRST204' || insertError.code === 'PGRST205' ||
+                insertError.code === '42P01' ||
+                insertError.message?.includes('does not exist') ||
+                insertError.message?.includes('relation')) {
               // Outcomes table doesn't exist, fall back to legacy method
               throw insertError;
             }
@@ -1802,9 +1808,11 @@ async function registerRoutes() {
         } catch (tableError: any) {
           // Feature #77: Fall back to legacy single outcome format if outcomes table doesn't exist
           // Check for various error codes that indicate table doesn't exist
-          if (tableError.code === 'PGRST204' || tableError.code === '42P01' ||
+          if (tableError.code === 'PGRST204' || tableError.code === 'PGRST205' ||
+              tableError.code === '42P01' ||
               tableError.message?.includes('does not exist') ||
               tableError.message?.includes('relation') ||
+              tableError.message?.includes('table') ||
               tableError.message?.includes('outcomes')) {
             server.log.warn('Outcomes table not found, using legacy single outcome format');
 
@@ -2293,4 +2301,5 @@ async function start() {
 }
 
 start();
+ 
  

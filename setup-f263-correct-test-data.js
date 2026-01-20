@@ -38,9 +38,12 @@ async function setupCorrectTestData() {
     console.log('\n3. Current time in Rome:', romeHour + ':00');
 
     // 4. Create decision due BEFORE quiet hours (should always show)
-    // Due at 10:00 AM today
-    const visibleDecisionTime = new Date(romeTime);
+    // Due at 10:00 AM Rome time today
+    // We need to create a Date object for 10:00 AM in the Rome timezone
+    const visibleDecisionTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
     visibleDecisionTime.setHours(10, 0, 0, 0);
+    // Convert back to UTC for storage
+    const visibleDecisionTimeUTC = new Date(visibleDecisionTime.getTime() + (visibleDecisionTime.getTimezoneOffset() * 60000));
 
     const { data: decision1, error: error1 } = await supabase
       .from('decisions')
@@ -63,9 +66,10 @@ async function setupCorrectTestData() {
     console.log('   Expected: Always visible (due before 18:00)');
 
     // 5. Create decision due DURING quiet hours (should be hidden during quiet hours)
-    // Due at 18:30 today (during quiet hours 18:00-19:00)
-    const hiddenDecisionTime = new Date(romeTime);
+    // Due at 18:30 Rome time today (during quiet hours 18:00-19:00)
+    const hiddenDecisionTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
     hiddenDecisionTime.setHours(18, 30, 0, 0);
+    // Keep as Rome time for storage
 
     const { data: decision2, error: error2 } = await supabase
       .from('decisions')
