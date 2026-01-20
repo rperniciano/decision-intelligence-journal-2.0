@@ -67,6 +67,24 @@ async function testOutcomesEndpoint() {
       console.log('   Exception:', e.message);
     }
 
+    // Test 4: Check the actual decision outcome data
+    console.log('\n4. Checking decision outcome data...');
+    const { data: decisionData, error: decisionDataError } = await supabase
+      .from('decisions')
+      .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
+      .eq('id', TEST_DECISION_ID)
+      .maybeSingle();
+
+    if (decisionDataError) {
+      console.log('   Error:', decisionDataError.message);
+    } else {
+      console.log('   Decision ID:', decisionData.id);
+      console.log('   User ID:', decisionData.user_id);
+      console.log('   Outcome:', decisionData.outcome);
+      console.log('   Outcome Notes:', decisionData.outcome_notes);
+      console.log('   Outcome Recorded At:', decisionData.outcome_recorded_at);
+    }
+
   } catch (error) {
     console.error('Test failed:', error);
   }
