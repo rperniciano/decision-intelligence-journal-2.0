@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { ConfirmModal } from '../components/Modal';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { SkipLink } from '../components/SkipLink';
+import { useToast } from '../contexts/ToastContext';
 
 // Type definitions
 interface DecisionOption {
@@ -135,6 +136,7 @@ interface Reminder {
 export function DecisionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast(); // Feature #221: Add toast for delete confirmation
   const [decision, setDecision] = useState<Decision | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -380,10 +382,15 @@ export function DecisionDetailPage() {
         throw new Error('Failed to delete decision');
       }
 
+      // Feature #221: Show success message indicating what was deleted
+      const decisionTitle = decision?.title || 'Decision';
+      showSuccess(`"${decisionTitle}" deleted`);
+
       // Navigate back to history after successful deletion
       navigate('/history', { replace: true });
     } catch (err) {
       console.error('Error deleting decision:', err);
+      showError('Failed to delete decision');
       setError('Failed to delete decision');
       setIsDeleting(false);
       setShowDeleteModal(false);
