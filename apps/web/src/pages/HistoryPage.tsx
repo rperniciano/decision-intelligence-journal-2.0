@@ -683,7 +683,7 @@ export function HistoryPage() {
     return () => {
       abortController.abort();
     };
-  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage, pageCursors]);
+  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage]);
 
   // Apply time-based filtering client-side (to respect user's timezone)
   const timeFilteredDecisions = decisions.filter((decision) => {
