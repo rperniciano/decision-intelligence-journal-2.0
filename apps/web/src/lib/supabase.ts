@@ -24,6 +24,8 @@ export const supabase: SupabaseClient = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      storage: window.localStorage,
+      storageKey: 'sb-doqojfsldvajmlscpwhu-auth-token',
     },
   }
 );
