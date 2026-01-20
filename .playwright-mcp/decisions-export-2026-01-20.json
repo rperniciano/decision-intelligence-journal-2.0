@@ -1,37 +1,5 @@
 {
-  "exportDate": "2026-01-20T14:11:28.933Z",
-  "totalDecisions": 1,
-  "decisions": [
-    {
-      "id": "8f7add38-8de6-4b89-b2b0-4aba0724f27a",
-      "user_id": "e9f18b63-4f41-416f-bbef-a040f315db1e",
-      "title": "EXPORT_INTEGRITY_TEST_2025 - Should I switch careers to AI development?",
-      "description": "Testing export feature integrity. This is a detailed description about a career decision. Special characters: @#$%^&*()_+-=[]{}|;:'\",.<>?/~` Numbers: 1234567890 Unicode: ñ é ü 测试 🎯",
-      "raw_transcript": null,
-      "audio_url": null,
-      "audio_duration_seconds": null,
-      "category_id": null,
-      "tags": [],
-      "detected_emotional_state": null,
-      "emotional_confidence": null,
-      "status": "draft",
-      "decided_at": null,
-      "chosen_option_id": null,
-      "outcome": null,
-      "outcome_notes": null,
-      "outcome_audio_url": null,
-      "outcome_recorded_at": null,
-      "follow_up_date": null,
-      "follow_up_notified": false,
-      "follow_up_notification_sent_at": null,
-      "hour_of_day": 15,
-      "day_of_week": 2,
-      "decision_duration_hours": null,
-      "deleted_at": null,
-      "created_at": "2026-01-20T14:10:23.934+00:00",
-      "updated_at": "2026-01-20T14:10:23.934+00:00",
-      "category": null,
-      "options": []
-    }
-  ]
+  "exportDate": "2026-01-20T18:06:25.964Z",
+  "totalDecisions": 0,
+  "decisions": []
 }

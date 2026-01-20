@@ -1622,11 +1622,8 @@ async function registerRoutes() {
               decision = result.data;
               decisionError = result.error;
 
-              console.log('[DEBUG F91] First query result:', { hasData: !!decision, error: decisionError });
-
               // If error is about missing column, try without it
               if (decisionError && (decisionError.message?.includes('column') || decisionError.message?.includes('does not exist') || decisionError.code === '42703')) {
-                console.log('[DEBUG F91] Column not found, trying fallback query without outcome_satisfaction');
                 const fallbackResult = await supabase
                   .from('decisions')
                   .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
@@ -1636,11 +1633,9 @@ async function registerRoutes() {
                   .maybeSingle();
                 decision = fallbackResult.data;
                 decisionError = fallbackResult.error;
-                console.log('[DEBUG F91] Fallback query result:', { hasData: !!decision, error: decisionError });
               }
             } catch (e: any) {
               // Column doesn't exist, try without it
-              console.log('[DEBUG F91] Exception in first query:', e.message);
               const result = await supabase
                 .from('decisions')
                 .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
@@ -1650,7 +1645,6 @@ async function registerRoutes() {
                 .maybeSingle();
               decision = result.data;
               decisionError = result.error;
-              console.log('[DEBUG F91] Catch block result:', { hasData: !!decision, error: decisionError });
             }
 
             if (decisionError || !decision) {
