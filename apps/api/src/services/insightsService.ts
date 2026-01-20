@@ -537,7 +537,7 @@ export class InsightsService {
   private static calculateAchievements(
     totalDecisions: number,
     decisionsWithOutcomes: number,
-    positiveOutcomes: number,
+    _positiveOutcomes: number,
     allDecisions: any[]
   ): Achievement[] {
     const achievements: Achievement[] = [
@@ -707,7 +707,7 @@ export class InsightsService {
 
     if (dates.includes(todayStr) || dates.includes(yesterdayStr)) {
       currentStreak = 1;
-      let daysToCheck = dates.includes(todayStr) ? 1 : 0;
+      // let daysToCheck = dates.includes(todayStr) ? 1 : 0; // Unused
 
       while (true) {
         checkDate.setDate(checkDate.getDate() - 1);

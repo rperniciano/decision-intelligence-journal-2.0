@@ -3107,3 +3107,69 @@ Screenshots:
 
 Progress: 276/291 passing (94.8%)
 ================================================================================
+
+================================================================================
+[REGRESSION TEST] Feature #170 - Delete decision removes options
+Date: 2026-01-20
+Status: ✅ VERIFIED WORKING
+
+Feature Description:
+-------------------
+When a decision is deleted, all associated options and pros/cons should be
+deleted as well (cascade delete).
+
+Test Method:
+------------
+1. Created test user: f170-cascade@example.com
+2. Created decision with 3 options via database
+3. Each option had pros and cons
+4. Deleted decision through the UI
+5. Verified cascade behavior in database
+
+Test Results:
+-------------
+✅ Decision soft-deleted (deleted_at timestamp set)
+✅ All 3 options hard-deleted from database
+✅ All 8 pros/cons hard-deleted from database
+✅ No orphaned data found
+✅ UI correctly showed decision removed
+✅ Toast notification displayed correctly
+
+Database Verification:
+---------------------
+Before delete:
+- Decision: 27285615-ac37-40f2-ab33-4d245d8b2e21
+- Options: 3 (Stay at current job, Accept new offer, Start own business)
+- Pros/Cons: 8 total
+
+After delete:
+- Decision: marked as deleted (deleted_at: 2026-01-20T16:51:50.252+00:00)
+- Options: 0 (cascade deleted)
+- Pros/Cons: 0 (cascade deleted)
+
+UI Verification:
+---------------
+✅ Decision appeared in History page
+✅ Clicked decision to view details
+✅ All 3 options displayed correctly with pros/cons
+✅ Clicked Delete button
+✅ Confirmation dialog appeared
+✅ Confirmed deletion
+✅ Redirected to History page
+✅ Toast: "F170 Test Decision - Job Change" deleted
+✅ Decision no longer visible in UI
+
+Conclusion:
+-----------
+Feature #170 is WORKING CORRECTLY
+
+The cascade delete functionality works as expected:
+- Decisions are soft-deleted (for recovery)
+- Options are hard-deleted (cascade from decision)
+- Pros/Cons are hard-deleted (cascade from options)
+- No orphaned data remains in database
+
+Screenshot: verification/f170-cascade-delete-verified.png
+
+Progress: 279/291 passing (95.9%)
+================================================================================
