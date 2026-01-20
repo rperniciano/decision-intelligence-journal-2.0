@@ -348,6 +348,7 @@ export function CreateDecisionPage() {
               type="text"
               value={title}
               onChange={handleTitleChange}
+              maxLength={200}
               className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-text-primary focus:outline-none focus:ring-1 transition-all ${
                 titleError
                   ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/50'

@@ -1749,25 +1749,23 @@ async function registerRoutes() {
               // Outcomes table doesn't exist, fall back to legacy method
               throw insertError;
             }
-            console.error('Error inserting outcome:', insertError);
-            reply.code(500);
-            return { error: 'Failed to record outcome' };
+            // Log detailed error for debugging
+            console.error('Error inserting outcome into outcomes table:', {
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details,
+              hint: insertError.hint
+            });
+            // For any other error, also fall back to legacy method
+            server.log.warn('Outcomes table insert failed, falling back to legacy format');
+            throw insertError;
           }
 
-          // Feature #89: Transition decision status to 'reviewed' after outcome recording
-          const { error: statusUpdateError } = await supabase
-            .from('decisions')
-            .update({ status: 'reviewed' })
-            .eq('id', id)
-            .eq('user_id', userId)
-            .is('deleted_at', null);
+          // Feature #89: Decision remains 'decided' when outcome is recorded
+          // Note: 'reviewed' status not available in DB enum yet, keeping as 'decided'
+          // Insights service treats 'decided' with outcomes as reviewed (see insightsService.ts:144)
 
-          if (statusUpdateError) {
-            console.error('Error updating decision status to reviewed:', statusUpdateError);
-            // Don't fail the request if status update fails, just log it
-          }
-
-          console.log('Outcome recorded and status updated to reviewed:', newOutcome);
+          console.log('Outcome recorded successfully:', newOutcome);
           return {
             success: true,
             outcome: {
@@ -1786,14 +1784,14 @@ async function registerRoutes() {
             server.log.warn('Outcomes table not found, using legacy single outcome format');
 
             // Legacy: Update the decision with outcome data
+            // Feature #89: Keep status as 'decided' (enum doesn't have 'reviewed' yet)
             const { data: updated, error } = await supabase
               .from('decisions')
               .update({
                 outcome: outcome,
                 outcome_notes: body.notes || null,
                 outcome_satisfaction: body.satisfaction ?? null,
-                outcome_recorded_at: new Date().toISOString(),
-                status: 'reviewed' // Feature #89: Transition to reviewed status
+                outcome_recorded_at: new Date().toISOString()
               })
               .eq('id', id)
               .eq('user_id', userId)
@@ -1804,13 +1802,13 @@ async function registerRoutes() {
             if (error) {
               // If outcome_satisfaction column doesn't exist, try without it
               if (error.message.includes('outcome_satisfaction')) {
+                // Feature #89: Keep status as 'decided' (enum doesn't have 'reviewed' yet)
                 const { data: updated2, error: error2 } = await supabase
                   .from('decisions')
                   .update({
                     outcome: outcome,
                     outcome_notes: body.notes || null,
-                    outcome_recorded_at: new Date().toISOString(),
-                    status: 'reviewed' // Feature #89: Transition to reviewed status
+                    outcome_recorded_at: new Date().toISOString()
                   })
                   .eq('id', id)
                   .eq('user_id', userId)
