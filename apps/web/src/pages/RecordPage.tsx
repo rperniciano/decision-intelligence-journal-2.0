@@ -92,7 +92,7 @@ export function RecordPage() {
     }
   };
 
-  const pollJobStatus = async (jobId: string, token: string): Promise<string> => {
+  const pollJobStatus = async (jobId: string): Promise<string> => {
     const maxAttempts = 60; // 60 attempts * 2 seconds = 2 minutes max
     let attempts = 0;
 
@@ -107,12 +107,18 @@ export function RecordPage() {
           throw new Error('Polling cancelled - component unmounted');
         }
 
-        // Poll for status
+        // Get fresh token on each polling iteration to handle token refresh during long-running actions
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('Session expired. Please log in again.');
+        }
+
+        // Poll for status with fresh token
         const statusResponse = await fetch(
           `${import.meta.env.VITE_API_URL}/recordings/${jobId}/status`,
           {
             headers: {
-              'Authorization': `Bearer ${token}`,
+              'Authorization': `Bearer ${session.access_token}`,
             },
             signal: abortController.signal, // Allow aborting the request
           }
@@ -121,6 +127,11 @@ export function RecordPage() {
         // Check again after async operation
         if (!isMountedRef.current) {
           throw new Error('Polling cancelled - component unmounted during request');
+        }
+
+        // Handle 401 errors - if token is truly invalid, throw error
+        if (statusResponse.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
         }
 
         if (!statusResponse.ok) {
@@ -200,8 +211,8 @@ export function RecordPage() {
 
       const result = await response.json();
 
-      // Start polling for job completion
-      const decisionId = await pollJobStatus(result.jobId, session.access_token);
+      // Start polling for job completion (will fetch fresh tokens automatically)
+      const decisionId = await pollJobStatus(result.jobId);
 
       // Only navigate and update state if component is still mounted
       if (isMountedRef.current) {
