@@ -125,3 +125,64 @@ Browser Verification:
 - Screenshot saved: export-page-verification.png
 
 Conclusion: Feature #282 is WORKING CORRECTLY - NO REGRESSION DETECTED
+
+================================================================================
+[FEATURE IMPLEMENTATION] Theme Persistence System
+Date: 2026-01-20 15:30:00
+Status: ✅ IMPLEMENTED AND VERIFIED
+
+Implementation Summary:
+- Created ThemeContext with localStorage persistence
+- Added ThemeProvider to App.tsx
+- Implemented two theme variants: Dark (default) and OLED Black
+- Added functional theme selector in Settings > Appearance
+- Theme preference persists across sessions
+
+Testing Performed:
+1. Theme switching: ✅ Dark ↔ OLED works correctly
+2. Persistence across navigation: ✅ Theme maintained
+3. Persistence across browser sessions: ✅ localStorage persists
+4. Console verification: ✅ Zero errors
+
+Files Modified:
+- apps/web/src/contexts/ThemeContext.tsx (NEW)
+- apps/web/src/App.tsx (added ThemeProvider wrapper)
+- apps/web/src/pages/SettingsPage.tsx (functional theme selector)
+
+Screenshots:
+- verification/f147-theme-selector.png
+
+Technical Details:
+- Storage key: 'decision-journal-theme'
+- Theme variants: 'dark' and 'oled'
+- CSS variables updated: --bg-deep, --bg-gradient
+- React Context API for state management
+
+================================================================================
+[REGRESSION TESTING] Feature #129: Filter parameters
+Date: 2026-01-20 15:15:00
+Status: ✅ VERIFIED PASSING
+
+Test Results:
+- Created test decisions with different statuses
+- Applied "Decided" filter on History page
+- Verified API request includes: ?status=decided&sort=date_desc&limit=10
+- URL updates correctly: /history?filter=decided&page=1
+- Only filtered decisions displayed (3 of 5)
+- Network tab confirmed filter parameter sent correctly
+
+No issues detected.
+
+================================================================================
+UPDATED STATISTICS
+================================================================================
+
+Progress: 260/291 passing (89.3%)
+Total features: 291
+Passing: 260
+In Progress: 0
+Remaining: 31
+
+Session completed successfully with theme implementation and regression testing.
+
+================================================================================
