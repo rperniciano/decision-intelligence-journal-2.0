@@ -25,6 +25,7 @@ const CreateDecisionPage = lazy(() => import('./pages/CreateDecisionPage').then(
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 const PatternDetailPage = lazy(() => import('./pages/PatternDetailPage').then(m => ({ default: m.PatternDetailPage })));
+const ExtractionReviewPage = lazy(() => import('./pages/ExtractionReviewPage').then(m => ({ default: m.ExtractionReviewPage })));
 
 // Landing Page Component
 function LandingPage() {
@@ -411,6 +412,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <RecordPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/decisions/:id/review"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <ExtractionReviewPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />

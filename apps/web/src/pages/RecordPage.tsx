@@ -249,8 +249,8 @@ export function RecordPage() {
 
       // Only navigate and update state if component is still mounted
       if (isMountedRef.current) {
-        // Navigate to the created decision
-        navigate(`/decisions/${decisionId}`);
+        // Navigate to the extraction review page
+        navigate(`/decisions/${decisionId}/review`);
       }
     } catch (err) {
       console.error('Error processing recording:', err);
