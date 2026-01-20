@@ -489,6 +489,17 @@ export function HistoryPage() {
     setNextCursor(null);
   }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl, timeFilterFromUrl]);
 
+  // Feature #279: Store filter state in sessionStorage for export page
+  useEffect(() => {
+    const filterState = {
+      filter: activeFilter,
+      category: selectedCategory,
+      time: timeFilter,
+      search: searchQuery,
+    };
+    sessionStorage.setItem('exportFilters', JSON.stringify(filterState));
+  }, [activeFilter, selectedCategory, timeFilter, searchQuery]);
+
   // Fetch categories on mount
   // Feature #268: Add AbortController to prevent race conditions
   useEffect(() => {

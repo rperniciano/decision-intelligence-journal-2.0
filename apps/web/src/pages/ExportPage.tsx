@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
@@ -6,9 +6,31 @@ import { SkipLink } from '../components/SkipLink';
 import { supabase } from '../lib/supabase';
 import jsPDF from 'jspdf';
 
+// Feature #279: Interface for filter state
+interface ExportFilters {
+  filter: string;
+  category: string;
+  time: string;
+  search: string;
+}
+
 export function ExportPage() {
   const [exporting, setExporting] = useState<string | null>(null);
   const isExportingRef = useRef(false);
+
+  // Feature #279: Retrieve filter state from sessionStorage
+  const [activeFilters, setActiveFilters] = useState<ExportFilters | null>(null);
+
+  useEffect(() => {
+    const storedFilters = sessionStorage.getItem('exportFilters');
+    if (storedFilters) {
+      try {
+        setActiveFilters(JSON.parse(storedFilters));
+      } catch (e) {
+        console.error('Failed to parse stored filters:', e);
+      }
+    }
+  }, []);
 
   const handleExport = async (format: 'json' | 'csv' | 'pdf') => {
     // Prevent multiple simultaneous exports using ref for immediate check
@@ -56,8 +78,26 @@ export function ExportPage() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else if (format === 'csv') {
-        // Fetch all decisions from API for CSV export
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions?limit=1000`, {
+        // Feature #279: Build query parameters with filters
+        const params = new URLSearchParams();
+        params.append('limit', '1000');
+
+        // Apply filters if they exist
+        if (activeFilters) {
+          if (activeFilters.filter && activeFilters.filter !== 'all') {
+            params.append('status', activeFilters.filter);
+          }
+          if (activeFilters.category && activeFilters.category !== 'all') {
+            params.append('category', activeFilters.category);
+          }
+          if (activeFilters.search && activeFilters.search.trim()) {
+            params.append('search', activeFilters.search.trim());
+          }
+        }
+
+        // Fetch filtered decisions from API for CSV export
+        const url = `${import.meta.env.VITE_API_URL}/decisions?${params.toString()}`;
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
           },
@@ -117,17 +157,35 @@ export function ExportPage() {
 
         // Create and download file
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+        const downloadUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href = downloadUrl;
         a.download = `decisions-export-${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(downloadUrl);
       } else if (format === 'pdf') {
-        // Fetch all decisions for PDF export
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions?limit=1000`, {
+        // Feature #279: Build query parameters with filters
+        const params = new URLSearchParams();
+        params.append('limit', '1000');
+
+        // Apply filters if they exist
+        if (activeFilters) {
+          if (activeFilters.filter && activeFilters.filter !== 'all') {
+            params.append('status', activeFilters.filter);
+          }
+          if (activeFilters.category && activeFilters.category !== 'all') {
+            params.append('category', activeFilters.category);
+          }
+          if (activeFilters.search && activeFilters.search.trim()) {
+            params.append('search', activeFilters.search.trim());
+          }
+        }
+
+        // Fetch filtered decisions for PDF export
+        const url = `${import.meta.env.VITE_API_URL}/decisions?${params.toString()}`;
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
           },
@@ -513,7 +571,16 @@ export function ExportPage() {
             <div>
               <div className="font-medium text-sm mb-1">Your Privacy Matters</div>
               <div className="text-sm text-text-secondary">
-                Exported data includes all your decisions, notes, and insights. Keep this file secure as it contains personal information.
+                {activeFilters && (activeFilters.filter !== 'all' || activeFilters.category !== 'all' || activeFilters.search) ? (
+                  <>
+                    Export will include only <span className="text-accent font-medium">filtered</span> decisions from your History view.
+                  </>
+                ) : (
+                  <>
+                    Exported data includes all your decisions, notes, and insights.
+                  </>
+                )}
+                {' '}Keep this file secure as it contains personal information.
               </div>
             </div>
           </div>

@@ -207,3 +207,48 @@ client-side using jsPDF and downloads automatically.
 
 ---
 
+
+# Testing Session - 2026-01-20 (Feature #202 - Regression Test)
+## Filter by Status Works - VERIFIED PASSING ✅
+
+### Feature Tested
+- **ID:** 202
+- **Category:** Search & Filter Edge Cases
+- **Name:** Filter by status works
+- **Status:** PASSING (no regression)
+
+### Test Results
+
+**Test Setup:**
+- User: test_f277@example.com
+- Test data: 5 decisions with different statuses
+- Filters tested: All, Decided, In Progress
+
+**Verification Steps:**
+1. ✅ Have decisions in different statuses (Draft, In Progress, Decided, Abandoned)
+2. ✅ Filter by 'Decided' status - Only 1 decision shown
+3. ✅ Verify only decided decisions shown - Correct
+4. ✅ Filter by 'Deliberating' (In Progress) - Only 1 decision shown
+5. ✅ Verify correct subset - Correct
+
+**Technical Verification:**
+- Console errors: None
+- Network requests: All successful
+- URL updates: Correct query parameters
+- Filter state: Active state properly toggled
+- UI responsiveness: Instant filter updates
+
+**Screenshots:**
+- feature-202-all-filter.png - All 5 decisions visible
+- feature-202-decided-filter.png - Only decided decision
+- feature-202-in-progress-filter.png - Only in-progress decision
+
+### Conclusion
+
+**Feature #202: VERIFIED PASSING ✅**
+
+No regression detected. The status filtering functionality works correctly across all tested scenarios.
+
+---
+
+
