@@ -1621,6 +1621,19 @@ async function registerRoutes() {
                 .maybeSingle();
               decision = result.data;
               decisionError = result.error;
+
+              // If error is about missing column, try without it
+              if (decisionError && (decisionError.message?.includes('column') || decisionError.message?.includes('does not exist') || decisionError.code === '42703')) {
+                const fallbackResult = await supabase
+                  .from('decisions')
+                  .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
+                  .eq('id', id)
+                  .eq('user_id', userId)
+                  .is('deleted_at', null)
+                  .maybeSingle();
+                decision = fallbackResult.data;
+                decisionError = fallbackResult.error;
+              }
             } catch (e: any) {
               // Column doesn't exist, try without it
               const result = await supabase
