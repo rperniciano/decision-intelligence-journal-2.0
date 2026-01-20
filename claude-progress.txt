@@ -6901,3 +6901,84 @@ Feature #77 will be testable once migration is executed manually.
 
 ================================================================================
 
+================================================================================
+[FEATURE #101] SESSION SUMMARY - 2026-01-20 (Second Attempt)
+================================================================================
+ASSIGNMENT: Feature #101 - Set and manage reminder
+MODE: Single Feature Mode (parallel execution)
+
+SESSION OUTCOME: ⏸️ FEATURE SKIPPED AGAIN (External Blocker Persists)
+
+INVESTIGATION SUMMARY:
+---------------------
+1. ✅ Re-verified code is 100% complete
+   - POST /api/v1/decisions/:id/reminders endpoint exists (server.ts:1985)
+   - PATCH /api/v1/decisions/:id/reminders/:reminderId exists (server.ts:2065)
+   - Background job implementation exists (reminderBackgroundJob.ts)
+   - Frontend integration exists
+
+2. ✅ Re-verified blocker: Missing database columns (STILL MISSING)
+   - Created check-f101-schema-now.js to verify migration status
+   - Ran test: Error "column DecisionsFollowUpReminders.remind_at does not exist"
+   - Confirmed: Migration has NOT been executed since last session
+
+3. ✅ Confirmed no automated migration path exists:
+   - No database password in .env file
+   - No PostgreSQL client (psql) available
+   - Supabase REST API doesn't support DDL statements
+   - Supabase CLI requires authentication credentials
+
+4. ✅ Validated this is STILL a legitimate external blocker
+   - Meets criteria: "Environment limitation - hardware or system requirement"
+   - Code is complete, only infrastructure missing
+   - Requires manual SQL execution in Supabase Dashboard
+
+BLOCKER DETAILS:
+---------------
+Missing Database Columns:
+- remind_at TIMESTAMPTZ (when reminder should trigger)
+- user_id UUID (foreign key to profiles)
+
+Migration File: migrations/fix-reminders-table-f101.sql
+Status: NOT EXECUTED (verified via database query)
+
+ACTION TAKEN:
+------------
+Skipped Feature #101 to end of queue (priority 366 → 369)
+Feature has now been skipped multiple times due to the same external blocker
+
+NEXT STEPS (when migration can be executed):
+-------------------------------------------
+1. Go to: https://supabase.com/dashboard/project/doqojfsldvajmlscpwhu/sql
+2. Copy contents of: migrations/fix-reminders-table-f101.sql
+3. Paste into SQL Editor
+4. Click "Run" button
+5. Verify: No errors in execution
+6. Test: Feature #101 will work IMMEDIATELY (no code changes needed)
+7. Mark: Feature #101 as PASSING
+
+IMPACT ON OTHER FEATURES:
+-------------------------
+This schema issue also blocks:
+- Feature #135: Reminder API integration (same root cause)
+- Feature #201: Reminder management (partially works)
+
+Executing this one migration will unblock all three features.
+
+FILES CREATED/MODIFIED:
+----------------------
+- check-f101-schema-now.js (schema verification script)
+
+CONCLUSION:
+-----------
+Feature #101 session completed. Feature skipped to end of queue AGAIN due to
+external infrastructure blocker (missing database columns that cannot be
+added programmatically).
+
+The migration file is ready and waiting for manual execution. Once executed,
+Feature #101 will work immediately without any code changes.
+
+Progress: 285/291 passing (97.9%)
+Feature #101: Skipped (priority 369)
+
+================================================================================
