@@ -22,6 +22,43 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export class DecisionService {
   /**
+   * Feature #184: Calculate smart reminder timing based on decision category
+   * Different categories have different optimal check-in intervals
+   */
+  private static getReminderDaysForCategory(categoryName: string | null): number {
+    // Default: 2 weeks (14 days)
+    const defaultDays = 14;
+
+    if (!categoryName) {
+      return defaultDays;
+    }
+
+    // Category-based reminder timing (AI-adjusted by decision type)
+    const categoryReminderDays: { [key: string]: number } = {
+      // Financial decisions: outcomes clear quickly (1 week)
+      'Finance': 7,
+      'Business': 7,
+
+      // Career decisions: medium-term feedback needed (2 weeks)
+      'Career': 14,
+
+      // Health decisions: medium-term (2-3 weeks)
+      'Health': 21,
+
+      // Relationship decisions: longer to evaluate (3-4 weeks)
+      'Relationships': 28,
+
+      // Education: semester/term-based (4 weeks)
+      'Education': 28,
+
+      // Lifestyle: personal preferences emerge quickly (1-2 weeks)
+      'Lifestyle': 10,
+    };
+
+    return categoryReminderDays[categoryName] || defaultDays;
+  }
+
+  /**
    * Get all decisions for a user with their options, pros/cons, and category
    */
   static async getDecisions(userId: string, filters?: {
@@ -484,11 +521,25 @@ export class DecisionService {
       }
 
       // Feature #184: Smart automatic reminders (2 weeks default, AI-adjusted by decision type)
-      // Create automatic reminder 2 weeks from decision date when status changes to 'decided'
+      // Create automatic reminder when status changes to 'decided'
       if (isChangingToDecided) {
         try {
+          // Fetch the decision with its category to determine smart reminder timing
+          const { data: decisionWithCategory } = await supabase
+            .from('decisions')
+            .select(`
+              category_id,
+              category:categories(name)
+            `)
+            .eq('id', decisionId)
+            .single();
+
+          // Calculate reminder days based on category (AI-adjusted by decision type)
+          const categoryName = decisionWithCategory?.category?.name || null;
+          const reminderDays = this.getReminderDaysForCategory(categoryName);
+
           const reminderDate = new Date();
-          reminderDate.setDate(reminderDate.getDate() + 14); // 2 weeks from now
+          reminderDate.setDate(reminderDate.getDate() + reminderDays);
 
           const { error: reminderError } = await supabase
             .from('DecisionsFollowUpReminders')
@@ -503,7 +554,7 @@ export class DecisionService {
             console.error('Failed to create automatic reminder:', reminderError);
             // Don't throw - the decision update succeeded, just log the error
           } else {
-            console.log(`Feature #184: Automatic reminder created for decision ${decisionId} at ${reminderDate.toISOString()}`);
+            console.log(`Feature #184: Smart automatic reminder created for decision ${decisionId} (${categoryName || 'no category'}) at ${reminderDate.toISOString()} (${reminderDays} days)`);
           }
         } catch (reminderError) {
           console.error('Exception creating automatic reminder:', reminderError);

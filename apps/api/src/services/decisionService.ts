@@ -65,6 +65,43 @@ export interface UpdateDecisionDTO {
 
 export class DecisionService {
   /**
+   * Feature #184: Calculate smart reminder timing based on decision category
+   * Different categories have different optimal check-in intervals
+   */
+  private static getReminderDaysForCategory(categoryName: string | null): number {
+    // Default: 2 weeks (14 days)
+    const defaultDays = 14;
+
+    if (!categoryName) {
+      return defaultDays;
+    }
+
+    // Category-based reminder timing (AI-adjusted by decision type)
+    const categoryReminderDays: { [key: string]: number } = {
+      // Financial decisions: outcomes clear quickly (1 week)
+      'Finance': 7,
+      'Business': 7,
+
+      // Career decisions: medium-term feedback needed (2 weeks)
+      'Career': 14,
+
+      // Health decisions: medium-term (2-3 weeks)
+      'Health': 21,
+
+      // Relationship decisions: longer to evaluate (3-4 weeks)
+      'Relationships': 28,
+
+      // Education: semester/term-based (4 weeks)
+      'Education': 28,
+
+      // Lifestyle: personal preferences emerge quickly (1-2 weeks)
+      'Lifestyle': 10,
+    };
+
+    return categoryReminderDays[categoryName] || defaultDays;
+  }
+
+  /**
    * Get all decisions for a user
    */
   static async getDecisions(userId: string, filters?: {
@@ -330,23 +367,32 @@ export class DecisionService {
     }
 
     // Feature #184: Smart automatic reminders (2 weeks default, AI-adjusted by decision type)
-    // Create automatic reminder 2 weeks from decision date when status changes to 'decided'
+    // Create automatic reminder when status changes to 'decided'
     if (data && isChangingToDecided) {
-      const reminderDate = new Date();
-      reminderDate.setDate(reminderDate.getDate() + 14); // 2 weeks from now
+      try {
+        // Get the decision's category for smart reminder timing
+        const categoryName = data.category || null;
+        const reminderDays = this.getReminderDaysForCategory(categoryName);
 
-      const { error: reminderError } = await supabase
-        .from('DecisionsFollowUpReminders')
-        .insert({
-          decision_id: decisionId,
-          user_id: userId,
-          remind_at: reminderDate.toISOString(),
-          status: 'pending'
-        });
+        const reminderDate = new Date();
+        reminderDate.setDate(reminderDate.getDate() + reminderDays);
 
-      if (reminderError) {
-        console.error('Failed to create automatic reminder:', reminderError);
-        // Don't throw - the decision update succeeded, just log the error
+        const { error: reminderError } = await supabase
+          .from('DecisionsFollowUpReminders')
+          .insert({
+            decision_id: decisionId,
+            user_id: userId,
+            remind_at: reminderDate.toISOString(),
+            status: 'pending'
+          });
+
+        if (reminderError) {
+          console.error('Failed to create automatic reminder:', reminderError);
+        } else {
+          console.log(`Feature #184: Smart automatic reminder created for decision ${decisionId} (${categoryName || 'no category'}) at ${reminderDate.toISOString()} (${reminderDays} days)`);
+        }
+      } catch (reminderError) {
+        console.error('Exception creating automatic reminder:', reminderError);
       }
     }
 
@@ -404,31 +450,11 @@ export class DecisionService {
     if (optionError) throw optionError;
 
     // Update the decision status and decided_at timestamp
+    // Note: updateDecision will automatically create a smart reminder (Feature #184)
     const updatedDecision = await this.updateDecision(decisionId, userId, {
       status: 'decided',
       decided_at: new Date().toISOString(),
     });
-
-    // Feature #184: Smart automatic reminders (2 weeks default, AI-adjusted by decision type)
-    // Create automatic reminder 2 weeks from decision date
-    if (updatedDecision) {
-      const reminderDate = new Date();
-      reminderDate.setDate(reminderDate.getDate() + 14); // 2 weeks from now
-
-      const { error: reminderError } = await supabase
-        .from('DecisionsFollowUpReminders')
-        .insert({
-          decision_id: decisionId,
-          user_id: userId,
-          remind_at: reminderDate.toISOString(),
-          status: 'pending'
-        });
-
-      if (reminderError) {
-        console.error('Failed to create automatic reminder:', reminderError);
-        // Don't throw - the decision update succeeded, just log the error
-      }
-    }
 
     return updatedDecision;
   }
