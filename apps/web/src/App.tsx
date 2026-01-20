@@ -1,22 +1,27 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { motion, MotionConfig } from 'framer-motion';
+import { lazy, Suspense } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+
+// Light pages - loaded immediately (no lazy loading for these)
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { HistoryPage } from './pages/HistoryPage';
-import { InsightsPage } from './pages/InsightsPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { ExportPage } from './pages/ExportPage';
 import { RecordPage } from './pages/RecordPage';
-import { DecisionDetailPage } from './pages/DecisionDetailPage';
-import { EditDecisionPage } from './pages/EditDecisionPage';
-import { CreateDecisionPage } from './pages/CreateDecisionPage';
-import { OnboardingPage } from './pages/OnboardingPage';
-import { CategoriesPage } from './pages/CategoriesPage';
+
+// Heavy pages - lazy loaded for code splitting
+const HistoryPage = lazy(() => import('./pages/HistoryPage').then(m => ({ default: m.HistoryPage })));
+const InsightsPage = lazy(() => import('./pages/InsightsPage').then(m => ({ default: m.InsightsPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const ExportPage = lazy(() => import('./pages/ExportPage').then(m => ({ default: m.ExportPage })));
+const DecisionDetailPage = lazy(() => import('./pages/DecisionDetailPage').then(m => ({ default: m.DecisionDetailPage })));
+const EditDecisionPage = lazy(() => import('./pages/EditDecisionPage').then(m => ({ default: m.EditDecisionPage })));
+const CreateDecisionPage = lazy(() => import('./pages/CreateDecisionPage').then(m => ({ default: m.CreateDecisionPage })));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
+const CategoriesPage = lazy(() => import('./pages/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 
 // Landing Page Component
 function LandingPage() {
@@ -86,6 +91,30 @@ function PlaceholderPage({ title }: { title: string }) {
   );
 }
 
+// Loading fallback for lazy-loaded components
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <main className="text-center" role="main" aria-label="Loading">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+        >
+          <motion.div
+            className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-accent border-t-transparent"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            aria-hidden="true"
+          />
+          <p className="text-text-secondary text-sm">Loading...</p>
+        </motion.div>
+      </main>
+      <div className="grain-overlay" aria-hidden="true" />
+    </div>
+  );
+}
+
 // 404 Page
 function NotFound() {
   return (
@@ -126,7 +155,11 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/onboarding" element={
+            <Suspense fallback={<PageLoader />}>
+              <OnboardingPage />
+            </Suspense>
+          } />
 
           {/* Protected routes */}
           <Route
@@ -149,7 +182,9 @@ function App() {
             path="/decisions/:id"
             element={
               <ProtectedRoute>
-                <DecisionDetailPage />
+                <Suspense fallback={<PageLoader />}>
+                  <DecisionDetailPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />
@@ -157,7 +192,9 @@ function App() {
             path="/decisions/:id/edit"
             element={
               <ProtectedRoute>
-                <EditDecisionPage />
+                <Suspense fallback={<PageLoader />}>
+                  <EditDecisionPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />
@@ -165,7 +202,9 @@ function App() {
             path="/decisions/new"
             element={
               <ProtectedRoute>
-                <CreateDecisionPage />
+                <Suspense fallback={<PageLoader />}>
+                  <CreateDecisionPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />
@@ -173,7 +212,9 @@ function App() {
             path="/history"
             element={
               <ProtectedRoute>
-                <HistoryPage />
+                <Suspense fallback={<PageLoader />}>
+                  <HistoryPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />
@@ -181,7 +222,9 @@ function App() {
             path="/insights"
             element={
               <ProtectedRoute>
-                <InsightsPage />
+                <Suspense fallback={<PageLoader />}>
+                  <InsightsPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />
@@ -189,7 +232,9 @@ function App() {
             path="/settings"
             element={
               <ProtectedRoute>
-                <SettingsPage />
+                <Suspense fallback={<PageLoader />}>
+                  <SettingsPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />
@@ -197,7 +242,9 @@ function App() {
             path="/export"
             element={
               <ProtectedRoute>
-                <ExportPage />
+                <Suspense fallback={<PageLoader />}>
+                  <ExportPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />
@@ -205,7 +252,9 @@ function App() {
             path="/categories"
             element={
               <ProtectedRoute>
-                <CategoriesPage />
+                <Suspense fallback={<PageLoader />}>
+                  <CategoriesPage />
+                </Suspense>
               </ProtectedRoute>
             }
           />
