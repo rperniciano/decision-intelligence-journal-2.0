@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { BottomNav } from '../components/BottomNav';
@@ -163,9 +163,29 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
+// Tab configuration
+const SETTINGS_TABS = [
+  { id: 'profile', label: 'Profile', icon: ProfileIcon },
+  { id: 'notifications', label: 'Notifications', icon: BellIcon },
+  { id: 'defaults', label: 'Defaults', icon: FolderIcon },
+  { id: 'appearance', label: 'Appearance', icon: PaletteIcon },
+  { id: 'data', label: 'Data', icon: ShieldIcon },
+] as const;
+
+type SettingsTab = typeof SETTINGS_TABS[number]['id'];
+
 export function SettingsPage() {
   const { user, signOut, session } = useAuth();
   const { showSuccess, showError } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Get current tab from URL or default to 'profile'
+  const currentTab = (searchParams.get('tab') as SettingsTab) || 'profile';
+
+  // Update URL when tab changes
+  const setTab = (tabId: SettingsTab) => {
+    setSearchParams({ tab: tabId });
+  };
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     user?.user_metadata?.outcome_reminders_enabled ?? true
   );
@@ -282,123 +302,178 @@ export function SettingsPage() {
 
       {/* Main content */}
       <main id="main-content" className="max-w-2xl mx-auto px-4 py-6" tabIndex={-1}>
-        {/* Profile Section */}
-        <SettingSection title="Profile" delay={0.1} key={profileKey}>
-          <button onClick={() => setIsEditProfileOpen(true)} className="w-full">
-            <SettingRow
-              icon={<ProfileIcon />}
-              label={displayName}
-              description="Edit your profile"
-              action={<ChevronRightIcon />}
-            />
-          </button>
-          <SettingRow
-            icon={<EmailIcon />}
-            label="Email"
-            description={user?.email || 'Not set'}
-          />
-        </SettingSection>
+        {/* Tab Navigation */}
+        <motion.nav
+          className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-4 px-4"
+          role="tablist"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          {SETTINGS_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = currentTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setTab(tab.id)}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`${tab.id}-panel`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all ${
+                  isActive
+                    ? 'bg-accent text-bg-deep font-medium'
+                    : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                }`}
+              >
+                <Icon />
+                <span className="text-sm">{tab.label}</span>
+              </button>
+            );
+          })}
+        </motion.nav>
 
-        {/* Notifications Section */}
-        <SettingSection title="Notifications" delay={0.15}>
-          <SettingRow
-            icon={<BellIcon />}
-            label="Outcome Reminders"
-            description="Get reminded to record outcomes"
-            action={
-              <Toggle
-                enabled={notificationsEnabled}
-                onChange={handleNotificationToggle}
-                label="Toggle outcome reminders"
-              />
-            }
-          />
-          <SettingRow
-            icon={<ClockIcon />}
-            label="Weekly Digest"
-            description="Summary of your decisions"
-            action={
-              <Toggle
-                enabled={weeklyDigestEnabled}
-                onChange={handleWeeklyDigestToggle}
-                label="Toggle weekly digest"
-              />
-            }
-          />
-        </SettingSection>
+        {/* Tab Panels */}
+        <motion.div
+          key={currentTab}
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {/* Profile Tab */}
+          {currentTab === 'profile' && (
+            <div role="tabpanel" id="profile-panel" aria-labelledby="profile-tab">
+              <SettingSection title="Profile" delay={0} key={profileKey}>
+                <button onClick={() => setIsEditProfileOpen(true)} className="w-full">
+                  <SettingRow
+                    icon={<ProfileIcon />}
+                    label={displayName}
+                    description="Edit your profile"
+                    action={<ChevronRightIcon />}
+                  />
+                </button>
+                <SettingRow
+                  icon={<EmailIcon />}
+                  label="Email"
+                  description={user?.email || 'Not set'}
+                />
+              </SettingSection>
+            </div>
+          )}
 
-        {/* Categories Section */}
-        <SettingSection title="Categories" delay={0.15}>
-          <Link to="/categories">
-            <SettingRow
-              icon={<FolderIcon />}
-              label="Manage Categories"
-              description="Create and organize categories"
-              action={<ChevronRightIcon />}
-            />
-          </Link>
-        </SettingSection>
+          {/* Notifications Tab */}
+          {currentTab === 'notifications' && (
+            <div role="tabpanel" id="notifications-panel" aria-labelledby="notifications-tab">
+              <SettingSection title="Notifications" delay={0}>
+                <SettingRow
+                  icon={<BellIcon />}
+                  label="Outcome Reminders"
+                  description="Get reminded to record outcomes"
+                  action={
+                    <Toggle
+                      enabled={notificationsEnabled}
+                      onChange={handleNotificationToggle}
+                      label="Toggle outcome reminders"
+                    />
+                  }
+                />
+                <SettingRow
+                  icon={<ClockIcon />}
+                  label="Weekly Digest"
+                  description="Summary of your decisions"
+                  action={
+                    <Toggle
+                      enabled={weeklyDigestEnabled}
+                      onChange={handleWeeklyDigestToggle}
+                      label="Toggle weekly digest"
+                    />
+                  }
+                />
+              </SettingSection>
+            </div>
+          )}
 
-        {/* Appearance Section */}
-        <SettingSection title="Appearance" delay={0.2}>
-          <SettingRow
-            icon={<PaletteIcon />}
-            label="Theme"
-            description="Dark (default)"
-            action={<ChevronRightIcon />}
-          />
-        </SettingSection>
+          {/* Defaults Tab */}
+          {currentTab === 'defaults' && (
+            <div role="tabpanel" id="defaults-panel" aria-labelledby="defaults-tab">
+              <SettingSection title="Categories" delay={0}>
+                <Link to="/categories">
+                  <SettingRow
+                    icon={<FolderIcon />}
+                    label="Manage Categories"
+                    description="Create and organize categories"
+                    action={<ChevronRightIcon />}
+                  />
+                </Link>
+              </SettingSection>
+            </div>
+          )}
 
-        {/* Data & Privacy Section */}
-        <SettingSection title="Data & Privacy" delay={0.25}>
-          <Link to="/export">
-            <SettingRow
-              icon={<DownloadIcon />}
-              label="Export Data"
-              description="Download your decisions"
-              action={<ChevronRightIcon />}
-            />
-          </Link>
-          <SettingRow
-            icon={<ShieldIcon />}
-            label="Privacy"
-            description="Manage your data"
-            action={<ChevronRightIcon />}
-          />
-        </SettingSection>
+          {/* Appearance Tab */}
+          {currentTab === 'appearance' && (
+            <div role="tabpanel" id="appearance-panel" aria-labelledby="appearance-tab">
+              <SettingSection title="Appearance" delay={0}>
+                <SettingRow
+                  icon={<PaletteIcon />}
+                  label="Theme"
+                  description="Dark (default)"
+                  action={<ChevronRightIcon />}
+                />
+              </SettingSection>
+            </div>
+          )}
 
-        {/* About Section */}
-        <SettingSection title="About" delay={0.3}>
-          <SettingRow
-            icon={<InfoIcon />}
-            label="Version"
-            description="1.0.0"
-          />
-        </SettingSection>
-
-        {/* Danger Zone */}
-        <SettingSection title="Account" delay={0.35}>
-          <button onClick={handleSignOut} className="w-full">
-            <SettingRow
-              icon={
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                </svg>
-              }
-              label="Sign Out"
-              description="Log out of your account"
-            />
-          </button>
-          <button onClick={() => setIsDeleteAccountOpen(true)} className="w-full">
-            <SettingRow
-              icon={<TrashIcon />}
-              label="Delete Account"
-              description="Permanently delete your account"
-              danger
-              action={<ChevronRightIcon />}
-            />
-          </button>
-        </SettingSection>
+          {/* Data Tab */}
+          {currentTab === 'data' && (
+            <div role="tabpanel" id="data-panel" aria-labelledby="data-tab">
+              <SettingSection title="Data & Privacy" delay={0}>
+                <Link to="/export">
+                  <SettingRow
+                    icon={<DownloadIcon />}
+                    label="Export Data"
+                    description="Download your decisions"
+                    action={<ChevronRightIcon />}
+                  />
+                </Link>
+                <SettingRow
+                  icon={<ShieldIcon />}
+                  label="Privacy"
+                  description="Manage your data"
+                  action={<ChevronRightIcon />}
+                />
+              </SettingSection>
+              <SettingSection title="About" delay={0.1}>
+                <SettingRow
+                  icon={<InfoIcon />}
+                  label="Version"
+                  description="1.0.0"
+                />
+              </SettingSection>
+              <SettingSection title="Account" delay={0.15}>
+                <button onClick={handleSignOut} className="w-full">
+                  <SettingRow
+                    icon={
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                      </svg>
+                    }
+                    label="Sign Out"
+                    description="Log out of your account"
+                  />
+                </button>
+                <button onClick={() => setIsDeleteAccountOpen(true)} className="w-full">
+                  <SettingRow
+                    icon={<TrashIcon />}
+                    label="Delete Account"
+                    description="Permanently delete your account"
+                    danger
+                    action={<ChevronRightIcon />}
+                  />
+                </button>
+              </SettingSection>
+            </div>
+          )}
+        </motion.div>
       </main>
 
       {/* Bottom navigation */}
