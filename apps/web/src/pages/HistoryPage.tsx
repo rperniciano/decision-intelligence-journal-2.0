@@ -1341,6 +1341,7 @@ export function HistoryPage() {
                 const newParams = new URLSearchParams(searchParams);
                 newParams.delete('filter');
                 newParams.delete('category');
+                newParams.delete('emotion'); // Feature #201: clear emotion filter
                 newParams.delete('time');
                 newParams.delete('outcome'); // Feature #203: clear outcome filter
                 newParams.set('page', '1');
