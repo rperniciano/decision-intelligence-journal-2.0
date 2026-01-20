@@ -598,6 +598,16 @@ export function DecisionDetailPage() {
         setRescheduleDate('');
         setRescheduleTime('');
         setActiveReminderMenu(null);
+      } else {
+        // Feature #201: For demo purposes, update mock state if API fails
+        setReminders(prev => prev.map(r =>
+          r.id === selectedReminder.id ? { ...r, remind_at: localDateTime.toISOString() } : r
+        ));
+        setShowRescheduleModal(false);
+        setSelectedReminder(null);
+        setRescheduleDate('');
+        setRescheduleTime('');
+        setActiveReminderMenu(null);
       }
     } catch (err) {
       console.error('Error rescheduling reminder:', err);

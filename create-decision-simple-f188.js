@@ -17,22 +17,28 @@ async function createTestDecision() {
     return;
   }
 
-  // Get or create a category
-  let categoryId;
-  const { data: existingCategories, error: catError } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('name', 'Testing')
-    .eq('user_id', user.id);
+  console.log('User ID:', user.id);
 
-  if (existingCategories && existingCategories.length > 0) {
-    categoryId = existingCategories[0].id;
-  } else {
-    const { data: newCategory } = await supabase
+  // Create the decision with a minimal structure
+  const decisionId = uuidv4();
+  const option1Id = uuidv4();
+  const option2Id = uuidv4();
+
+  // First, let's see what categories exist
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('id, name')
+    .eq('user_id', user.id)
+    .limit(1);
+
+  let categoryId = categories && categories[0] ? categories[0].id : null;
+  if (!categoryId) {
+    // Create minimal category
+    const { data: newCat } = await supabase
       .from('categories')
       .insert({
         user_id: user.id,
-        name: 'Testing',
+        name: 'Test',
         color: '#00d4aa',
         icon: '🧪',
         decision_count: 0,
@@ -41,18 +47,18 @@ async function createTestDecision() {
       })
       .select('id')
       .single();
-    categoryId = newCategory?.id;
-    if (!categoryId) {
-      console.error('Failed to create category');
-      return;
-    }
+    categoryId = newCat?.id;
+    console.log('Created category:', categoryId);
   }
 
-  // Create the decision
-  const decisionId = uuidv4();
-  const option1Id = uuidv4();
-  const option2Id = uuidv4();
+  if (!categoryId) {
+    console.error('No category available');
+    return;
+  }
 
+  console.log('Using category:', categoryId);
+
+  // Create the decision
   const { data: decision, error: decisionError } = await supabase
     .from('decisions')
     .insert({
@@ -77,14 +83,17 @@ async function createTestDecision() {
     return;
   }
 
+  console.log('Decision created:', decision.id);
+
   // Create options
-  await supabase.from('options').insert([
+  const { error: optsError } = await supabase.from('options').insert([
     {
       id: option1Id,
       decision_id: decisionId,
-      name: 'Option A - Voice Reflection Test',
+      name: 'Option A - Test Voice Reflection',
       position: 0,
       is_chosen: true,
+      created_at: new Date().toISOString(),
     },
     {
       id: option2Id,
@@ -92,12 +101,17 @@ async function createTestDecision() {
       name: 'Option B',
       position: 1,
       is_chosen: false,
+      created_at: new Date().toISOString(),
     }
   ]);
 
-  console.log('Test decision created successfully!');
-  console.log('Decision ID:', decisionId);
-  console.log('URL:', `http://localhost:5173/decisions/${decisionId}`);
+  if (optsError) {
+    console.error('Error creating options:', optsError);
+  } else {
+    console.log('Test decision created successfully!');
+    console.log('Decision ID:', decisionId);
+    console.log('URL:', `http://localhost:5173/decisions/${decisionId}`);
+  }
 }
 
 createTestDecision();

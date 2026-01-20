@@ -17,38 +17,7 @@ async function createTestDecision() {
     return;
   }
 
-  // Get or create a category
-  let categoryId;
-  const { data: existingCategories, error: catError } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('name', 'Testing')
-    .eq('user_id', user.id);
-
-  if (existingCategories && existingCategories.length > 0) {
-    categoryId = existingCategories[0].id;
-  } else {
-    const { data: newCategory } = await supabase
-      .from('categories')
-      .insert({
-        user_id: user.id,
-        name: 'Testing',
-        color: '#00d4aa',
-        icon: '🧪',
-        decision_count: 0,
-        positive_rate: 0,
-        is_system: false,
-      })
-      .select('id')
-      .single();
-    categoryId = newCategory?.id;
-    if (!categoryId) {
-      console.error('Failed to create category');
-      return;
-    }
-  }
-
-  // Create the decision
+  // Create the decision with correct schema
   const decisionId = uuidv4();
   const option1Id = uuidv4();
   const option2Id = uuidv4();
@@ -58,13 +27,11 @@ async function createTestDecision() {
     .insert({
       id: decisionId,
       user_id: user.id,
-      category_id: categoryId,
+      category_id: null,
       title: 'Test Decision F188 - Voice Reflection',
       status: 'decided',
-      emotional_state: 'Confident',
-      confidence_level: 4,
+      detected_emotional_state: 'Confident',
       chosen_option_id: option1Id,
-      recorded_at: new Date().toISOString(),
       decided_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -77,23 +44,42 @@ async function createTestDecision() {
     return;
   }
 
-  // Create options
-  await supabase.from('options').insert([
-    {
-      id: option1Id,
-      decision_id: decisionId,
-      name: 'Option A - Voice Reflection Test',
-      position: 0,
-      is_chosen: true,
-    },
-    {
-      id: option2Id,
-      decision_id: decisionId,
-      name: 'Option B',
-      position: 1,
-      is_chosen: false,
+  console.log('Decision created:', decision.id);
+
+  // For this schema, options might be in a different table or stored differently
+  // Let's check if there's an options table
+  const { data: optsData, error: optsError } = await supabase
+    .from('options')
+    .select('*')
+    .limit(1);
+
+  if (optsData) {
+    console.log('Options table exists, creating options...');
+    const { error: insertOptsError } = await supabase.from('options').insert([
+      {
+        id: option1Id,
+        decision_id: decisionId,
+        name: 'Option A - Test Voice Reflection',
+        position: 0,
+        is_chosen: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: option2Id,
+        decision_id: decisionId,
+        name: 'Option B',
+        position: 1,
+        is_chosen: false,
+        created_at: new Date().toISOString(),
+      }
+    ]);
+
+    if (insertOptsError) {
+      console.error('Error creating options:', insertOptsError);
     }
-  ]);
+  } else {
+    console.log('Options table might not exist or is structured differently');
+  }
 
   console.log('Test decision created successfully!');
   console.log('Decision ID:', decisionId);

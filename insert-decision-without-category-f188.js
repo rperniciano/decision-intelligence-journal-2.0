@@ -17,38 +17,7 @@ async function createTestDecision() {
     return;
   }
 
-  // Get or create a category
-  let categoryId;
-  const { data: existingCategories, error: catError } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('name', 'Testing')
-    .eq('user_id', user.id);
-
-  if (existingCategories && existingCategories.length > 0) {
-    categoryId = existingCategories[0].id;
-  } else {
-    const { data: newCategory } = await supabase
-      .from('categories')
-      .insert({
-        user_id: user.id,
-        name: 'Testing',
-        color: '#00d4aa',
-        icon: '🧪',
-        decision_count: 0,
-        positive_rate: 0,
-        is_system: false,
-      })
-      .select('id')
-      .single();
-    categoryId = newCategory?.id;
-    if (!categoryId) {
-      console.error('Failed to create category');
-      return;
-    }
-  }
-
-  // Create the decision
+  // Create the decision without category (make it nullable)
   const decisionId = uuidv4();
   const option1Id = uuidv4();
   const option2Id = uuidv4();
@@ -58,7 +27,7 @@ async function createTestDecision() {
     .insert({
       id: decisionId,
       user_id: user.id,
-      category_id: categoryId,
+      category_id: null, // No category
       title: 'Test Decision F188 - Voice Reflection',
       status: 'decided',
       emotional_state: 'Confident',
@@ -77,14 +46,17 @@ async function createTestDecision() {
     return;
   }
 
+  console.log('Decision created:', decision.id);
+
   // Create options
-  await supabase.from('options').insert([
+  const { error: optsError } = await supabase.from('options').insert([
     {
       id: option1Id,
       decision_id: decisionId,
-      name: 'Option A - Voice Reflection Test',
+      name: 'Option A - Test Voice Reflection',
       position: 0,
       is_chosen: true,
+      created_at: new Date().toISOString(),
     },
     {
       id: option2Id,
@@ -92,12 +64,17 @@ async function createTestDecision() {
       name: 'Option B',
       position: 1,
       is_chosen: false,
+      created_at: new Date().toISOString(),
     }
   ]);
 
-  console.log('Test decision created successfully!');
-  console.log('Decision ID:', decisionId);
-  console.log('URL:', `http://localhost:5173/decisions/${decisionId}`);
+  if (optsError) {
+    console.error('Error creating options:', optsError);
+  } else {
+    console.log('Test decision created successfully!');
+    console.log('Decision ID:', decisionId);
+    console.log('URL:', `http://localhost:5173/decisions/${decisionId}`);
+  }
 }
 
 createTestDecision();
