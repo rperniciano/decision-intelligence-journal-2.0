@@ -492,7 +492,7 @@ export class DecisionService {
       if (dto.chosen_option_id !== undefined) updateData.chosen_option_id = dto.chosen_option_id;
       if (dto.outcome !== undefined) updateData.outcome = dto.outcome;
       if (dto.outcome_notes !== undefined) updateData.outcome_notes = dto.outcome_notes;
-      if (dto.decide_by_date !== undefined) updateData.decide_by_date = dto.decide_by_date;
+      if (dto.decide_by_date !== undefined) updateData.follow_up_date = dto.decide_by_date; // Map to actual database column name
 
       // If recording an outcome, set outcome_recorded_at timestamp
       if (dto.outcome !== undefined) {
