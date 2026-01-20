@@ -46,12 +46,7 @@ async function addDecisions() {
       user_id: userId,
       title: 'Loading State Test Decision',
       description: 'This decision is for testing loading states in Feature #110',
-      context: 'Testing loading indicators',
-      status: 'considering',
-      category_id: categoryId,
-      decision_score: 50,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      status: 'draft',
     })
     .select()
     .single();

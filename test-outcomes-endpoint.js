@@ -8,7 +8,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const TEST_DECISION_ID = 'f7ceacdd-9742-44df-9811-205a37e2cdb4';
+const TEST_DECISION_ID = '693288d3-96ef-4997-9473-2108779d6279';
 
 async function testOutcomesEndpoint() {
   console.log('Testing outcomes table access...');

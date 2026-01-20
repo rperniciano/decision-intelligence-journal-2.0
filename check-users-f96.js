@@ -42,7 +42,7 @@ async function checkUsersAndCreateDecision() {
   const decisionData = {
     user_id: userId,
     title: 'F96: Test Decision for Restore Workflow',
-    status: 'pending',
+    status: 'draft',
     category_id: categoryId,
     created_at: new Date().toISOString()
   };

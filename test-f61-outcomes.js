@@ -70,7 +70,7 @@ async function createTestDecisions(userId, categoryId) {
     .insert({
       user_id: userId,
       title: 'DECISION_A - Test Feature 61',
-      status: 'pending',
+      status: 'deliberating',
       category_id: categoryId
     })
     .select()
@@ -89,7 +89,7 @@ async function createTestDecisions(userId, categoryId) {
     .insert({
       user_id: userId,
       title: 'DECISION_B - Test Feature 61',
-      status: 'pending',
+      status: 'deliberating',
       category_id: categoryId
     })
     .select()
