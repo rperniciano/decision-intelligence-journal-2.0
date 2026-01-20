@@ -4,6 +4,7 @@ import { lazy, Suspense } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { SkipLink } from './components/SkipLink';
 
 // Light pages - loaded immediately (no lazy loading for these)
 import { LoginPage } from './pages/LoginPage';
@@ -27,7 +28,8 @@ const CategoriesPage = lazy(() => import('./pages/CategoriesPage').then(m => ({ 
 function LandingPage() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <main className="text-center" role="main" aria-label="Welcome to Decisions">
+      <SkipLink />
+      <main id="main-content" className="text-center" role="main" aria-label="Welcome to Decisions">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -82,7 +84,8 @@ function LandingPage() {
 function PlaceholderPage({ title }: { title: string }) {
   return (
     <div className="min-h-screen p-8">
-      <main role="main" aria-label={title}>
+      <SkipLink />
+      <main id="main-content" role="main" aria-label={title}>
         <h1 className="text-2xl font-semibold mb-4">{title}</h1>
         <p className="text-text-secondary">This page is coming soon.</p>
       </main>
@@ -95,7 +98,8 @@ function PlaceholderPage({ title }: { title: string }) {
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <main className="text-center" role="main" aria-label="Loading">
+      <SkipLink />
+      <main id="main-content" className="text-center" role="main" aria-label="Loading">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -119,7 +123,8 @@ function PageLoader() {
 function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <main className="text-center" role="main" aria-label="Page not found">
+      <SkipLink />
+      <main id="main-content" className="text-center" role="main" aria-label="Page not found">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

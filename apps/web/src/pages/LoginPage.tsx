@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { SkipLink } from '../components/SkipLink';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -73,7 +74,8 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <main className="w-full max-w-md" role="main" aria-label="Sign in">
+      <SkipLink />
+      <main id="main-content" className="w-full max-w-md" role="main" aria-label="Sign in">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

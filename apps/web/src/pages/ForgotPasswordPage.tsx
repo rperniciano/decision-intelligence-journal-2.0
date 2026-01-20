@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { SkipLink } from '../components/SkipLink';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -70,14 +71,15 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
-        className="w-full max-w-md"
-      >
-        {/* Logo and title */}
-        <div className="text-center mb-8">
+      <SkipLink />
+      <main id="main-content" className="w-full max-w-md" role="main" aria-label="Reset password">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+        >
+          {/* Logo and title */}
+          <div className="text-center mb-8">
           <Link to="/">
             <motion.div
               className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent to-accent-700 glow-accent"
@@ -137,6 +139,7 @@ export function ForgotPasswordPage() {
           </p>
         </div>
       </motion.div>
+      </main>
 
       {/* Grain overlay */}
       <div className="grain-overlay" />
