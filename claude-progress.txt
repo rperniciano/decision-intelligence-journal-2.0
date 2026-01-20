@@ -2699,3 +2699,74 @@ After implementation, all verification steps pass successfully.
 Progress: 275/291 passing (94.5%)
 ================================================================================
 
+
+================================================================================
+[FEATURE #211 - SPEC LINE 211] Option position bias detection (primacy bias)
+Date: 2026-01-20
+Status: ✅ VERIFIED WORKING
+
+Feature Description:
+-------------------
+Detects if users tend to choose options in certain positions more often
+(primacy bias = tendency to choose first option)
+
+Implementation Location:
+-----------------------
+Backend: apps/api/src/services/insightsService.ts (lines 280-337)
+Frontend: apps/web/src/pages/InsightsPage.tsx (lines 490-610)
+
+How It Works:
+-------------
+1. Analyzes all decided decisions with multiple options
+2. Tracks which position (1, 2, 3, etc.) was chosen
+3. Calculates selection rate for each position
+4. Returns position with highest rate if:
+   - Chosen at least 3 times
+   - Selection rate >= 30%
+
+Test Execution:
+--------------
+Created test user: f211.positionbias@example.com
+
+Test Data Created:
+- 10 decisions, each with 3 options
+- 7 decisions chose position 1
+- 3 decisions chose position 2
+- All had outcomes recorded
+
+Verification Results:
+--------------------
+✅ API returns positionBias data correctly
+✅ Position Bias pattern card appears on Insights page
+✅ Shows position number and percentage
+✅ Display is: "Position Bias: Your most chosen option position"
+✅ Zero JavaScript errors
+✅ Zero console errors
+
+Screenshots:
+-----------
+- verification/f211-position-bias-detected.png
+
+Conclusion:
+-----------
+Feature #211 (spec line 211) is WORKING CORRECTLY
+
+The option position bias detection is fully implemented and functional.
+Users can see if they have a primacy bias (tendency to choose first option)
+or any other position bias in their decision-making.
+
+Note: MCP feature numbering differs from spec line numbering.
+Spec line 211 = Option position bias detection
+MCP feature #211 = Pro/con content max length validated (already passing)
+
+Statistics:
+-----------
+- Test decisions created: 10
+- Test decisions with bias: 10
+- Detection threshold: >= 3 choices AND >= 30%
+- Frontend display: ✅ Working
+- Backend calculation: ✅ Working
+- Console errors: 0
+- Progress: 279/291 passing (95.9%)
+
+================================================================================
