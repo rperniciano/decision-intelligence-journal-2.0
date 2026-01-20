@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { SkipLink } from '../components/SkipLink';
+import { useToast } from '../contexts/ToastContext';
 
 // Type definitions
 interface ProCon {
@@ -43,6 +44,7 @@ interface Category {
 export function EditDecisionPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(true);
   const [decision, setDecision] = useState<Decision | null>(null);
   const [title, setTitle] = useState('');
@@ -692,11 +694,14 @@ export function EditDecisionPage() {
         throw new Error('Failed to update decision');
       }
 
+      // Show success feedback
+      showSuccess('Decision saved');
+
       // Navigate back to decision detail page
       navigate(`/decisions/${id}`);
     } catch (error) {
       console.error('Error saving decision:', error);
-      alert('Failed to save decision. Please try again.');
+      showError('Failed to save decision. Please try again.');
     }
   };
 

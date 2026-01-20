@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../contexts/ToastContext';
 
 // Emotional states with emojis
 const EMOTIONAL_STATES = [
@@ -56,6 +57,7 @@ export function DecisionExtractionCard({
   onSave,
 }: DecisionExtractionCardProps) {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [showCategoryInput, setShowCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -121,6 +123,9 @@ export function DecisionExtractionCard({
         throw new Error('Failed to save decision');
       }
 
+      // Show success feedback
+      showSuccess('Decision saved');
+
       if (onSave) {
         onSave();
       } else {
@@ -128,7 +133,7 @@ export function DecisionExtractionCard({
       }
     } catch (error) {
       console.error('Error saving decision:', error);
-      alert('Failed to save. Please try again.');
+      showError('Failed to save. Please try again.');
     } finally {
       setIsSaving(false);
     }

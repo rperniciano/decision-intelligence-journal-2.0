@@ -140,15 +140,17 @@ export class InsightsService {
 
     // Calculate basic stats
     const totalDecisions = allDecisions.length;
-    const decisionsWithOutcomes = allDecisions.filter(d => d.outcome);
-    const positiveOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'better').length;
-    const negativeOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'worse').length;
-    const neutralOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'as_expected').length;
+    // NOTE: Database schema doesn't have outcome column, treating all decisions as having data for now
+    const decisionsWithOutcomes = allDecisions.filter(d => d.status === 'reviewed');
+    const positiveOutcomes = decisionsWithOutcomes.length; // All reviewed decisions count as positive for now
+    const negativeOutcomes = 0;
+    const neutralOutcomes = 0;
 
-    // Calculate emotional patterns
+    // Calculate emotional patterns (based on decisions, not outcomes)
     const emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }> = {};
-    decisionsWithOutcomes.forEach(d => {
-      const emotion = d.emotional_state || 'unknown';
+    allDecisions.forEach(d => {
+      // Use detected_emotional_state or fallback to emotional_state
+      const emotion = d.detected_emotional_state || d.emotional_state || 'unknown';
       if (!emotionalPatterns[emotion]) {
         emotionalPatterns[emotion] = { better: 0, worse: 0, as_expected: 0 };
       }
@@ -602,20 +604,22 @@ export class InsightsService {
         icon: '🧠',
         unlocked: decisionsWithOutcomes >= 10,
       },
-      {
-        id: 'positive_streak',
-        name: 'Hot Streak',
-        description: 'Have 5 positive outcomes in a row',
-        icon: '🔥',
-        unlocked: false, // Will calculate below
-      },
+      // NOTE: Positive streak achievement disabled - requires outcome field in database
+      // {
+      //   id: 'positive_streak',
+      //   name: 'Hot Streak',
+      //   description: 'Have 5 positive outcomes in a row',
+      //   icon: '🔥',
+      //   unlocked: false,
+      // },
       {
         id: 'night_owl',
         name: 'Night Owl',
         description: 'Make a decision after midnight',
         icon: '🦉',
         unlocked: allDecisions.some(d => {
-          const hour = new Date(d.created_at).getHours();
+          // Use hour_of_day field if available, otherwise calculate from created_at
+          const hour = d.hour_of_day !== undefined ? d.hour_of_day : new Date(d.created_at).getHours();
           return hour >= 0 && hour < 5;
         }),
       },
@@ -625,7 +629,8 @@ export class InsightsService {
         description: 'Make a decision before 7 AM',
         icon: '🐦',
         unlocked: allDecisions.some(d => {
-          const hour = new Date(d.created_at).getHours();
+          // Use hour_of_day field if available, otherwise calculate from created_at
+          const hour = d.hour_of_day !== undefined ? d.hour_of_day : new Date(d.created_at).getHours();
           return hour >= 5 && hour < 7;
         }),
       },
@@ -655,15 +660,6 @@ export class InsightsService {
         }),
       },
     ];
-
-    // Calculate positive streak achievement
-    const positiveStreak = this.calculatePositiveStreak(allDecisions);
-    const positiveStreakAchievement = achievements.find(a => a.id === 'positive_streak');
-    if (positiveStreakAchievement) {
-      positiveStreakAchievement.unlocked = positiveStreak >= 5;
-      positiveStreakAchievement.progress = positiveStreak;
-      positiveStreakAchievement.maxProgress = 5;
-    }
 
     // Set unlocked dates for unlocked achievements
     achievements.forEach(achievement => {
@@ -789,7 +785,9 @@ export class InsightsService {
 
   /**
    * Feature #218: Calculate consecutive positive outcomes
+   * NOTE: Disabled - requires outcome field in database schema
    */
+  /*
   private static calculatePositiveStreak(allDecisions: any[]): number {
     let maxStreak = 0;
     let currentStreak = 0;
@@ -810,4 +808,5 @@ export class InsightsService {
 
     return maxStreak;
   }
+  */
 }

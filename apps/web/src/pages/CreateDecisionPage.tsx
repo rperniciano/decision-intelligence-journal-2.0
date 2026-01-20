@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { SkipLink } from '../components/SkipLink';
+import { useToast } from '../contexts/ToastContext';
 
 interface Category {
   id: string;
@@ -32,6 +33,7 @@ const EMOTIONAL_STATES = [
 
 export function CreateDecisionPage() {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -270,11 +272,14 @@ export function CreateDecisionPage() {
 
       const decision = await response.json();
 
+      // Show success feedback
+      showSuccess('Decision saved');
+
       // Navigate to the created decision
       navigate(`/decisions/${decision.id}`);
     } catch (error) {
       console.error('Error saving decision:', error);
-      setError('Failed to save decision. Please try again.');
+      showError('Failed to save decision. Please try again.');
     } finally {
       setSaving(false);
     }

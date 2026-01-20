@@ -9,11 +9,28 @@ async function createTestDecision() {
   const timestamp = new Date().toISOString();
   const uniqueTitle = `F52_Regression_Test_${timestamp}`;
 
+  // First create a new user
+  const email = `f52-test-${Date.now()}@example.com`;
+  const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+    email,
+    password: 'Test123456!',
+    email_confirm: true,
+    user_metadata: { name: 'F52 Test User' }
+  });
+
+  if (userError) {
+    console.error('Error creating user:', userError);
+    process.exit(1);
+  }
+
+  const userId = userData.user.id;
+  console.log(`✅ Test user created: ${email}`);
+  console.log('User ID:', userId);
+
+  // Now create the decision
   const decision = {
-    user_id: '5a7e8f9c-3b1d-4e8f-9a2b-1c3d4e5f6a7b', // feature272.test@example.com user ID
+    user_id: userId,
     title: uniqueTitle,
-    status: 'deliberating',
-    decision_content: 'This is a regression test decision for Feature #52 - data persistence verification through page refresh.',
   };
 
   const { data, error } = await supabase
@@ -27,12 +44,14 @@ async function createTestDecision() {
     process.exit(1);
   }
 
-  console.log('✅ Test decision created successfully!');
+  console.log('\n✅ Test decision created successfully!');
   console.log('ID:', data.id);
   console.log('Title:', data.title);
-  console.log('Content:', data.decision_content);
+  console.log('\nLogin credentials:');
+  console.log(`Email: ${email}`);
+  console.log('Password: Test123456!');
   console.log('\nThis decision will be used to verify persistence after page refresh.');
-  return data;
+  return { decision, email };
 }
 
 createTestDecision()

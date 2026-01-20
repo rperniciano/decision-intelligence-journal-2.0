@@ -489,6 +489,7 @@ export function HistoryPage() {
   const viewFromUrl = (searchParams.get('view') || 'list') as ViewType;
   const timeFilterFromUrl = searchParams.get('time') || 'all_time';
   const outcomeFromUrl = searchParams.get('outcome') || 'all'; // Feature #203: outcome filter from URL
+  const emotionFromUrl = searchParams.get('emotion') || 'all'; // Feature #201: emotion filter from URL
   const fromDateFromUrl = searchParams.get('fromDate') || ''; // Feature #200: Custom range start date
   const toDateFromUrl = searchParams.get('toDate') || ''; // Feature #200: Custom range end date
 
@@ -499,6 +500,7 @@ export function HistoryPage() {
   const [activeView, setActiveView] = useState<ViewType>(viewFromUrl);
   const [timeFilter, setTimeFilter] = useState(timeFilterFromUrl);
   const [selectedOutcome, setSelectedOutcome] = useState(outcomeFromUrl); // Feature #203: outcome filter state
+  const [selectedEmotion, setSelectedEmotion] = useState(emotionFromUrl); // Feature #201: emotion filter state
   const [customFromDate, setCustomFromDate] = useState(fromDateFromUrl); // Feature #200: Custom range start date state
   const [customToDate, setCustomToDate] = useState(toDateFromUrl); // Feature #200: Custom range end date state
   const [decisions, setDecisions] = useState<Decision[]>([]);
@@ -519,7 +521,7 @@ export function HistoryPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
-  // Update activeFilter, selectedCategory, sortBy, activeView, timeFilter, and selectedOutcome when URL changes (e.g., browser back/forward)
+  // Update activeFilter, selectedCategory, sortBy, activeView, timeFilter, selectedOutcome, and selectedEmotion when URL changes (e.g., browser back/forward)
   useEffect(() => {
     setActiveFilter(filterFromUrl);
     setSelectedCategory(categoryFromUrl);
@@ -527,13 +529,14 @@ export function HistoryPage() {
     setActiveView(viewFromUrl);
     setTimeFilter(timeFilterFromUrl);
     setSelectedOutcome(outcomeFromUrl); // Feature #203: sync outcome filter from URL
+    setSelectedEmotion(emotionFromUrl); // Feature #201: sync emotion filter from URL
     setCustomFromDate(fromDateFromUrl); // Feature #200: sync custom from date
     setCustomToDate(toDateFromUrl); // Feature #200: sync custom to date
 
     // Feature #267: Reset pageCursors when filters change
     setPageCursors(new Map());
     setNextCursor(null);
-  }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl, timeFilterFromUrl, outcomeFromUrl, fromDateFromUrl, toDateFromUrl]);
+  }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl, timeFilterFromUrl, outcomeFromUrl, emotionFromUrl, fromDateFromUrl, toDateFromUrl]);
 
   // Feature #279: Store filter state in sessionStorage for export page
   useEffect(() => {
@@ -541,10 +544,11 @@ export function HistoryPage() {
       filter: activeFilter,
       category: selectedCategory,
       time: timeFilter,
+      emotion: selectedEmotion, // Feature #201: include emotion filter
       search: searchQuery,
     };
     sessionStorage.setItem('exportFilters', JSON.stringify(filterState));
-  }, [activeFilter, selectedCategory, timeFilter, searchQuery]);
+  }, [activeFilter, selectedCategory, timeFilter, selectedEmotion, searchQuery]);
 
   // Fetch categories on mount
   // Feature #268: Add AbortController to prevent race conditions
@@ -674,6 +678,11 @@ export function HistoryPage() {
           params.append('category', selectedCategory);
         }
 
+        // Feature #201: Add emotion filter
+        if (selectedEmotion !== 'all') {
+          params.append('emotion', selectedEmotion);
+        }
+
         // Add search query
         if (searchQuery.trim()) {
           params.append('search', searchQuery.trim());
@@ -799,7 +808,7 @@ export function HistoryPage() {
     return () => {
       abortController.abort();
     };
-  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage, timeFilter, customFromDate, customToDate, selectedOutcome]);
+  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage, timeFilter, customFromDate, customToDate, selectedOutcome, selectedEmotion]); // Feature #201: added selectedEmotion
 
   // Apply time-based filtering client-side (to respect user's timezone)
   // Feature #200: When custom_range is active with dates, backend handles filtering
