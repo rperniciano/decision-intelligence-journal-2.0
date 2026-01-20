@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { BottomNav } from '../components/BottomNav';
 import { SkipLink } from '../components/SkipLink';
 import { EditProfileModal } from '../components/EditProfileModal';
@@ -163,6 +164,7 @@ const ChevronRightIcon = () => (
 
 export function SettingsPage() {
   const { user, signOut, session } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     user?.user_metadata?.outcome_reminders_enabled ?? true
   );
@@ -208,13 +210,16 @@ export function SettingsPage() {
         // Rollback on failure
         setNotificationsEnabled(previousValue);
         const error = await response.json();
-        alert(error.error || 'Failed to update settings. Please try again.');
+        showError(error.error || 'Failed to update settings. Please try again.');
         console.error('Failed to update settings:', error);
+      } else {
+        // Show specific success message
+        showSuccess(newValue ? 'Outcome reminders enabled' : 'Outcome reminders disabled');
       }
     } catch (error) {
       // Rollback on network error
       setNotificationsEnabled(previousValue);
-      alert('Network error. Your changes could not be saved.');
+      showError('Network error. Your changes could not be saved.');
       console.error('Network error:', error);
     }
   };
@@ -243,13 +248,16 @@ export function SettingsPage() {
         // Rollback on failure
         setWeeklyDigestEnabled(previousValue);
         const error = await response.json();
-        alert(error.error || 'Failed to update settings. Please try again.');
+        showError(error.error || 'Failed to update settings. Please try again.');
         console.error('Failed to update settings:', error);
+      } else {
+        // Show specific success message
+        showSuccess(newValue ? 'Weekly digest enabled' : 'Weekly digest disabled');
       }
     } catch (error) {
       // Rollback on network error
       setWeeklyDigestEnabled(previousValue);
-      alert('Network error. Your changes could not be saved.');
+      showError('Network error. Your changes could not be saved.');
       console.error('Network error:', error);
     }
   };

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 
 interface EditProfileModalProps {
@@ -12,6 +13,7 @@ interface EditProfileModalProps {
 
 export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: EditProfileModalProps) {
   const { session } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [name, setName] = useState(currentName);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,6 +53,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: Ed
       // Refresh the Supabase session to get updated user metadata
       await supabase.auth.refreshSession();
 
+      showSuccess('Profile updated');
       onSuccess();
       onClose();
     } catch (err) {

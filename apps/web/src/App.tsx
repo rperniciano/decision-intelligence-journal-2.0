@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { motion, MotionConfig } from 'framer-motion';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -116,8 +117,9 @@ function NotFound() {
 function App() {
   return (
     <MotionConfig reducedMotion="user">
-      <AuthProvider>
-        <BrowserRouter>
+      <ToastProvider>
+        <AuthProvider>
+          <BrowserRouter>
           <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
@@ -218,8 +220,9 @@ function App() {
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </ToastProvider>
     </MotionConfig>
   );
 }
