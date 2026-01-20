@@ -180,3 +180,51 @@ implementation.
 ================================================================================
 END OF SESSION
 ================================================================================
+
+================================================================================
+[SESSION] Feature #77 - ADDITIONAL SKIP ATTEMPT
+Date: 2026-01-20 (Afternoon)
+Status: SKIPPED (External Blocker Persists)
+================================================================================
+
+This was a follow-up session assigned to Feature #77 in Single Feature Mode.
+The feature remains blocked by the same issue: the outcomes table does not
+exist in the database and cannot be created through available tools.
+
+CURRENT STATUS:
+--------------
+✅ Code: 100% Complete (from previous sessions)
+⚠️  Database Migration: Not executed
+❌ Testing: Blocked (missing table)
+❌ Feature Passing: No (cannot verify without table)
+
+VERIFICATION ATTEMPTED:
+----------------------
+Ran check-outcomes-table.js script
+Result: Table does not exist (Error PGRST205)
+
+BLOCKER DETAILS:
+---------------
+- outcomes table missing from Supabase database
+- Migration file ready: apps/api/migrations/create_outcomes_table.sql
+- Requires manual execution at:
+  https://supabase.com/dashboard/project/doqojfsldvajmlscpwhu/sql
+- No direct SQL access available through current tools
+- No migration runner configured in project
+
+ACTION TAKEN:
+------------
+Feature #77 skipped again (priority 348 → 359)
+
+TO COMPLETE THIS FEATURE:
+------------------------
+1. Manually execute SQL migration in Supabase dashboard
+2. Test with browser automation:
+   - Record first outcome → verify '1st check-in' badge
+   - Record second outcome → verify '2nd check-in' badge
+   - Verify check_in_number increments correctly
+3. Mark feature as passing
+
+Progress: 279/291 passing (95.9%)
+================================================================================
+

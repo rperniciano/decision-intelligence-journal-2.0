@@ -54,7 +54,7 @@ async function createDecisions(userId) {
     .insert({
       user_id: userId,
       title: 'OVERDUE_DECISION_F258',
-      status: 'deliberating', // Not decided yet, so should show as overdue
+      status: 'in_progress', // Not decided yet, so should show as overdue
       follow_up_date: yesterdayStr
     })
     .select()
@@ -77,7 +77,7 @@ async function createDecisions(userId) {
     .insert({
       user_id: userId,
       title: 'FUTURE_DECISION_F258',
-      status: 'deliberating',
+      status: 'in_progress',
       follow_up_date: tomorrowStr
     })
     .select()

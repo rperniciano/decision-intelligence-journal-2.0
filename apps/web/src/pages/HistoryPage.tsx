@@ -47,16 +47,17 @@ function StatusBadge({ status }: { status: Decision['status'] }) {
 }
 
 // Check if a decision is overdue (timezone-aware)
+// Feature #258: Overdue items identified correctly
 function isOverdue(decideByDate: string | undefined, status: Decision['status']): boolean {
   // Only mark as overdue if:
-  // 1. There is a decide_by_date
+  // 1. There is a follow_up_date (mapped to decideByDate in frontend)
   // 2. The status is NOT 'decided' or 'abandoned' (already resolved)
-  // 3. The decide_by_date is in the past (compared to user's local timezone)
+  // 3. The follow_up_date is in the past (compared to user's local timezone)
   if (!decideByDate || status === 'decided' || status === 'abandoned') {
     return false;
   }
 
-  // Parse the decide_by_date (YYYY-MM-DD format) and compare to today in user's timezone
+  // Parse the follow_up_date (YYYY-MM-DD format) and compare to today in user's timezone
   const decideBy = new Date(decideByDate);
   const today = new Date();
 
@@ -761,7 +762,7 @@ export function HistoryPage() {
           emotionalState: d.emotional_state,
           createdAt: d.created_at,
           decidedAt: d.decided_at,
-          decideByDate: d.decide_by_date,
+          decideByDate: d.follow_up_date,
           chosenOption: d.options?.find((opt: any) => opt.isChosen)?.text,
         }));
 
