@@ -21,6 +21,17 @@ async function getOrCreateTestUser() {
     return existingUser;
   }
 
+  // Try to get user from auth
+  const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+
+  if (!listError && users) {
+    const existingAuthUser = users.find(u => u.email === 'f61test@example.com');
+    if (existingAuthUser) {
+      console.log('Found existing auth user:', existingAuthUser.id);
+      return { id: existingAuthUser.id };
+    }
+  }
+
   // Create new user
   const { data: newUser, error } = await supabase.auth.admin.createUser({
     email: 'f61test@example.com',
@@ -37,22 +48,30 @@ async function getOrCreateTestUser() {
   return newUser.user;
 }
 
+// Get a category ID
+async function getCategoryId() {
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('*')
+    .limit(1);
+
+  if (!categories || categories.length === 0) {
+    throw new Error('No categories found');
+  }
+
+  return categories[0].id;
+}
+
 // Create test decisions
-async function createTestDecisions(userId) {
+async function createTestDecisions(userId, categoryId) {
   // Create DECISION_A
   const { data: decisionA, error: errorA } = await supabase
     .from('decisions')
     .insert({
       user_id: userId,
       title: 'DECISION_A - Test Feature 61',
-      context: 'This is decision A for testing outcome linkage',
-      options: [
-        { text: 'Option A1', pros: ['Pro 1'], cons: ['Con 1'] },
-        { text: 'Option A2', pros: ['Pro 2'], cons: ['Con 2'] }
-      ],
-      emotional_state: 'neutral',
-      tags: ['test-f61'],
-      confidence_level: 5
+      status: 'pending',
+      category_id: categoryId
     })
     .select()
     .single();
@@ -70,13 +89,8 @@ async function createTestDecisions(userId) {
     .insert({
       user_id: userId,
       title: 'DECISION_B - Test Feature 61',
-      context: 'This is decision B for testing outcome linkage',
-      options: [
-        { text: 'Option B1', pros: ['Pro 1'], cons: ['Con 1'] }
-      ],
-      emotional_state: 'neutral',
-      tags: ['test-f61'],
-      confidence_level: 5
+      status: 'pending',
+      category_id: categoryId
     })
     .select()
     .single();
@@ -100,9 +114,7 @@ async function createOutcome(userId, decisionId) {
       decision_id: decisionId,
       satisfaction_level: 7,
       outcome_text: 'This outcome should only appear on DECISION_A',
-      lessons_learned: 'Testing feature 61 - outcome linkage',
-      would_choose_same_option: true,
-      check_in_number: 1
+      would_choose_same_option: true
     })
     .select()
     .single();
@@ -125,12 +137,15 @@ async function main() {
     const userId = user.id;
 
     // Clean up any existing test data
-    await supabase.from('outcomes').delete().eq('user_id', userId).eq('lessons_learned', 'Testing feature 61 - outcome linkage');
-    await supabase.from('decisions').delete().eq('user_id', userId).eq('tags', ['test-f61']);
+    await supabase.from('outcomes').delete().eq('user_id', userId).eq('outcome_text', 'This outcome should only appear on DECISION_A');
+    await supabase.from('decisions').delete().eq('user_id', userId).like('title', 'DECISION_% - Test Feature 61');
     console.log('Cleaned up old test data\n');
 
+    // Get category ID
+    const categoryId = await getCategoryId();
+
     // Create test decisions
-    const { decisionA, decisionB } = await createTestDecisions(userId);
+    const { decisionA, decisionB } = await createTestDecisions(userId, categoryId);
 
     // Create outcome for DECISION_A only
     await createOutcome(userId, decisionA.id);
