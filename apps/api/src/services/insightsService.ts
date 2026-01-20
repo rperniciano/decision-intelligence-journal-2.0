@@ -140,11 +140,11 @@ export class InsightsService {
 
     // Calculate basic stats
     const totalDecisions = allDecisions.length;
-    // NOTE: Database schema doesn't have outcome column, treating all decisions as having data for now
-    const decisionsWithOutcomes = allDecisions.filter(d => d.status === 'reviewed');
-    const positiveOutcomes = decisionsWithOutcomes.length; // All reviewed decisions count as positive for now
-    const negativeOutcomes = 0;
-    const neutralOutcomes = 0;
+    // Decisions with outcomes are those that have been reviewed or decided
+    const decisionsWithOutcomes = allDecisions.filter(d => d.status === 'reviewed' || d.status === 'decided');
+    const positiveOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'better').length;
+    const negativeOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'worse').length;
+    const neutralOutcomes = decisionsWithOutcomes.filter(d => d.outcome === 'as_expected').length;
 
     // Calculate emotional patterns (based on decisions, not outcomes)
     const emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }> = {};

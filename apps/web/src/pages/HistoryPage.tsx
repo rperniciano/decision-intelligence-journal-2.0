@@ -1205,7 +1205,7 @@ export function HistoryPage() {
         </motion.div>
 
         {/* Active filter chips - Feature #198 */}
-        {(activeFilter !== 'all' || selectedCategory !== 'all' || timeFilter !== 'all_time' || searchQuery.trim()) && (
+        {(activeFilter !== 'all' || selectedCategory !== 'all' || selectedEmotion !== 'all' || timeFilter !== 'all_time' || searchQuery.trim()) && (
           <motion.div
             className="flex flex-wrap gap-2 mb-4"
             initial={{ opacity: 0, y: 10 }}
@@ -1246,6 +1246,27 @@ export function HistoryPage() {
                   }}
                   className="ml-1 hover:bg-accent/30 rounded-full p-0.5 transition-colors"
                   aria-label="Remove category filter"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* Feature #201: Emotion filter chip */}
+            {selectedEmotion !== 'all' && (
+              <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent/20 text-accent rounded-full text-sm">
+                <span>Emotion: {selectedEmotion}</span>
+                <button
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('emotion');
+                    newParams.set('page', '1');
+                    setSearchParams(newParams);
+                  }}
+                  className="ml-1 hover:bg-accent/30 rounded-full p-0.5 transition-colors"
+                  aria-label="Remove emotion filter"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1530,6 +1551,38 @@ export function HistoryPage() {
             </select>
           </motion.div>
         )}
+
+        {/* Feature #201: Emotional state filter */}
+        <motion.div
+          className="mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+        >
+          <label htmlFor="emotion-filter" className="block text-sm text-text-secondary mb-2">Emotional State</label>
+          <select
+            id="emotion-filter"
+            value={selectedEmotion}
+            onChange={(e) => {
+              const newParams = new URLSearchParams(searchParams);
+              newParams.set('emotion', e.target.value);
+              newParams.set('page', '1');
+              setSearchParams(newParams);
+            }}
+            className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+          >
+            <option value="all">All Emotions</option>
+            <option value="calm">Calm</option>
+            <option value="confident">Confident</option>
+            <option value="anxious">Anxious</option>
+            <option value="excited">Excited</option>
+            <option value="uncertain">Uncertain</option>
+            <option value="stressed">Stressed</option>
+            <option value="neutral">Neutral</option>
+            <option value="hopeful">Hopeful</option>
+            <option value="frustrated">Frustrated</option>
+          </select>
+        </motion.div>
 
         {/* Sort order - only visible in List view (Timeline/Calendar have fixed chronological order) */}
         {activeView === 'list' && (

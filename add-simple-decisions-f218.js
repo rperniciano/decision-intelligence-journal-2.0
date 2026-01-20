@@ -30,7 +30,7 @@ async function createTestDecisions() {
     { title: 'Test Decision 2', status: 'decided', outcome: 'better', detected_emotional_state: 'confident', hour_of_day: 14, created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
     { title: 'Test Decision 3', status: 'decided', outcome: 'better', detected_emotional_state: 'confident', hour_of_day: 16, created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
     { title: 'Test Decision 4', status: 'decided', outcome: 'better', detected_emotional_state: 'calm', hour_of_day: 11, created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
-    { title: 'Test Decision 5', status: 'decided', outcome: 'better', detected_emotional_state: 'happy', hour_of_day: 9, created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+    { title: 'Test Decision 5', status: 'decided', outcome: 'better', detected_emotional_state: 'confident', hour_of_day: 9, created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
     { title: 'Night Owl Decision', status: 'decided', outcome: 'as_expected', detected_emotional_state: 'anxious', hour_of_day: 2, created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString() },
     { title: 'Early Bird Decision', status: 'decided', outcome: 'better', detected_emotional_state: 'calm', hour_of_day: 6, created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() },
   ];

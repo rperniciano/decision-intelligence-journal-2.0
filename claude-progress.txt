@@ -2318,3 +2318,106 @@ Test decision ID: e72df39d-9bf6-4340-ac2e-a8883e57616b
 
 Progress: 274/291 passing (94.2%)
 ================================================================================
+[Testing] Feature #129 verified - still passing
+Verification Summary:
+- Status filter (filter=decided → status=decided API param): ✅ Working
+- Outcome filter (outcome=better): ✅ Working
+- Category filter (category=UUID): ✅ Working
+- Time filter (client-side for timezone respect): ✅ Working by design
+- URL persistence: ✅ Working
+- Combined filters: ✅ Working
+- Zero console errors: ✅ Confirmed
+
+
+================================================================================
+[SESSION] Feature #129 Regression Test - COMPLETED
+Date: 2026-01-20
+Status: ✅ PASSING - No regressions found
+================================================================================
+
+FEATURE TESTED:
+---------------
+Feature #129: Filter parameters sent to API correctly
+
+VERIFICATION RESULTS:
+--------------------
+✅ Apply filters on History page - WORKING
+✅ Monitor Network tab - WORKING
+✅ GET requests include filter params - WORKING
+   - Status filter: filter=decided → status=decided API param ✅
+   - Outcome filter: outcome=better sent to API ✅
+   - Category filter: category=UUID sent to API ✅
+   - Time filter: Client-side for timezone accuracy (by design) ✅
+   - Combined filters: Multiple params correctly combined ✅
+✅ Results match filter criteria - WORKING
+✅ Filter persistence in URL - WORKING
+
+API REQUESTS VERIFIED:
+---------------------
+1. GET /api/v1/decisions?sort=date_desc&limit=10 (no filters)
+2. GET /api/v1/decisions?outcome=better&sort=date_desc&limit=10 (outcome filter)
+3. GET /api/v1/decisions?status=in_progress&outcome=better&sort=date_desc&limit=10 (combined)
+4. GET /api/v1/decisions?category=<UUID>&sort=date_desc&limit=10 (category filter)
+5. GET /api/v1/decisions?status=decided&sort=date_desc&limit=10 (status filter)
+
+TEST DATA:
+---------
+User: f129-test-regression@example.com
+Decisions created: 5 test decisions
+
+SCREENSHOTS:
+-----------
+- verification/f129-history-page-before-filter.png
+- verification/f129-history-page-after-better-filter.png
+- verification/f129-status-filter-working.png
+
+DOCUMENTATION:
+-------------
+- verification/f129-test-summary.md
+
+CODE ANALYSIS:
+-------------
+File: apps/web/src/pages/HistoryPage.tsx
+- Lines 666-723: Filter params correctly built
+- Lines 804-818: Time filtering client-side (timezone accuracy)
+- Status filter: URL param 'filter' → API param 'status' translation
+
+CONCLUSION:
+-----------
+Feature #129 is WORKING CORRECTLY. All filter parameters are properly sent to
+the API. Time-based filters are intentionally client-side for timezone respect.
+No regressions detected.
+
+Progress: 275/291 passing (94.5%)
+
+================================================================================
+
+[REGRESSION TEST] Feature #181 - Date picker defaults to sensible date
+Date: 2026-01-20
+Status: ✅ PASSED - NO REGRESSION FOUND
+
+Test Summary:
+- Decide-by date picker defaults to today: VERIFIED (2026-01-20)
+- Not 1970 or 1900: VERIFIED (current year 2026)
+- Reasonable constraints: VERIFIED (min=today, max=1 year)
+
+Verification Steps:
+1. Navigated to Create Decision page (/decisions/new)
+2. Examined 'Decide By (optional)' field
+3. Verified date value: 2026-01-20 (today) ✅
+4. Verified min date: 2026-01-20 ✅
+5. Verified max date: 2027-01-20 (1 year from now) ✅
+6. Zero console errors ✅
+
+Implementation:
+- File: apps/web/src/pages/CreateDecisionPage.tsx
+- Lines: 48-52
+- Correctly initializes decide-by date to today using useState
+
+Screenshots:
+- verification/f181-decide-by-date-defaults-to-today.png
+- verification/feature-181-regression-test-summary.md
+
+Conclusion: Feature #181 continues to work correctly. No regression found.
+Progress: 275/291 passing (94.5%)
+================================================================================

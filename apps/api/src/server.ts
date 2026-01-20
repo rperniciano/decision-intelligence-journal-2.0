@@ -184,6 +184,7 @@ async function registerRoutes() {
         const result = await DecisionService.getDecisions(userId, {
           status: query.status,
           categoryId: query.categoryId,
+          emotion: query.emotion, // Feature #201: emotion filtering
           search: query.search,
           outcome: query.outcome, // Feature #203: outcome filtering
           limit: query.limit ? parseInt(query.limit) : 20,
