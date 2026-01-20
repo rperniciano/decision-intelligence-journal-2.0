@@ -412,6 +412,7 @@ const timeFilterOptions = [
   { id: 'today', label: 'Today' },
   { id: 'this_week', label: 'This Week' },
   { id: 'this_month', label: 'This Month' },
+  { id: 'custom_range', label: 'Custom Range' }, // Feature #200: Custom date range filter
 ];
 
 // Filter chips
@@ -420,6 +421,14 @@ const filterOptions = [
   { id: 'in_progress', label: 'In Progress' },
   { id: 'decided', label: 'Decided' },
   { id: 'trash', label: 'Trash' },
+];
+
+// Feature #203: Outcome filter options
+const outcomeFilterOptions = [
+  { id: 'all', label: 'All Outcomes' },
+  { id: 'better', label: 'Better' },
+  { id: 'as_expected', label: 'As Expected' },
+  { id: 'worse', label: 'Worse' },
 ];
 
 // View options
@@ -479,6 +488,9 @@ export function HistoryPage() {
   const sortFromUrl = searchParams.get('sort') || 'date_desc';
   const viewFromUrl = (searchParams.get('view') || 'list') as ViewType;
   const timeFilterFromUrl = searchParams.get('time') || 'all_time';
+  const outcomeFromUrl = searchParams.get('outcome') || 'all'; // Feature #203: outcome filter from URL
+  const fromDateFromUrl = searchParams.get('fromDate') || ''; // Feature #200: Custom range start date
+  const toDateFromUrl = searchParams.get('toDate') || ''; // Feature #200: Custom range end date
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(filterFromUrl);
@@ -486,6 +498,9 @@ export function HistoryPage() {
   const [sortBy, setSortBy] = useState(sortFromUrl);
   const [activeView, setActiveView] = useState<ViewType>(viewFromUrl);
   const [timeFilter, setTimeFilter] = useState(timeFilterFromUrl);
+  const [selectedOutcome, setSelectedOutcome] = useState(outcomeFromUrl); // Feature #203: outcome filter state
+  const [customFromDate, setCustomFromDate] = useState(fromDateFromUrl); // Feature #200: Custom range start date state
+  const [customToDate, setCustomToDate] = useState(toDateFromUrl); // Feature #200: Custom range end date state
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -500,18 +515,21 @@ export function HistoryPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
-  // Update activeFilter, selectedCategory, sortBy, activeView, and timeFilter when URL changes (e.g., browser back/forward)
+  // Update activeFilter, selectedCategory, sortBy, activeView, timeFilter, and selectedOutcome when URL changes (e.g., browser back/forward)
   useEffect(() => {
     setActiveFilter(filterFromUrl);
     setSelectedCategory(categoryFromUrl);
     setSortBy(sortFromUrl);
     setActiveView(viewFromUrl);
     setTimeFilter(timeFilterFromUrl);
+    setSelectedOutcome(outcomeFromUrl); // Feature #203: sync outcome filter from URL
+    setCustomFromDate(fromDateFromUrl); // Feature #200: sync custom from date
+    setCustomToDate(toDateFromUrl); // Feature #200: sync custom to date
 
     // Feature #267: Reset pageCursors when filters change
     setPageCursors(new Map());
     setNextCursor(null);
-  }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl, timeFilterFromUrl]);
+  }, [filterFromUrl, categoryFromUrl, sortFromUrl, viewFromUrl, timeFilterFromUrl, outcomeFromUrl, fromDateFromUrl, toDateFromUrl]);
 
   // Feature #279: Store filter state in sessionStorage for export page
   useEffect(() => {
@@ -600,6 +618,21 @@ export function HistoryPage() {
         // Add search query
         if (searchQuery.trim()) {
           params.append('search', searchQuery.trim());
+        }
+
+        // Feature #203: Add outcome filter
+        if (selectedOutcome !== 'all') {
+          params.append('outcome', selectedOutcome);
+        }
+
+        // Feature #200: Add date range filter when custom_range is selected
+        if (timeFilter === 'custom_range') {
+          if (customFromDate) {
+            params.append('fromDate', customFromDate);
+          }
+          if (customToDate) {
+            params.append('toDate', customToDate);
+          }
         }
 
         // Add sort parameter
@@ -707,14 +740,17 @@ export function HistoryPage() {
     return () => {
       abortController.abort();
     };
-  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage]);
+  }, [activeFilter, selectedCategory, searchQuery, sortBy, currentPage, timeFilter, customFromDate, customToDate, selectedOutcome]);
 
   // Apply time-based filtering client-side (to respect user's timezone)
+  // Feature #200: When custom_range is active with dates, backend handles filtering
   const timeFilteredDecisions = decisions.filter((decision) => {
     if (timeFilter === 'all_time') return true;
     if (timeFilter === 'today') return isToday(decision.createdAt);
     if (timeFilter === 'this_week') return isThisWeek(decision.createdAt);
     if (timeFilter === 'this_month') return isThisMonth(decision.createdAt);
+    // Feature #200: For custom_range, backend handles filtering when dates are provided
+    if (timeFilter === 'custom_range' && customFromDate && customToDate) return true;
     return true;
   });
 
@@ -723,7 +759,10 @@ export function HistoryPage() {
 
   // Pagination calculations using filtered count for time filter
   // Note: When time filter is applied, we use client-side count
-  const effectiveCount = timeFilter === 'all_time' ? totalCount : timeFilteredDecisions.length;
+  // Feature #200: For custom_range with dates, use totalCount from API
+  const effectiveCount = (timeFilter === 'all_time' || (timeFilter === 'custom_range' && customFromDate && customToDate))
+    ? totalCount
+    : timeFilteredDecisions.length;
   const totalPages = Math.ceil(effectiveCount / ITEMS_PER_PAGE);
 
   // Handle page change
@@ -1099,6 +1138,26 @@ export function HistoryPage() {
               </div>
             )}
 
+            {/* Feature #203: Outcome filter chip */}
+            {selectedOutcome !== 'all' && (
+              <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent/20 text-accent rounded-full text-sm">
+                <span>Outcome: {outcomeFilterOptions.find(o => o.id === selectedOutcome)?.label || selectedOutcome}</span>
+                <button
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('outcome');
+                    setSearchParams(newParams);
+                  }}
+                  className="ml-1 hover:bg-accent/30 rounded-full p-0.5 transition-colors"
+                  aria-label="Remove outcome filter"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
             {/* Clear all filters button */}
             <button
               onClick={() => {
@@ -1106,6 +1165,7 @@ export function HistoryPage() {
                 newParams.delete('filter');
                 newParams.delete('category');
                 newParams.delete('time');
+                newParams.delete('outcome'); // Feature #203: clear outcome filter
                 newParams.set('page', '1');
                 setSearchParams(newParams);
                 setSearchQuery('');
@@ -1181,6 +1241,40 @@ export function HistoryPage() {
           </div>
         </motion.div>
 
+        {/* Feature #203: Outcome filter */}
+        <motion.div
+          className="mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="text-sm text-text-secondary mb-2">Outcome</div>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {outcomeFilterOptions.map((outcome) => (
+              <button
+                key={outcome.id}
+                onClick={() => {
+                  const newParams = new URLSearchParams(searchParams);
+                  if (outcome.id === 'all') {
+                    newParams.delete('outcome');
+                  } else {
+                    newParams.set('outcome', outcome.id);
+                  }
+                  newParams.set('page', '1'); // Reset to page 1 when filter changes
+                  setSearchParams(newParams);
+                }}
+                className={`px-4 min-h-[44px] rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                  selectedOutcome === outcome.id
+                    ? 'bg-accent text-bg-deep'
+                    : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                }`}
+              >
+                {outcome.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Time filter */}
         <motion.div
           className="mb-4"
@@ -1206,6 +1300,50 @@ export function HistoryPage() {
               </option>
             ))}
           </select>
+
+          {/* Feature #200: Custom date range inputs */}
+          {timeFilter === 'custom_range' && (
+            <motion.div
+              className="mt-4 grid grid-cols-2 gap-3"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div>
+                <label htmlFor="from-date" className="block text-xs text-text-secondary mb-1.5">From</label>
+                <input
+                  id="from-date"
+                  type="date"
+                  value={customFromDate}
+                  onChange={(e) => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.set('fromDate', e.target.value);
+                    newParams.set('page', '1');
+                    setSearchParams(newParams);
+                  }}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-text-primary text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+                  max={customToDate || undefined}
+                />
+              </div>
+              <div>
+                <label htmlFor="to-date" className="block text-xs text-text-secondary mb-1.5">To</label>
+                <input
+                  id="to-date"
+                  type="date"
+                  value={customToDate}
+                  onChange={(e) => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.set('toDate', e.target.value);
+                    newParams.set('page', '1');
+                    setSearchParams(newParams);
+                  }}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-text-primary text-sm focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+                  min={customFromDate || undefined}
+                />
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Category filter */}

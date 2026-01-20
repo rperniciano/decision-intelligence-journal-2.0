@@ -185,9 +185,12 @@ async function registerRoutes() {
           status: query.status,
           categoryId: query.categoryId,
           search: query.search,
+          outcome: query.outcome, // Feature #203: outcome filtering
           limit: query.limit ? parseInt(query.limit) : 20,
           offset: query.offset ? parseInt(query.offset) : 0,
           cursor: query.cursor, // Feature #267: cursor-based pagination
+          fromDate: query.fromDate, // Feature #200: Date range filter start
+          toDate: query.toDate, // Feature #200: Date range filter end
         });
 
         return result;
@@ -1661,7 +1664,7 @@ async function registerRoutes() {
       }
 
       try {
-        const body = request.body as { result?: string; satisfaction?: number; notes?: string } | null;
+        const body = request.body as { result?: string; satisfaction?: number; notes?: string; reflection_transcript?: string; learned?: string } | null;
 
         console.log('Outcome recording - body:', JSON.stringify(body));
         console.log('Outcome recording - id:', id);
@@ -1725,7 +1728,8 @@ async function registerRoutes() {
               decision_id: id,
               result: outcome,
               satisfaction: body.satisfaction ?? null,
-              learned: body.notes || null,
+              learned: body.learned || body.notes || null,
+              reflection_transcript: body.reflection_transcript || null,
               recorded_at: new Date().toISOString(),
               check_in_number: nextCheckInNumber
             })
@@ -1856,6 +1860,57 @@ async function registerRoutes() {
         console.error('Error code:', error?.code);
         reply.code(500);
         return { error: 'Failed to record outcome' };
+      }
+    });
+
+    // Feature #188: Voice reflection processing endpoint
+    api.post('/decisions/:id/reflection', async (request, reply) => {
+      const userId = request.user?.id;
+
+      if (!userId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
+
+      try {
+        // Get uploaded audio file
+        const data = await request.file();
+        if (!data) {
+          reply.code(400);
+          return { error: 'Audio file is required' };
+        }
+
+        // Check file size (max 5MB for reflection audio)
+        const MAX_FILE_SIZE = 5 * 1024 * 1024;
+        if (data.file.readableLength && data.file.readableLength > MAX_FILE_SIZE) {
+          reply.code(400);
+          return { error: 'Audio file too large. Maximum size is 5MB.' };
+        }
+
+        // Convert file to buffer (consume the stream)
+        await data.toBuffer();
+
+        // For now, return a mock response since we don't have AssemblyAI configured
+        // In production, this would:
+        // 1. Upload audio to Supabase Storage
+        // 2. Send to AssemblyAI for transcription
+        // 3. Send transcript to GPT-4 for insight extraction
+        // 4. Return transcript and insights
+
+        // Mock response for testing the UI flow
+        const mockTranscript = "This decision turned out better than expected. I feel more confident now and learned that taking time to deliberate really helps clarify my thinking.";
+        const mockInsights = "User reports positive outcome with increased confidence. Key learning: Deliberation time improves decision clarity and reduces anxiety about choices.";
+
+        return {
+          transcript: mockTranscript,
+          insights: mockInsights,
+          audio_url: null, // Would be Supabase Storage URL in production
+        };
+
+      } catch (error: any) {
+        console.error('Error processing reflection:', error);
+        reply.code(500);
+        return { error: 'Failed to process reflection', details: error?.message || 'Unknown error' };
       }
     });
 

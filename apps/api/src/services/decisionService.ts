@@ -74,6 +74,8 @@ export class DecisionService {
     sort?: string;
     limit?: number;
     offset?: number;
+    fromDate?: string; // Feature #200: Date range filter - start date
+    toDate?: string; // Feature #200: Date range filter - end date
   }) {
     // Build base query for counting
     let countQuery = supabase
@@ -102,6 +104,22 @@ export class DecisionService {
     if (filters?.search) {
       countQuery = countQuery.ilike('title', `%${filters.search}%`);
       query = query.ilike('title', `%${filters.search}%`);
+    }
+
+    // Feature #200: Apply date range filtering
+    if (filters?.fromDate) {
+      // Filter for decisions created on or after fromDate (inclusive)
+      countQuery = countQuery.gte('created_at', filters.fromDate);
+      query = query.gte('created_at', filters.fromDate);
+    }
+
+    if (filters?.toDate) {
+      // Filter for decisions created on or before toDate (inclusive)
+      // Add 23:59:59 to include the entire end date
+      const endDate = new Date(filters.toDate);
+      endDate.setHours(23, 59, 59, 999);
+      countQuery = countQuery.lte('created_at', endDate.toISOString());
+      query = query.lte('created_at', endDate.toISOString());
     }
 
     // Apply sorting

@@ -28,9 +28,12 @@ export class DecisionService {
     status?: string;
     categoryId?: string;
     search?: string;
+    outcome?: string; // Feature #203: outcome filtering (better, as_expected, worse)
     limit?: number;
     offset?: number;
     cursor?: string; // ISO timestamp for cursor-based pagination (Feature #267)
+    fromDate?: string; // Feature #200: Date range filter - start date (ISO format)
+    toDate?: string; // Feature #200: Date range filter - end date (ISO format)
   }) {
     try {
       // Build the base query for count (simplified select for better performance)
@@ -49,6 +52,20 @@ export class DecisionService {
       }
       if (filters?.search) {
         countQuery = countQuery.ilike('title', `%${filters.search}%`);
+      }
+      // Feature #203: outcome filter - only count decisions with matching outcome
+      if (filters?.outcome) {
+        countQuery = countQuery.eq('outcome', filters.outcome);
+      }
+
+      // Feature #200: Apply date range filtering to count query
+      if (filters?.fromDate) {
+        countQuery = countQuery.gte('created_at', filters.fromDate);
+      }
+      if (filters?.toDate) {
+        const endDate = new Date(filters.toDate);
+        endDate.setHours(23, 59, 59, 999);
+        countQuery = countQuery.lte('created_at', endDate.toISOString());
       }
 
       // Get the count
@@ -85,6 +102,21 @@ export class DecisionService {
 
       if (filters?.search) {
         query = query.ilike('title', `%${filters.search}%`);
+      }
+
+      // Feature #203: outcome filter - only fetch decisions with matching outcome
+      if (filters?.outcome) {
+        query = query.eq('outcome', filters.outcome);
+      }
+
+      // Feature #200: Apply date range filtering to main query
+      if (filters?.fromDate) {
+        query = query.gte('created_at', filters.fromDate);
+      }
+      if (filters?.toDate) {
+        const endDate = new Date(filters.toDate);
+        endDate.setHours(23, 59, 59, 999);
+        query = query.lte('created_at', endDate.toISOString());
       }
 
       const limit = filters?.limit || 20;
