@@ -132,7 +132,7 @@ class ReminderBackgroundJob {
    * Push notifications will be implemented in a separate feature (#205)
    */
   private async processReminder(reminder: any) {
-    const { id, decision_id, user_id } = reminder;
+    const { id, decision_id } = reminder;
 
     // For MVP: Mark as sent (notification delivery will be added in feature #205)
     const { error } = await supabase

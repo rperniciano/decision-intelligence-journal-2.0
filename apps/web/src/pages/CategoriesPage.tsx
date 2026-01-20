@@ -60,6 +60,9 @@ export function CategoriesPage() {
   const [selectedColor, setSelectedColor] = useState('#00d4aa');
   const [creating, setCreating] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [nameError, setNameError] = useState('');
+
+  const MAX_CATEGORY_NAME_LENGTH = 50;
 
   // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {
@@ -110,9 +113,18 @@ export function CategoriesPage() {
   };
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) return;
+    if (!newCategoryName.trim()) {
+      setNameError('Please enter a category name');
+      return;
+    }
+
+    if (newCategoryName.trim().length > MAX_CATEGORY_NAME_LENGTH) {
+      setNameError(`Category name must be ${MAX_CATEGORY_NAME_LENGTH} characters or less`);
+      return;
+    }
 
     setCreating(true);
+    setNameError('');
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, {
         method: 'POST',
@@ -152,12 +164,22 @@ export function CategoriesPage() {
     setSelectedIcon(category.icon);
     setSelectedColor(category.color);
     setShowEditModal(true);
+    setNameError('');
   };
 
   const handleUpdateCategory = async () => {
-    if (!editingCategory || !newCategoryName.trim()) return;
+    if (!editingCategory || !newCategoryName.trim()) {
+      setNameError('Please enter a category name');
+      return;
+    }
+
+    if (newCategoryName.trim().length > MAX_CATEGORY_NAME_LENGTH) {
+      setNameError(`Category name must be ${MAX_CATEGORY_NAME_LENGTH} characters or less`);
+      return;
+    }
 
     setUpdating(true);
+    setNameError('');
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/categories/${editingCategory.id}`, {
         method: 'PATCH',
@@ -244,7 +266,10 @@ export function CategoriesPage() {
       <main id="main-content" className="container mx-auto px-4 py-8 max-w-2xl" tabIndex={-1}>
         {/* Create Button */}
         <motion.button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            setShowCreateModal(true);
+            setNameError('');
+          }}
           className="w-full glass glass-hover p-4 rounded-2xl flex items-center justify-center gap-2 mb-6"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -330,11 +355,27 @@ export function CategoriesPage() {
                 id="create-category-name"
                 type="text"
                 value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
+                onChange={(e) => {
+                  setNewCategoryName(e.target.value);
+                  setNameError('');
+                }}
                 placeholder="e.g., Work Projects"
-                className="w-full glass p-3 rounded-xl text-text-primary placeholder-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                maxLength={MAX_CATEGORY_NAME_LENGTH}
+                className={`w-full glass p-3 rounded-xl text-text-primary placeholder-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/50 ${
+                  nameError ? 'ring-2 ring-red-500' : ''
+                }`}
+                aria-invalid={!!nameError}
+                aria-describedby={nameError ? 'create-name-error' : undefined}
                 autoFocus
               />
+              <div className="flex justify-between items-center mt-1">
+                <div id="create-name-error" className="text-sm text-red-400" role="alert">
+                  {nameError}
+                </div>
+                <div className="text-xs text-text-secondary">
+                  {newCategoryName.length} / {MAX_CATEGORY_NAME_LENGTH}
+                </div>
+              </div>
             </div>
 
             {/* Icon Selection */}
@@ -387,7 +428,10 @@ export function CategoriesPage() {
             {/* Actions */}
             <div className="flex gap-3">
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNameError('');
+                }}
                 className="flex-1 glass glass-hover min-h-[44px] rounded-xl text-text-secondary font-medium transition-all duration-200"
                 disabled={creating}
               >
@@ -425,11 +469,27 @@ export function CategoriesPage() {
                 id="edit-category-name"
                 type="text"
                 value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
+                onChange={(e) => {
+                  setNewCategoryName(e.target.value);
+                  setNameError('');
+                }}
                 placeholder="e.g., Work Projects"
-                className="w-full glass p-3 rounded-xl text-text-primary placeholder-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                maxLength={MAX_CATEGORY_NAME_LENGTH}
+                className={`w-full glass p-3 rounded-xl text-text-primary placeholder-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/50 ${
+                  nameError ? 'ring-2 ring-red-500' : ''
+                }`}
+                aria-invalid={!!nameError}
+                aria-describedby={nameError ? 'edit-name-error' : undefined}
                 autoFocus
               />
+              <div className="flex justify-between items-center mt-1">
+                <div id="edit-name-error" className="text-sm text-red-400" role="alert">
+                  {nameError}
+                </div>
+                <div className="text-xs text-text-secondary">
+                  {newCategoryName.length} / {MAX_CATEGORY_NAME_LENGTH}
+                </div>
+              </div>
             </div>
 
             {/* Icon Selection */}
@@ -488,6 +548,7 @@ export function CategoriesPage() {
                   setNewCategoryName('');
                   setSelectedIcon('📁');
                   setSelectedColor('#00d4aa');
+                  setNameError('');
                 }}
                 className="flex-1 glass glass-hover min-h-[44px] rounded-xl text-text-secondary font-medium transition-all duration-200"
                 disabled={updating}

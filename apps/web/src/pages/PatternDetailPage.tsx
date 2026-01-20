@@ -176,21 +176,26 @@ function PatternDetailPage() {
             break;
 
           case 'categoryperformance':
-            const categories = Object.entries(insights.categoryDistribution || {});
-            const sortedCategories = categories
-              .sort(([, a], [, b]) => (b as number) - (a as number))
-              .slice(0, 5);
+            // Feature #207: Category performance - success rate per category, decision count
+            // Use topCategories from backend which includes positiveRate
+            const categoryData = insights.topCategories || [];
+            const sortedCategories = categoryData
+              .sort((a: any, b: any) => b.count - a.count)
+              .slice(0, 10);
 
-            detailData.value = sortedCategories[0]
-              ? `${sortedCategories[0][0]}: ${sortedCategories[0][1]} decisions`
+            detailData.value = sortedCategories.length > 0
+              ? `${sortedCategories.length} categories tracked`
               : 'Not enough data';
-            detailData.insights = sortedCategories.map(([cat, count]) =>
-              `${cat}: ${count} decisions`
-            );
+            // Feature #207: Show both decision count AND success rate per category
+            detailData.insights = sortedCategories.map((cat: any) => {
+              const successRate = Math.round(cat.positiveRate * 100);
+              return `${cat.category}: ${cat.count} decisions (${successRate}% positive rate)`;
+            });
             detailData.recommendations = [
               'Diversify your decision categories to get more balanced insights.',
               'Consider which categories need more attention in your life.',
               'Track outcomes by category to identify strengths and weaknesses.',
+              'Categories with lower success rates may need more deliberation time.',
             ];
             break;
 

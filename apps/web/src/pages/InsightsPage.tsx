@@ -183,6 +183,12 @@ interface InsightsData {
   neutralOutcomes: number;
   emotionalPatterns: Record<string, { better: number; worse: number; as_expected: number }>;
   categoryDistribution: Record<string, number>;
+  topCategories: Array<{ // Feature #207: Category performance data
+    category: string;
+    count: number;
+    withOutcomes: number;
+    positiveRate: number;
+  }>;
   decisionScore: number;
   positionBias: {
     position: number;
@@ -202,6 +208,12 @@ interface InsightsData {
       count: number;
       positiveRate: number;
     }>;
+  } | null;
+  confidencePattern: { // Feature #210
+    lowConfidence: { count: number; positiveRate: number };
+    mediumConfidence: { count: number; positiveRate: number };
+    highConfidence: { count: number; positiveRate: number };
+    correlation: string;
   } | null;
 }
 
@@ -241,9 +253,11 @@ export function InsightsPage() {
           neutralOutcomes: insights.neutralOutcomes,
           emotionalPatterns: insights.emotionalPatterns,
           categoryDistribution: insights.categoryDistribution,
+          topCategories: insights.topCategories || [], // Feature #207: Category performance data
           decisionScore: insights.decisionScore,
           positionBias: insights.positionBias,
           timingPattern: insights.timingPattern || null, // Feature #90
+          confidencePattern: insights.confidencePattern || null, // Feature #210
         });
       } catch (error: any) {
         // Feature #268: Silently ignore abort errors
@@ -285,17 +299,14 @@ export function InsightsPage() {
     ? `${Math.round((insightsData.positiveOutcomes / insightsData.decisionsWithOutcomes) * 100)}% positive`
     : 'Not enough data';
 
-  // Category Performance - find category with most decisions
+  // Feature #207: Category Performance - find category with most decisions AND show success rate
   const categoryPerformance = insightsData ? (() => {
-    const catCounts = insightsData.categoryDistribution || {};
-    const categories = Object.entries(catCounts);
-    if (categories.length === 0) return 'Not enough data';
+    const topCategories = insightsData.topCategories || [];
+    if (topCategories.length === 0) return 'Not enough data';
 
-    const topCategory = categories.reduce((top, [cat, count]) => {
-      return count > top.count ? { name: cat, count } : top;
-    }, { name: '', count: 0 });
-
-    return topCategory.count > 0 ? `${topCategory.name}: ${topCategory.count} decisions` : 'Not enough data';
+    const topCategory = topCategories[0];
+    const successRate = Math.round(topCategory.positiveRate * 100);
+    return `${topCategory.category}: ${topCategory.count} decisions (${successRate}% success)`;
   })() : 'Not enough data';
 
   // Position Bias (Primacy Bias) - detect if user tends to choose first option
@@ -320,6 +331,23 @@ export function InsightsPage() {
   })() : 'Not enough data';
 
   const hasTimingPattern = insightsData?.timingPattern !== null;
+
+  // Feature #210: Calculate confidence vs outcome correlation pattern
+  const hasConfidencePattern = insightsData?.confidencePattern !== null;
+  const confidencePattern = insightsData?.confidencePattern ? (() => {
+    const cp = insightsData.confidencePattern!;
+
+    // Format the display based on correlation type
+    if (cp.correlation === 'positive') {
+      return `High confidence: ${Math.round(cp.highConfidence.positiveRate * 100)}% success`;
+    } else if (cp.correlation === 'negative') {
+      return `Overconfidence detected`;
+    } else if (cp.correlation === 'neutral') {
+      return `No clear pattern`;
+    } else {
+      return 'Not enough data';
+    }
+  })() : 'Not enough data';
 
   const patterns = [
     {
@@ -377,7 +405,7 @@ export function InsightsPage() {
       patternId: 'timing-bias',
       trend: insightsData?.timingPattern?.lateNightDecisions.positiveRate && insightsData.timingPattern.lateNightDecisions.positiveRate < 0.5
         ? { direction: 'down' as const, value: 'Avoid late night' }
-        : insightsData?.timingPattern?.bestHours.length > 0
+        : insightsData?.timingPattern?.bestHours && insightsData.timingPattern.bestHours.length > 0
         ? { direction: 'up' as const, value: 'Best time' }
         : undefined,
       icon: (
@@ -399,6 +427,27 @@ export function InsightsPage() {
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+        </svg>
+      ),
+    }] : []),
+    // Feature #210: Confidence vs outcome correlation pattern card
+    ...(hasConfidencePattern ? [{
+      title: 'Confidence Correlation',
+      description: insightsData?.confidencePattern?.correlation === 'negative'
+        ? 'Higher confidence leads to worse outcomes'
+        : insightsData?.confidencePattern?.correlation === 'positive'
+        ? 'Your confidence matches outcomes'
+        : 'How confidence relates to outcomes',
+      value: confidencePattern,
+      patternId: 'confidence-correlation',
+      trend: insightsData?.confidencePattern?.correlation === 'negative'
+        ? { direction: 'down' as const, value: 'Overconfidence' }
+        : insightsData?.confidencePattern?.correlation === 'positive'
+        ? { direction: 'up' as const, value: 'Well-calibrated' }
+        : undefined,
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     }] : []),

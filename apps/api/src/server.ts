@@ -120,7 +120,7 @@ async function registerRoutes() {
   });
 
   // Feature #204: Reminder job stats (public, for monitoring)
-  server.get('/reminder-job/stats', async (request, reply) => {
+  server.get('/reminder-job/stats', async (_request, reply) => {
     try {
       const stats = reminderJob.getStats();
       return { stats };
@@ -1057,6 +1057,10 @@ async function registerRoutes() {
           return reply.code(400).send({ error: 'Category name is required' });
         }
 
+        if (body.name.trim().length > 50) {
+          return reply.code(400).send({ error: 'Category name must be 50 characters or less' });
+        }
+
         // Generate slug from name
         const slug = body.name
           .toLowerCase()
@@ -1109,6 +1113,9 @@ async function registerRoutes() {
         if (body.name !== undefined) {
           if (body.name.trim() === '') {
             return reply.code(400).send({ error: 'Category name cannot be empty' });
+          }
+          if (body.name.trim().length > 50) {
+            return reply.code(400).send({ error: 'Category name must be 50 characters or less' });
           }
           updates.name = body.name.trim();
           // Update slug when name changes
@@ -1853,7 +1860,7 @@ async function registerRoutes() {
 
           throw tableError;
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error recording outcome:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
         console.error('Error message:', error?.message);

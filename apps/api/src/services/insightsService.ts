@@ -43,6 +43,13 @@ export interface PositionBiasPattern {
   percentage: number;
 }
 
+export interface ConfidencePattern {
+  lowConfidence: { count: number; positiveRate: number };
+  mediumConfidence: { count: number; positiveRate: number };
+  highConfidence: { count: number; positiveRate: number };
+  correlation: string; // "positive", "negative", "neutral", "none"
+}
+
 // Feature #90: Timing patterns - best/worst hours for decisions
 export interface TimingPattern {
   bestHours: number[];
@@ -56,6 +63,33 @@ export interface TimingPattern {
     count: number;
     positiveRate: number;
   }>;
+}
+
+// Feature #218: Gamification - Achievement types
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  unlockedAt?: string;
+  progress?: number;
+  maxProgress?: number;
+}
+
+// Feature #218: Gamification - Streak tracking
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastRecordDate: string | null;
+}
+
+// Feature #218: Gamification - User level
+export interface LevelData {
+  level: number;
+  currentXP: number;
+  xpToNextLevel: number;
+  totalXP: number;
 }
 
 export interface InsightsData {
@@ -72,6 +106,11 @@ export interface InsightsData {
   topCategories: CategoryPattern[];
   positionBias: PositionBiasPattern | null;
   timingPattern: TimingPattern | null; // Feature #90
+  confidencePattern: ConfidencePattern | null; // Feature #210: Confidence vs outcome correlation
+  // Feature #218: Gamification elements
+  achievements: Achievement[];
+  streakData: StreakData;
+  levelData: LevelData;
 }
 
 export class InsightsService {
@@ -79,13 +118,18 @@ export class InsightsService {
    * Calculate insights for a user based on their decisions
    */
   static async getInsights(userId: string): Promise<InsightsData> {
-    // Fetch all decisions for the user (not deleted) with their options
+    // Fetch all decisions for the user (not deleted) with their options, pros_cons, and category
     // Use explicit relationship name to avoid ambiguity (decisions has two relationships to options table)
     const { data: decisions, error } = await supabase
       .from('decisions')
       .select(`
         *,
-        options!options_decision_id_fkey (id, display_order)
+        options!options_decision_id_fkey (
+          id,
+          display_order,
+          pros_cons (id)
+        ),
+        category:categories(id, name)
       `)
       .eq('user_id', userId)
       .is('deleted_at', null)
@@ -120,12 +164,71 @@ export class InsightsService {
     // Calculate category distribution
     const categoryDistribution: Record<string, number> = {};
     allDecisions.forEach(d => {
-      const category = d.category || 'Uncategorized';
+      const category = d.category?.name || 'Uncategorized';
       categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
     });
 
-    // Calculate decision score (simple formula: total decisions * 2, max 100)
-    const decisionScore = Math.min(100, totalDecisions * 2);
+    // Feature #215: Calculate Decision Score based on outcome rate, process quality, and follow-through
+    // Score is 0-100, composed of:
+    // - Outcome Rate (40 points): Positive outcome percentage
+    // - Process Quality (30 points): Based on thoroughness (options, pros/cons)
+    // - Follow-through (30 points): Outcome recording rate
+
+    let outcomeRateScore = 0;
+    let processQualityScore = 0;
+    let followThroughScore = 0;
+
+    // 1. Outcome Rate Score (40 points): Based on positive outcome percentage
+    if (decisionsWithOutcomes.length > 0) {
+      const positiveRate = positiveOutcomes / decisionsWithOutcomes.length;
+      // 40 points max: 100% positive outcomes = 40 points, 0% = 0 points
+      // Use a curve that rewards high performance: positiveRate^0.8 * 40
+      outcomeRateScore = Math.pow(positiveRate, 0.8) * 40;
+    }
+
+    // 2. Process Quality Score (30 points): Based on thoroughness
+    // Measure by average number of options and pros/cons per decision
+    if (totalDecisions > 0) {
+      let totalOptions = 0;
+      let totalProsCons = 0;
+
+      // Count options and pros_cons from the nested query result
+      allDecisions.forEach((decision: any) => {
+        const options = decision.options || [];
+        totalOptions += options.length;
+
+        options.forEach((option: any) => {
+          const prosCons = option.pros_cons || [];
+          totalProsCons += prosCons.length;
+        });
+      });
+
+      // Calculate averages
+      const avgOptions = totalOptions / totalDecisions;
+      const avgProsCons = totalOptions > 0 ? totalProsCons / totalOptions : 0;
+
+      // Process quality scoring:
+      // - Good: 2+ options, 2+ pros/cons per option (30 points)
+      // - Average: 2 options, 1 pro/con per option (20 points)
+      // - Basic: 1-2 options, minimal pros/cons (10 points)
+      const optionsScore = Math.min(15, avgOptions * 5); // Max 15 points for options
+      const prosConsScore = Math.min(15, avgProsCons * 5); // Max 15 points for pros/cons
+      processQualityScore = optionsScore + prosConsScore;
+    }
+
+    // 3. Follow-through Score (30 points): Based on outcome recording rate
+    // This measures how well users complete the decision lifecycle
+    if (totalDecisions > 0) {
+      const followThroughRate = decisionsWithOutcomes.length / totalDecisions;
+      // 30 points max: 100% follow-through = 30 points
+      // Use a gentle curve to encourage consistency
+      followThroughScore = followThroughRate * 30;
+    }
+
+    // Combine scores for final Decision Score (0-100)
+    const decisionScore = Math.min(100, Math.round(
+      outcomeRateScore + processQualityScore + followThroughScore
+    ));
 
     // Calculate score trend (compare this month vs last month)
     const now = new Date();
@@ -138,9 +241,23 @@ export class InsightsService {
       return date >= lastMonthStart && date < thisMonthStart;
     });
 
-    const thisMonthScore = Math.min(100, thisMonthDecisions.length * 10);
-    const lastMonthScore = Math.min(100, lastMonthDecisions.length * 10);
-    const scoreTrend = thisMonthScore - lastMonthScore;
+    // Calculate trend by comparing the change in score components
+    // This is a simplified trend calculation
+    const thisMonthDecisionsCount = thisMonthDecisions.length;
+    const lastMonthDecisionsCount = lastMonthDecisions.length;
+
+    // Trend is based on decision volume improvement (simplified)
+    // More accurate would be to calculate full score for each month, but that's expensive
+    let scoreTrend = 0;
+    if (lastMonthDecisionsCount > 0) {
+      const growthRate = (thisMonthDecisionsCount - lastMonthDecisionsCount) / lastMonthDecisionsCount;
+      scoreTrend = Math.round(growthRate * 10); // Scale to reasonable range
+    } else if (thisMonthDecisionsCount > 0) {
+      scoreTrend = 5; // Positive trend when starting from zero
+    }
+
+    // Clamp trend to reasonable bounds
+    scoreTrend = Math.max(-20, Math.min(20, scoreTrend));
 
     // Find best emotional state
     let bestEmotionalState: EmotionalPattern | null = null;
@@ -163,7 +280,7 @@ export class InsightsService {
 
     // Calculate top categories with outcomes
     const categoryStats: CategoryPattern[] = Object.entries(categoryDistribution).map(([category, count]) => {
-      const categoryDecisions = allDecisions.filter(d => (d.category || 'Uncategorized') === category);
+      const categoryDecisions = allDecisions.filter(d => (d.category?.name || 'Uncategorized') === category);
       const withOutcomes = categoryDecisions.filter(d => d.outcome).length;
       const positives = categoryDecisions.filter(d => d.outcome === 'better').length;
       const positiveRate = withOutcomes > 0 ? positives / withOutcomes : 0;
@@ -281,7 +398,7 @@ export class InsightsService {
       // Calculate positive rate for each hour
       const hourlyRates: Array<{ hour: number; rate: number; count: number }> = [];
       hourlyStats.forEach((stats, hour) => {
-        if (stats.count >= 2) { // Only consider hours with at least 2 decisions
+        if (stats.total >= 2) { // Only consider hours with at least 2 decisions
           const rate = stats.positive / stats.total;
           hourlyRates.push({ hour, rate, count: stats.total });
         }
@@ -320,6 +437,74 @@ export class InsightsService {
       };
     }
 
+    // Feature #210: Calculate confidence vs outcome correlation
+    let confidencePattern: ConfidencePattern | null = null;
+
+    // Filter decisions with both confidence level and outcome
+    const decisionsWithConfidenceAndOutcome = decisionsWithOutcomes.filter(d =>
+      d.confidence_level !== null && d.confidence_level !== undefined
+    );
+
+    if (decisionsWithConfidenceAndOutcome.length >= 5) {
+      // Categorize by confidence levels: low (1-2), medium (3), high (4-5)
+      let lowCount = 0, lowPositive = 0;
+      let mediumCount = 0, mediumPositive = 0;
+      let highCount = 0, highPositive = 0;
+
+      decisionsWithConfidenceAndOutcome.forEach(d => {
+        const confidence = d.confidence_level!;
+        const isPositive = d.outcome === 'better';
+
+        if (confidence <= 2) {
+          lowCount++;
+          if (isPositive) lowPositive++;
+        } else if (confidence === 3) {
+          mediumCount++;
+          if (isPositive) mediumPositive++;
+        } else { // confidence >= 4
+          highCount++;
+          if (isPositive) highPositive++;
+        }
+      });
+
+      const lowPositiveRate = lowCount > 0 ? lowPositive / lowCount : 0;
+      const mediumPositiveRate = mediumCount > 0 ? mediumPositive / mediumCount : 0;
+      const highPositiveRate = highCount > 0 ? highPositive / highCount : 0;
+
+      // Determine correlation type
+      // Positive correlation: higher confidence → higher success rate
+      // Negative correlation: higher confidence → lower success rate (overconfidence)
+      // Neutral: rates are similar
+      let correlation: string;
+
+      const rateDiff = highPositiveRate - lowPositiveRate;
+      const threshold = 0.15; // 15% difference threshold
+
+      if (Math.abs(rateDiff) < threshold) {
+        correlation = 'neutral'; // No significant correlation
+      } else if (rateDiff > 0) {
+        correlation = 'positive'; // Higher confidence correlates with better outcomes
+      } else {
+        correlation = 'negative'; // Higher confidence correlates with worse outcomes (overconfidence bias)
+      }
+
+      confidencePattern = {
+        lowConfidence: {
+          count: lowCount,
+          positiveRate: lowPositiveRate,
+        },
+        mediumConfidence: {
+          count: mediumCount,
+          positiveRate: mediumPositiveRate,
+        },
+        highConfidence: {
+          count: highCount,
+          positiveRate: highPositiveRate,
+        },
+        correlation,
+      };
+    }
+
     return {
       totalDecisions,
       decisionsWithOutcomes: decisionsWithOutcomes.length,
@@ -334,6 +519,7 @@ export class InsightsService {
       topCategories,
       positionBias,
       timingPattern, // Feature #90
+      confidencePattern, // Feature #210: Confidence vs outcome correlation
     };
   }
 }

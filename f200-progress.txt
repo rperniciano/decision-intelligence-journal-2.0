@@ -1,0 +1,39 @@
+[FEATURE #200] Filter by date range works
+Date: 2026-01-20
+Status: ✅ IMPLEMENTED AND VERIFIED PASSING
+
+Implementation:
+---------------
+Backend (apps/api/src/services/decisionServiceNew.ts):
+- Added fromDate and toDate parameters to getDecisions() filter interface
+- Applied date range filtering to both count query and main query
+- Converts date-only strings (YYYY-MM-DD) to proper ISO timestamps
+- Uses Supabase's gte/lte operators for created_at column
+
+Frontend (apps/web/src/pages/HistoryPage.tsx):
+- Added 'Custom Range' option to timeFilterOptions
+- Added customFromDate and customToDate state variables
+- Added date input fields that appear when timeFilter === 'custom_range'
+- Date inputs update URL parameters (fromDate, toDate)
+- URL persistence: Filter state preserved across page refreshes
+- 'Remove time filter' button clears custom range
+- API query includes fromDate/toDate when custom_range is active
+
+Testing Results:
+----------------
+✅ Created 4 test decisions with different dates
+✅ Test 1: Date range Jan 14 - Jan 20 - Correctly showed 2 decisions
+✅ Test 2: Single day filter (Jan 20) - Correctly showed 1 decision
+✅ Test 3: Remove filter - Correctly showed all 4 decisions
+✅ Test 4: URL persistence - Date range preserved in URL and inputs
+
+Screenshots:
+-----------
+1. verification/f200-custom-range-ui.png
+2. verification/f200-date-range-filter-working.png
+3. verification/f200-today-only-filter.png
+
+Conclusion:
+-----------
+Feature #200 is WORKING CORRECTLY - ALL VERIFICATION STEPS PASSED
+Progress: 268/291 features passing (92.1%)
