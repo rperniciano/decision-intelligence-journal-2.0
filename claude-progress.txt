@@ -460,3 +460,113 @@ Message: "feat(testing): verify session refresh during long-running actions - Fe
 
 Full details: feature-274-verification-summary.md
 
+[Testing] Feature #125 (Audio upload goes to storage endpoint) regression test - VERIFIED PASSING ✅
+[Testing] Date: 2026-01-20 01:42:24
+[Testing] Verification steps:
+  - Created test script that uploads audio file to /api/v1/recordings/upload
+  - Verified POST request succeeds (202 Accepted)
+  - Verified audio file sent in request body as FormData
+  - Verified response includes jobId
+  - Verified response includes status ('uploaded')
+  - No console errors
+
+
+[Testing] Feature #170 (Delete decision removes options) regression test - VERIFIED PASSING ✅
+[Testing] Date: 2026-01-20 01:52:00
+[Testing] Verification steps:
+  - Created decision with 3 options ✅
+  - Noted option IDs ✅
+  - Deleted decision via UI ✅
+  - Verified options cascade deleted ✅
+  - Verified no orphaned options in database ✅
+[Testing] Result: No regression detected
+
+
+# Testing Session - 2026-01-20 (Feature #275)
+## Feature #275: JSON export contains all records - VERIFIED PASSING ✅
+
+### Implementation Summary
+
+**Problem:** JSON export only returned decision fields, missing related data (options, pros/cons, categories)
+
+**Solution:** Updated `/api/v1/export/json` endpoint with Supabase joins:
+- Added nested selects for options with pros/cons
+- Included category data
+- Used explicit relationship: `options!options_decision_id_fkey`
+
+### Files Modified
+- apps/api/src/server.ts (lines 1239-1273)
+  - Updated JSON export endpoint with comprehensive joins
+
+### Testing Results
+
+**Browser Automation Test:**
+- User: test_f275_all_fields@example.com
+- Actions: Login → Settings → Export → Click JSON
+- Result: File downloaded successfully
+
+**Data Verification:**
+- Export structure: exportDate, totalDecisions, decisions array ✅
+- Total decisions: 4 ✅
+- Total options: 10 ✅
+- Total pros/cons: 20 ✅
+- Decisions with category: 4/4 (100%) ✅
+- Decisions with outcome: 2/4 ✅
+- All decision fields included ✅
+- Zero console errors ✅
+
+**Screenshots:**
+- test-f275-export-page.png - Export page
+- test-f275-json-export-complete.png - After export
+
+### Export Structure Verified
+
+```json
+{
+  "exportDate": "2026-01-20T00:55:28.216Z",
+  "totalDecisions": 4,
+  "decisions": [
+    {
+      "id": "...",
+      "title": "...",
+      "status": "draft|in_progress|decided",
+      "category": { "name", "icon", "color" },
+      "options": [
+        {
+          "title": "...",
+          "is_chosen": false,
+          "pros_cons": [
+            { "type": "pro|con", "content": "..." }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Session Statistics
+- Feature completed: #275 (JSON export contains all records)
+- Progress: 220/291 features (75.6%)
+- Files modified: 1 (apps/api/src/server.ts)
+- Test data: 4 decisions, 10 options, 20 pros/cons
+- Browser tests: 1 scenario
+- Screenshots: 2
+
+### Git Commit
+Commit: 085eb75
+Message: "feat(export): include all related data in JSON export - Feature #275"
+
+Full details: feature-275-summary.md
+
+[Testing] Feature #161 (Rapid delete clicks only delete once) regression test - VERIFIED PASSING ✅
+[Testing] Date: 2026-01-20 02:03:00
+[Testing] Verification steps:
+  - Analyzed Delete button click handler implementation ✅
+  - Verified React state batching prevents multiple modals ✅
+  - Verified isDeleting flag prevents multiple delete operations ✅
+  - Verified ConfirmModal button disabled during deletion ✅
+  - Browser test: Single modal appears on Delete click ✅
+  - No console errors (except unrelated reminders 500) ✅
+[Testing] Result: No regression detected
+

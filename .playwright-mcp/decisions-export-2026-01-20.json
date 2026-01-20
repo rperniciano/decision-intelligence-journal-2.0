@@ -1,0 +1,319 @@
+{
+  "exportDate": "2026-01-20T01:08:35.107Z",
+  "totalDecisions": 3,
+  "decisions": [
+    {
+      "id": "0b7f38d0-0455-4e05-8a42-109a2d5bac0b",
+      "user_id": "27643135-dc78-4440-9e4e-e87f79334528",
+      "title": "F276_TEST: Job Offer with Nested Data",
+      "description": "Testing JSON export with complete nested structure",
+      "raw_transcript": null,
+      "audio_url": null,
+      "audio_duration_seconds": null,
+      "category_id": "18fac869-da1a-4f45-a5c0-2cb29261d6d0",
+      "tags": [],
+      "detected_emotional_state": "neutral",
+      "emotional_confidence": null,
+      "status": "decided",
+      "decided_at": "2026-01-20T01:08:00.178+00:00",
+      "chosen_option_id": null,
+      "outcome": null,
+      "outcome_notes": "F276_OUTCOME: Great decision, salary increased by 40%",
+      "outcome_audio_url": null,
+      "outcome_recorded_at": "2026-01-20T01:08:00.179+00:00",
+      "follow_up_date": null,
+      "follow_up_notified": false,
+      "follow_up_notification_sent_at": null,
+      "hour_of_day": 2,
+      "day_of_week": 2,
+      "decision_duration_hours": 0,
+      "deleted_at": null,
+      "created_at": "2026-01-20T01:08:00.591032+00:00",
+      "updated_at": "2026-01-20T01:08:00.591032+00:00",
+      "category": {
+        "id": "18fac869-da1a-4f45-a5c0-2cb29261d6d0",
+        "icon": "briefcase",
+        "name": "F276_Career",
+        "slug": "f276-career",
+        "color": "#00d4aa"
+      },
+      "options": [
+        {
+          "id": "8fea7b98-53f5-4e10-9e62-9d962b01c4d3",
+          "title": "F276: Accept the offer",
+          "is_chosen": true,
+          "pros_cons": [
+            {
+              "id": "a9b34fd0-aed3-4f59-b7c2-50b54ab3966b",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: 40% salary increase",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "8b175d0d-9310-4e5b-8e21-01429f6520f0",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: Better health insurance",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "cbf60971-a794-4376-ae68-aa1ccea43c69",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: Remote work flexibility",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "e0d91014-e3a4-4ad7-be9e-77888d0aeec0",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: Longer commute",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "42bdd674-ba12-4aa2-9096-436d7f868f8e",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: New team to learn",
+              "ai_extracted": true,
+              "display_order": 0
+            }
+          ],
+          "description": "Higher salary, better benefits",
+          "ai_extracted": true,
+          "display_order": 0
+        },
+        {
+          "id": "0e60a3ff-2207-46fb-8fd6-a462437aa7a0",
+          "title": "F276: Stay at current job",
+          "is_chosen": false,
+          "pros_cons": [
+            {
+              "id": "3c25a535-b6fe-41d3-aad0-bcb3b198857d",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: Lower salary",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "c0542f8a-5cf1-4244-85f6-bbaf80134fdd",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: Limited growth",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "c2c78986-7541-42a7-95d4-18134e16afde",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: No remote work",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "30d66455-9d2c-45c8-949a-05e2d3a55d33",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: Familiar team",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "c22c1f81-567c-4f00-a34f-65dddc0c101e",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: Short commute",
+              "ai_extracted": true,
+              "display_order": 0
+            }
+          ],
+          "description": "Familiar environment",
+          "ai_extracted": true,
+          "display_order": 0
+        }
+      ]
+    },
+    {
+      "id": "732fc908-b82b-4bf5-8041-5695e40a16b7",
+      "user_id": "27643135-dc78-4440-9e4e-e87f79334528",
+      "title": "F276_TEST: Job Offer with Nested Data",
+      "description": "Testing JSON export with complete nested structure",
+      "raw_transcript": null,
+      "audio_url": null,
+      "audio_duration_seconds": null,
+      "category_id": "18fac869-da1a-4f45-a5c0-2cb29261d6d0",
+      "tags": [],
+      "detected_emotional_state": "neutral",
+      "emotional_confidence": null,
+      "status": "decided",
+      "decided_at": "2026-01-20T01:07:36.408+00:00",
+      "chosen_option_id": null,
+      "outcome": null,
+      "outcome_notes": "F276_OUTCOME: Great decision, salary increased by 40%",
+      "outcome_audio_url": null,
+      "outcome_recorded_at": "2026-01-20T01:07:36.409+00:00",
+      "follow_up_date": null,
+      "follow_up_notified": false,
+      "follow_up_notification_sent_at": null,
+      "hour_of_day": 2,
+      "day_of_week": 2,
+      "decision_duration_hours": 0,
+      "deleted_at": null,
+      "created_at": "2026-01-20T01:07:36.837257+00:00",
+      "updated_at": "2026-01-20T01:07:36.837257+00:00",
+      "category": {
+        "id": "18fac869-da1a-4f45-a5c0-2cb29261d6d0",
+        "icon": "briefcase",
+        "name": "F276_Career",
+        "slug": "f276-career",
+        "color": "#00d4aa"
+      },
+      "options": [
+        {
+          "id": "b235cce7-b400-497d-81f7-6472cfc04caf",
+          "title": "F276: Accept the offer",
+          "is_chosen": true,
+          "pros_cons": [
+            {
+              "id": "79d1b2b4-82ad-4e8d-9141-8fff59444764",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: 40% salary increase",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "ca48465a-011c-4744-99ae-e2df547b0da6",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: Better health insurance",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "7fb0ffee-a7e9-4993-bf20-835b6c9bd507",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: Remote work flexibility",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "6582194b-24cd-49b9-93cf-79d7dff5d442",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: Longer commute",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "35933531-683b-44cd-82c4-e904e8a0ca73",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: New team to learn",
+              "ai_extracted": true,
+              "display_order": 0
+            }
+          ],
+          "description": "Higher salary, better benefits",
+          "ai_extracted": true,
+          "display_order": 0
+        },
+        {
+          "id": "da8c77fb-6355-42bf-be8d-b0d240141564",
+          "title": "F276: Stay at current job",
+          "is_chosen": false,
+          "pros_cons": [
+            {
+              "id": "5d426684-9411-4a94-b7a0-6fed3ef2709b",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: Familiar team",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "6ed42432-f76d-49e0-822b-6487d32e2435",
+              "type": "pro",
+              "weight": 5,
+              "content": "F276_PRO: Short commute",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "e7957420-1876-4449-a164-75a256c6b542",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: Lower salary",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "8f1c043b-6409-4652-9fc8-6a82f32d1dd3",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: Limited growth",
+              "ai_extracted": true,
+              "display_order": 0
+            },
+            {
+              "id": "cafb7686-bf93-48bc-b4c5-32820791d733",
+              "type": "con",
+              "weight": 5,
+              "content": "F276_CON: No remote work",
+              "ai_extracted": true,
+              "display_order": 0
+            }
+          ],
+          "description": "Familiar environment",
+          "ai_extracted": true,
+          "display_order": 0
+        }
+      ]
+    },
+    {
+      "id": "f38e6708-37e7-4521-90ca-821827a276fb",
+      "user_id": "27643135-dc78-4440-9e4e-e87f79334528",
+      "title": "F276_TEST: Job Offer with Nested Data",
+      "description": "Testing JSON export with complete nested structure",
+      "raw_transcript": null,
+      "audio_url": null,
+      "audio_duration_seconds": null,
+      "category_id": "18fac869-da1a-4f45-a5c0-2cb29261d6d0",
+      "tags": [],
+      "detected_emotional_state": "neutral",
+      "emotional_confidence": null,
+      "status": "decided",
+      "decided_at": "2026-01-20T01:06:42.881+00:00",
+      "chosen_option_id": null,
+      "outcome": null,
+      "outcome_notes": "F276_OUTCOME: Great decision, salary increased by 40%",
+      "outcome_audio_url": null,
+      "outcome_recorded_at": "2026-01-20T01:06:42.882+00:00",
+      "follow_up_date": null,
+      "follow_up_notified": false,
+      "follow_up_notification_sent_at": null,
+      "hour_of_day": 2,
+      "day_of_week": 2,
+      "decision_duration_hours": 0,
+      "deleted_at": null,
+      "created_at": "2026-01-20T01:06:43.312735+00:00",
+      "updated_at": "2026-01-20T01:06:43.312735+00:00",
+      "category": {
+        "id": "18fac869-da1a-4f45-a5c0-2cb29261d6d0",
+        "icon": "briefcase",
+        "name": "F276_Career",
+        "slug": "f276-career",
+        "color": "#00d4aa"
+      },
+      "options": []
+    }
+  ]
+}
