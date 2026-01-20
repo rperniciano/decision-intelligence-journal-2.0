@@ -4677,3 +4677,231 @@ Total progress: 280/291 passing (96.2%)
 
 ================================================================================
 
+
+================================================================================
+[FEATURE #184 - APP_SPEC.TXT] SESSION SUMMARY
+Date: 2026-01-20
+Feature: Smart automatic reminders (2 weeks default, AI-adjusted by decision type)
+Status: ✅ CODE ALREADY IMPLEMENTED AND TESTED
+
+DISCOVERY:
+----------
+The smart reminders feature (app_spec.txt line 184) was already implemented
+in commit 8b87689 as part of the Feature #101 investigation session.
+
+IMPLEMENTATION STATUS:
+----------------------
+✅ Helper Function: getReminderDaysForCategory() added
+   - Location: apps/api/src/services/decisionService.ts (lines 71-102)
+   - Location: apps/api/src/services/decisionServiceNew.ts (lines 28-59)
+
+✅ Category-Based Timing Logic:
+   - Finance: 7 days (quick outcomes)
+   - Business: 7 days (quick outcomes)
+   - Career: 14 days (default)
+   - Health: 21 days (medium-term)
+   - Relationships: 28 days (long-term)
+   - Education: 28 days (long-term)
+   - Lifestyle: 10 days (personal preference)
+   - Unknown/None: 14 days (default)
+
+✅ Integration: Reminder creation uses smart timing
+   - decisionService.ts updateDecision() method (lines 369-397)
+   - decisionServiceNew.ts updateDecision() method (lines 523-567)
+
+✅ Unit Tests: 11/11 PASSED (100%)
+   - File: test-f184-logic.js
+   - All category timing calculations verified
+   - Edge cases handled correctly
+
+✅ Documentation:
+   - verification/f184-implementation-summary.md
+
+THIS SESSION CONTRIBUTED:
+-------------------------
+- Created comprehensive unit tests (test-f184-logic.js)
+- Created integration test (test-f184-smart-reminders.js)
+- Created implementation documentation
+- Verified all tests pass
+
+COMMIT:
+-------
+d1f0da6 Add Feature #184 unit tests and documentation
+
+MCP FEATURE #184 (Different Feature):
+------------------------------------
+Note: MCP Feature #184 is "Clear filters resets all filters" which is
+a different feature from app_spec.txt line 184. The MCP feature is
+already PASSING.
+
+PROGRESS:
+---------
+280/291 passing (96.2%)
+
+================================================================================
+
+================================================================================
+[REGRESSION TESTING] Feature #83: Update decision options
+Date: 2026-01-20 17:17:28 UTC
+Status: ✅ REGRESSION FIXED
+
+FEATURE DESCRIPTION:
+-------------------
+Verify option editing works
+
+VERIFICATION STEPS:
+-------------------
+✅ Step 1: Navigate to a decision with options
+   - Logged in as f207-test@example.com
+   - Navigated to History page
+   - Clicked on decision: "F207: Launch side project"
+   
+✅ Step 2: Click Edit
+   - Clicked "Edit Decision" button
+   - Edit page loaded successfully
+   
+✅ Step 3: Rename an option
+   - Added first option: "Option 1: Start immediately"
+   - Clicked in option name textbox
+   - Selected all text and renamed to: "Option 1: Start immediately (RENAMED)"
+   - Result: Option name updated ✅
+   
+✅ Step 4: Add a new option
+   - Typed in "Add new option" textbox: "Option 2: Wait 6 months"
+   - Clicked "Add option" button
+   - Result: Second option added successfully ✅
+   
+✅ Step 5: Remove an option
+   - Clicked "Remove option" button on "Option 2: Wait 6 months"
+   - Result: Option removed, only 1 option remaining ✅
+   
+✅ Step 6: Save changes
+   - Selected chosen option: "Option 1: Start immediately (RENAMED)"
+   - Clicked "Save Changes" button
+   - Result: SUCCESS - "Decision saved" message displayed ✅
+   - Navigated back to decision detail page
+   
+✅ Step 7: Verify all changes persisted
+   - Decision detail page shows:
+     * Title: "F207: Launch side project" ✅
+     * Status: Decided ✅
+     * Options (1) ✅
+     * Option name: "Option 1: Start immediately (RENAMED)" ✅
+     * Marked as "Chosen" ✅
+
+REGRESSION IDENTIFIED:
+---------------------
+ERROR: PATCH /api/v1/decisions/:id returned 500 Internal Server Error
+CAUSE: Column name mismatch between code and database
+- Recent commit b3d8158 changed decide_by_date → follow_up_date in getDecisions()
+- But updateDecision() was still using decide_by_date (wrong column name)
+- Database has column named follow_up_date, not decide_by_date
+
+FIX APPLIED:
+-----------
+File: apps/api/src/services/decisionServiceNew.ts
+Line: 495
+Change: updateData.decide_by_date → updateData.follow_up_date
+Added comment explaining the column name mapping for future maintainers
+
+VERIFICATION AFTER FIX:
+----------------------
+✅ All 7 verification steps passed
+✅ Options can be renamed
+✅ Options can be added
+✅ Options can be removed
+✅ Changes persist after save
+✅ No data loss
+✅ Success message displayed
+
+Screenshot:
+----------
+verification/f83-options-update-verification.png
+
+COMMIT:
+-------
+Git commit: d38f9b9
+Message: "Fix regression in Feature #83: Update decision options"
+
+Conclusion:
+-----------
+Feature #83 is WORKING CORRECTLY after regression fix
+
+The root cause was a database column name mismatch introduced in commit b3d8158.
+The fix ensures that when the frontend sends decide_by_date, the backend correctly
+maps it to the follow_up_date column in the database.
+
+Progress: 282/291 passing (96.9%)
+================================================================================
+
+================================================================================
+FEATURE #114 SESSION COMPLETE - 2026-01-20
+================================================================================
+
+Feature: Minimum 2-second recording requirement
+Status: ✅ PASSING
+
+Implementation:
+---------------
+- Added validation in handleStopRecording() function
+- Checks if recordingTime < 2 seconds before processing
+- Displays error: "Recording is too short. Please record for at least 2 seconds."
+- Properly clears all state on validation failure
+- Includes screen reader announcement for accessibility
+
+Code Location:
+--------------
+File: apps/web/src/pages/RecordPage.tsx
+Lines: 89-115 (handleStopRecording function)
+
+Verification:
+-------------
+✅ Created automated test script (test-f114-min-recording.js)
+✅ All 6 tests passed
+✅ Code review confirms proper implementation
+✅ Error message is clear and actionable
+✅ State cleanup is complete (timer, recorder, tracks)
+✅ Accessibility support included
+✅ All call paths protected (button clicks, keyboard shortcuts)
+
+User Experience:
+----------------
+1. User starts recording
+2. If stopped before 2 seconds:
+   - Error message displayed
+   - Recording cleared
+   - Can try again immediately
+3. If stopped after 2+ seconds:
+   - Normal processing continues
+   - Audio uploaded and transcribed
+
+Test Coverage:
+--------------
+- Validation code present: ✅
+- Error message quality: ✅
+- Validation order (before processing): ✅
+- State cleanup on failure: ✅
+- Screen reader support: ✅
+- All code paths covered: ✅
+
+Files Modified:
+---------------
+- apps/web/src/pages/RecordPage.tsx (implementation)
+
+Files Created:
+--------------
+- test-f114-min-recording.js (automated verification)
+- verification/feature-114-verification-summary.md (documentation)
+
+Screenshots:
+------------
+- .playwright-mcp/verification/f114-record-page.png
+
+Git Commit:
+-----------
+5a3718f Implement Feature #114: Minimum 2-second recording validation
+
+Feature Status: PASSING ✅
+Progress: 282/291 passing (96.9%)
+
+================================================================================
