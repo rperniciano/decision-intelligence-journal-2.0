@@ -1386,11 +1386,47 @@ async function registerRoutes() {
     });
 
     // Outcomes
-    api.get('/decisions/:id/outcomes', async (request) => {
+    api.get('/decisions/:id/outcomes', async (request, reply) => {
       const { id } = request.params as { id: string };
       const userId = request.user?.id;
-      // TODO: Implement outcomes list
-      return { outcomes: [], decisionId: id, userId };
+
+      if (!userId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
+
+      // Verify the decision belongs to the user (Feature #15)
+      // Don't select outcome_satisfaction as the column may not exist
+      const { data: decision, error: decisionError } = await supabase
+        .from('decisions')
+        .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (decisionError || !decision) {
+        // Decision not found or doesn't belong to user - return 404 to avoid leaking information
+        reply.code(404);
+        return { error: 'Not Found', message: 'Decision not found' };
+      }
+
+      // Return outcome data if it exists
+      if (decision.outcome) {
+        return {
+          outcomes: [{
+            id: decision.id,
+            result: decision.outcome,
+            notes: decision.outcome_notes,
+            satisfaction: null, // outcome_satisfaction column doesn't exist in DB
+            recordedAt: decision.outcome_recorded_at
+          }],
+          decisionId: id
+        };
+      }
+
+      // No outcome recorded yet
+      return { outcomes: [], decisionId: id };
     });
 
     api.post('/decisions/:id/outcomes', async (request, reply) => {
