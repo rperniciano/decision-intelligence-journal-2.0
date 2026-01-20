@@ -17,12 +17,18 @@ export class AsyncVoiceService {
     filename: string
   ): Promise<void> {
     try {
-      // Step 1: Upload audio (already done in sync part, but update status)
+      // Step 1: Upload audio if not already uploaded
       jobManager.updateStatus(jobId, 'uploaded', 0.1);
 
-      // Upload to storage
-      const { url: audioUrl } = await VoiceService.uploadAudio(userId, audioBuffer, filename);
-      jobManager.updateJob(jobId, { audioUrl });
+      // Check if audio URL already exists (uploaded in sync part)
+      let audioUrl = jobManager.getJob(jobId)?.audioUrl;
+
+      if (!audioUrl) {
+        // Upload to storage
+        const uploadResult = await VoiceService.uploadAudio(userId, audioBuffer, filename);
+        audioUrl = uploadResult.url;
+        jobManager.updateJob(jobId, { audioUrl });
+      }
 
       // Step 2: Transcribe
       jobManager.updateStatus(jobId, 'transcribing', 0.3);

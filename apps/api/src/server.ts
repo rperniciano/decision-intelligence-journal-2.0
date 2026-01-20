@@ -11,6 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from './middleware/auth.js';
 import { DecisionService } from './services/decisionServiceNew.js';
 import { AsyncVoiceService } from './services/asyncVoiceService.js';
+import { VoiceService } from './services/voiceService.js';
 import { jobManager } from './services/jobManager.js';
 import { InsightsService } from './services/insightsService.js';
 import { loginWithRateLimit } from './services/loginRateLimitService.js';
@@ -869,10 +870,18 @@ async function registerRoutes() {
         // Read file buffer
         const buffer = await data.toBuffer();
 
-        // Create a processing job
-        const job = jobManager.createJob(userId, '', null);
+        // Feature #125: Upload audio to storage and get URL immediately
+        const { url: audioUrl } = await VoiceService.uploadAudio(
+          userId,
+          buffer,
+          data.filename
+        );
 
-        // Start async processing in the background
+        // Create a processing job with audio URL
+        const job = jobManager.createJob(userId, '', null);
+        jobManager.updateJob(job.id, { audioUrl });
+
+        // Start async processing in the background (transcription, extraction)
         AsyncVoiceService.startBackgroundProcessing(
           job.id,
           userId,
@@ -880,11 +889,12 @@ async function registerRoutes() {
           data.filename
         );
 
-        // Return job ID immediately for polling
+        // Return job ID and audio URL immediately
         return reply.code(202).send({
           jobId: job.id,
           status: job.status,
-          message: 'Processing started. Poll /recordings/:id/status for updates.',
+          audioUrl: audioUrl,
+          message: 'Audio uploaded. Processing started. Poll /recordings/:id/status for updates.',
         });
       } catch (error) {
         server.log.error(error);
