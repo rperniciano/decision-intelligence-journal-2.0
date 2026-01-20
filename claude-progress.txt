@@ -763,3 +763,113 @@ The application demonstrates production-ready console hygiene:
 **Session Outcome**: Feature #286 marked as PASSING
 **Total Features Passing**: 231/291 (79.4%)
 **Confidence Level**: HIGH - Comprehensive testing across all pages and flows
+
+[Testing] Feature #106 Regression Test - COMPLETED
+Date: 2026-01-20
+
+REGRESSION DETECTED AND FIXED
+
+**Issue**: CreateDecisionPage was missing minimum title length validation
+- Allowed 1-character titles to be submitted
+- No field-level error highlighting
+- No specific error message
+
+**Fix Applied**:
+1. Added titleError state field
+2. Added minimum 3 character validation in handleSave()
+3. Added handleTitleChange() to clear errors on typing
+4. Added conditional CSS classes for red error border
+5. Added ARIA attributes for accessibility (aria-invalid, aria-describedby)
+6. Added field-level error message display below title input
+
+**Verification**:
+✅ 1-character title shows error: "Title must be at least 3 characters long"
+✅ Field highlighted with red border
+✅ Error clears when user types valid input
+✅ Valid title (3+ chars) submits successfully
+✅ Zero console errors related to validation
+✅ Accessibility attributes present
+
+**Screenshots**:
+- feature-106-regression-1-char-title-accepted.png
+- feature-106-validation-error-displayed.png
+- feature-106-valid-title-submitted-successfully.png
+
+**Files Modified**:
+- apps/web/src/pages/CreateDecisionPage.tsx
+
+**Status**: Feature #106 MARKED AS PASSING
+
+[Testing] Session Complete - Feature #106 Regression Test
+- Started: 2026-01-20 05:12 UTC
+- Completed: 2026-01-20 05:19 UTC
+- Duration: ~7 minutes
+- Status: REGRESSION DETECTED AND FIXED
+
+**Outcome**:
+1. Retrieved Feature #106 for regression testing
+2. Discovered regression: CreateDecisionPage missing title validation
+3. Marked feature as FAILING
+4. Fixed the regression:
+   - Added minimum 3 character validation
+   - Added field-level error state (titleError)
+   - Added red border highlighting
+   - Added error message display
+   - Added ARIA accessibility attributes
+   - Added auto-clear on user input
+5. Verified fix with browser automation:
+   - 1-char title rejected with error message ✅
+   - Field highlighted with red border ✅
+   - Error clears on valid input ✅
+   - Valid title submits successfully ✅
+6. Marked feature as PASSING
+7. Created summary: feature-106-regression-test-summary.md
+
+**Screenshots Taken**:
+- feature-106-regression-1-char-title-accepted.png
+- feature-106-validation-error-displayed.png
+- feature-106-valid-title-submitted-successfully.png
+
+**Files Modified**:
+- apps/web/src/pages/CreateDecisionPage.tsx
+
+**Feature Status**: #106 NOW PASSING ✅
+
+=== Feature #108 Regression Test - mar 20 gen 2026 05:24:07 ===
+Status: ✅ NO REGRESSION DETECTED
+
+Verification Steps Completed:
+1. ✅ Created and deleted a decision (ID: 6ace5b45-c5b5-4bd0-86ed-e2bdc5b879cf)
+2. ✅ Navigated to deleted decision URL
+3. ✅ Verified 'Decision not found' message displays
+4. ✅ Verified no crash
+5. ✅ Verified 'Back to History' navigation button available
+
+Technical Verification:
+- API returns 404 for deleted decision (expected)
+- Error page renders cleanly with proper message
+- Navigation button works correctly
+- Zero JavaScript runtime errors
+- Proper ARIA attributes for accessibility
+
+Conclusion: Feature #108 is PASSING - no regression found.
+
+=== Feature #108 Regression Test - mar 20 gen 2026 05:24:34 ===
+Status: ✅ NO REGRESSION DETECTED
+
+Verification Steps Completed:
+1. ✅ Created and deleted a decision (ID: 6ace5b45-c5b5-4bd0-86ed-e2bdc5b879cf)
+2. ✅ Navigated to deleted decision URL
+3. ✅ Verified 'Decision not found' message displays
+4. ✅ Verified no crash
+5. ✅ Verified 'Back to History' navigation button available
+
+Technical Verification:
+- API returns 404 for deleted decision (expected)
+- Error page renders cleanly with proper message
+- Navigation button works correctly
+- Zero JavaScript runtime errors
+- Proper ARIA attributes for accessibility
+
+Conclusion: Feature #108 is PASSING - no regression found.
+
