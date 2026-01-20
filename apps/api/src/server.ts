@@ -372,6 +372,36 @@ async function registerRoutes() {
       }
     });
 
+    // Restore a single soft-deleted decision
+    api.post('/decisions/:id/restore', async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        if (!id) {
+          return reply.code(400).send({ error: 'Decision ID is required' });
+        }
+
+        const decision = await DecisionService.restoreDecision(id, userId);
+
+        if (!decision) {
+          return reply.code(404).send({ error: 'Decision not found or unauthorized' });
+        }
+
+        return {
+          message: 'Decision restored successfully',
+          decision
+        };
+      } catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
     // Bulk permanent delete (hard delete from database)
     api.post('/decisions/bulk-permanent-delete', async (request, reply) => {
       try {
