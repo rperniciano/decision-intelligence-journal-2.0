@@ -1049,3 +1049,74 @@ Screenshots:
 Conclusion: Feature #72 is PASSING - no regression found.
 
 ---
+
+=== Feature #227: Multiple notifications don't overlap badly - COMPLETED ✅ ===
+Date: 2026-01-20
+
+Status: PASSING
+
+Verification Summary:
+- ✅ Triggered 5 toasts rapidly - all appeared successfully
+- ✅ Toasts stack vertically with proper spacing (gap-2)
+- ✅ All toasts are clearly readable with glassmorphism design
+- ✅ Individual close buttons on each toast
+- ✅ Auto-dismiss after 3 seconds
+- ✅ Zero console errors
+
+Implementation Details:
+- Container uses flex flex-col for vertical stacking
+- Fixed positioning at top-4 prevents overlap
+- pointer-events-none on container, pointer-events-auto on toasts
+- Each toast has unique onClose callback
+- AnimatePresence for smooth enter/exit animations
+- Spring physics for natural motion
+
+Screenshots:
+- verification/feature-227-multiple-toasts-stacked.png (5 toasts)
+- verification/feature-227-four-toasts-stacked-final.png (4 toasts)
+- verification/feature-227-three-toasts-before-dismissal.png (3 toasts)
+
+Files Modified:
+- apps/web/src/components/Toast.tsx (already fixed in previous session)
+- apps/web/src/contexts/ToastContext.tsx (already fixed in previous session)
+
+Test Method:
+- Logged in as toast-test-1768883856141@example.com
+- Navigated to Settings page
+- Rapidly clicked 'Outcome Reminders' toggle
+- Verified toasts stack vertically
+- Verified individual close buttons present
+
+Feature #227 marked as PASSING
+
+Commit: e7cc0f3
+
+---
+
+
+=== Feature #213 Regression Test - mar 20 gen 2026 05:56:59 ===
+Status: ✅ NO REGRESSION DETECTED
+
+Feature: Satisfaction rating within range
+
+API Validation Tests:
+- satisfaction=0: ✅ REJECTED (400 - 'Satisfaction must be between 1 and 5')
+- satisfaction=6: ✅ REJECTED (400 - 'Satisfaction must be between 1 and 5')
+- satisfaction=-1: ✅ REJECTED (400 - 'Satisfaction must be between 1 and 5')
+- satisfaction=1.5: ✅ REJECTED (400 - 'Satisfaction must be an integer')
+- satisfaction=5: ✅ ACCEPTED (200)
+- satisfaction=1: ✅ ACCEPTED (200)
+
+UI Testing:
+- Opened outcome modal ✅
+- Observed 1-5 star rating system ✅
+- Selected rating and result ✅
+- Recorded outcome successfully ✅
+- Zero console errors ✅
+
+Feature #213 is PASSING - no regression found.
+
+Summary: feature-213-regression-test-summary.md
+Test Script: test-f213-validation.js
+Test User: f213-test-1768884740999@example.com
+
