@@ -14,15 +14,25 @@ const supabase = createClient(
 );
 
 async function main() {
-  const { data, error } = await supabase
-    .from('users')
-    .select('email, name')
-    .limit(5);
+  const { data: { users }, error } = await supabase.auth.admin.listUsers();
 
   if (error) {
     console.error('Error:', error);
+    return;
+  }
+
+  console.log('Recent test users (last 10):');
+  const testUsers = users.filter(u => u.email.includes('test') || u.email.includes('feature')).slice(-10);
+
+  if (testUsers.length === 0) {
+    console.log('No test users found. Listing all users:');
+    users.slice(-5).forEach(u => {
+      console.log(`- ${u.email} (Confirmed: ${u.email_confirmed_at ? 'Yes' : 'No'})`);
+    });
   } else {
-    console.log('Users:', JSON.stringify(data, null, 2));
+    testUsers.forEach(u => {
+      console.log(`- ${u.email} (Confirmed: ${u.email_confirmed_at ? 'Yes' : 'No'})`);
+    });
   }
 }
 

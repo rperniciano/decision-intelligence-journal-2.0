@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { BottomNav } from '../components/BottomNav';
 import { SkipLink } from '../components/SkipLink';
 import { EditProfileModal } from '../components/EditProfileModal';
@@ -177,6 +178,7 @@ type SettingsTab = typeof SETTINGS_TABS[number]['id'];
 export function SettingsPage() {
   const { user, signOut, session } = useAuth();
   const { showSuccess, showError } = useToast();
+  const { theme, setTheme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Get current tab from URL or default to 'profile'
@@ -416,8 +418,33 @@ export function SettingsPage() {
                 <SettingRow
                   icon={<PaletteIcon />}
                   label="Theme"
-                  description="Dark (default)"
-                  action={<ChevronRightIcon />}
+                  description={theme === 'oled' ? 'OLED Black' : 'Dark'}
+                  action={
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setTheme('dark')}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          theme === 'dark'
+                            ? 'bg-accent text-bg-deep'
+                            : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                        }`}
+                        aria-label="Select Dark theme"
+                      >
+                        Dark
+                      </button>
+                      <button
+                        onClick={() => setTheme('oled')}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          theme === 'oled'
+                            ? 'bg-accent text-bg-deep'
+                            : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                        }`}
+                        aria-label="Select OLED Black theme"
+                      >
+                        OLED
+                      </button>
+                    </div>
+                  }
                 />
               </SettingSection>
             </div>

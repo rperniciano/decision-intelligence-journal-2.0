@@ -3,6 +3,7 @@ import { motion, MotionConfig } from 'framer-motion';
 import { lazy, Suspense } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SkipLink } from './components/SkipLink';
 
@@ -282,15 +283,16 @@ function NotFound() {
 function App() {
   return (
     <MotionConfig reducedMotion="user">
-      <ToastProvider>
-        <AuthProvider>
-          <BrowserRouter>
-          <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <BrowserRouter>
+            <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/onboarding" element={
             <Suspense fallback={<PageLoader />}>
               <OnboardingPage />
@@ -418,6 +420,7 @@ function App() {
           </BrowserRouter>
         </AuthProvider>
       </ToastProvider>
+      </ThemeProvider>
     </MotionConfig>
   );
 }

@@ -1,0 +1,27 @@
+[REGRESSION TESTING] Feature #282: Export then verify integrity
+Date: 2026-01-20 14:12:00
+Status: ✅ VERIFIED PASSING
+
+Test Results:
+- Created test decision with special chars, Unicode, numbers
+- Exported data via JSON format
+- Verified 10/10 integrity checks:
+  1. ✅ Title with unique identifier preserved
+  2. ✅ Special characters (@#$%^&*()_+-=[]{}|;:'",.<>?/~`) preserved
+  3. ✅ Unicode characters (ñ é ü 测试 🎯) preserved
+  4. ✅ Status field integrity (draft)
+  5. ✅ Created date integrity (2026-01-20T14:10:23.934+00:00)
+  6. ✅ Updated date integrity (matches created)
+  7. ✅ No data transformation errors - content preserved
+  8. ✅ Numeric fields integrity (hour_of_day=15, day_of_week=2)
+  9. ✅ Null fields preserved correctly
+  10. ✅ Export metadata accurate
+
+Browser Verification:
+- Navigation to /export successful
+- JSON export button functional
+- File downloaded: decisions-export-2026-01-20.json
+- No console errors
+- Screenshot saved: export-page-verification.png
+
+Conclusion: Feature #282 is WORKING CORRECTLY - NO REGRESSION DETECTED
