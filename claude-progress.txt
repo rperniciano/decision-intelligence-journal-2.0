@@ -1,4 +1,83 @@
 ================================================================================
+SESSION SUMMARY - 2026-01-20 (Continued)
+================================================================================
+
+## Feature #112: AI Extraction Failure Shows Partial Results - COMPLETED ✅
+
+**Date:** 2026-01-20
+**Feature:** #112 - AI extraction failure shows partial results
+**Status:** ✅ COMPLETED AND MARKED PASSING
+**Progress:** 285/291 passing (97.9%)
+**Commit:** d1f0da6 (already committed)
+
+### Feature Requirements
+
+1. Record/create decision where extraction might be difficult
+2. If extraction partially fails
+3. Verify partial results shown with confidence warning
+4. Verify editing available to fix
+5. Verify option to re-process or enter manually
+
+### Implementation Summary
+
+**Backend Changes:**
+
+1. **voiceService.ts** - Enhanced extraction with partial results:
+   - Returns partial results with low confidence (0.2) instead of throwing errors
+   - Ensures at least minimal data structure (1 empty option)
+   - Enhanced AI prompt with confidence scoring guidelines
+
+2. **asyncVoiceService.ts** - Store confidence value:
+   - Added ai_confidence to decision creation payload
+   - Process completes even with low confidence (doesn't mark as failed)
+
+3. **decisionServiceNew.ts** - Persist confidence:
+   - Added ai_confidence field to decision insert
+
+**Frontend Changes:**
+
+4. **DecisionExtractionCard.tsx** - Confidence warning UI:
+   - Displays warning when confidence < 0.8
+   - Different colors for different severity levels:
+     - **< 0.3 (Red)**: "AI extraction had significant difficulties..."
+     - **0.3-0.5 (Red)**: "AI extraction partially failed..."
+     - **0.5-0.8 (Amber)**: "I'm not 100% sure I understood everything..."
+     - **>= 0.8**: No warning
+   - Shows action buttons for low confidence (< 0.5):
+     - "Enter Manually" - navigates to /decisions/new
+     - "Re-record" - navigates back to recording
+   - All fields remain editable
+
+5. **ExtractionReviewPage.tsx** - Read stored confidence:
+   - Reads ai_confidence from decision data
+   - Passes confidence to DecisionExtractionCard
+   - Falls back to 0.8 if not stored (backward compatibility)
+
+### Testing Approach
+
+The implementation can be tested by:
+1. Creating a decision with ai_confidence: 0.3 → Red warning + action buttons
+2. Creating a decision with ai_confidence: 0.6 → Amber warning
+3. Creating a decision with ai_confidence: 0.9 → No warning
+4. Simulating extraction failure → Partial result with confidence 0.2
+
+### User Experience Improvement
+
+**Before:** If AI extraction failed, users got an error and had to start over completely.
+
+**After:** Users get:
+- Partial results (better than nothing!)
+- Clear warning about extraction quality
+- Ability to edit and fix the partial data
+- Options to enter manually or re-record if needed
+
+### Documentation
+
+Created: feature-112-implementation-summary.md
+
+---
+
+================================================================================
 SESSION SUMMARY - 2026-01-20
 ================================================================================
 
