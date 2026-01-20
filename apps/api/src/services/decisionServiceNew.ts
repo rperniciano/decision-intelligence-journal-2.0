@@ -299,7 +299,7 @@ export class DecisionService {
             .from('options')
             .insert({
               decision_id: decision.id,
-              title: opt.text || opt.title,
+              title: opt.name || opt.text || opt.title,
               display_order: i,
             })
             .select()
