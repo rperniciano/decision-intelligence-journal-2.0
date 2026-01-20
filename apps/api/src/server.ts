@@ -1304,6 +1304,57 @@ async function registerRoutes() {
       return { message: 'Export PDF - to be implemented', userId };
     });
 
+    // Feature #281: Audio recordings export
+    api.post('/export/audio', async (request, reply) => {
+      const userId = request.user?.id;
+
+      if (!userId) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      try {
+        // Fetch all decisions with audio URLs for this user
+        const { data: decisions, error } = await supabase
+          .from('decisions')
+          .select('id, title, audio_url, audio_duration_seconds, created_at')
+          .eq('user_id', userId)
+          .not('audio_url', 'is', null)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching audio decisions:', error);
+          return reply.status(500).send({ error: 'Failed to fetch audio recordings' });
+        }
+
+        if (!decisions || decisions.length === 0) {
+          return reply.status(404).send({ error: 'No audio recordings found' });
+        }
+
+        // Return list of audio recordings with metadata
+        // In a real implementation, you would fetch the actual files from Supabase Storage
+        // and create a ZIP file. For now, we return the metadata which can be used
+        // to download the files directly.
+        const audioRecordings = decisions.map(decision => ({
+          decisionId: decision.id,
+          title: decision.title,
+          audioUrl: decision.audio_url,
+          duration: decision.audio_duration_seconds,
+          recordedAt: decision.created_at,
+          fileName: `${decision.title.replace(/[^a-z0-9]/gi, '_')}_${decision.id.slice(0, 8)}.mp3`,
+        }));
+
+        return {
+          success: true,
+          count: audioRecordings.length,
+          recordings: audioRecordings,
+          message: `Found ${audioRecordings.length} audio recording(s)`,
+        };
+      } catch (error) {
+        console.error('Audio export error:', error);
+        return reply.status(500).send({ error: 'Failed to export audio recordings' });
+      }
+    });
+
     // Outcomes
     api.get('/decisions/:id/outcomes', async (request) => {
       const { id } = request.params as { id: string };

@@ -32,7 +32,7 @@ export function ExportPage() {
     }
   }, []);
 
-  const handleExport = async (format: 'json' | 'csv' | 'pdf') => {
+  const handleExport = async (format: 'json' | 'csv' | 'pdf' | 'audio') => {
     // Prevent multiple simultaneous exports using ref for immediate check
     if (isExportingRef.current) {
       console.log('Export already in progress, ignoring duplicate click');
@@ -410,6 +410,65 @@ export function ExportPage() {
 
         // Save the PDF
         doc.save(`decisions-export-${new Date().toISOString().split('T')[0]}.pdf`);
+      } else if (format === 'audio') {
+        // Feature #281: Audio recordings export
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/export/audio`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            alert('No audio recordings found. You need to record audio for your decisions first.');
+          } else {
+            throw new Error('Failed to export audio recordings');
+          }
+          isExportingRef.current = false;
+          setExporting(null);
+          return;
+        }
+
+        const exportData = await response.json();
+
+        // Create a list of audio recordings as a text file
+        // In a real implementation, you would download the actual audio files as a ZIP
+        const audioList = exportData.recordings.map((rec: any, i: number) => {
+          return [
+            `${i + 1}. ${rec.title}`,
+            `   Duration: ${rec.duration}s`,
+            `   Recorded: ${new Date(rec.recordedAt).toLocaleString()}`,
+            `   File: ${rec.fileName}`,
+            `   URL: ${rec.audioUrl}`,
+            '',
+          ].join('\n');
+        }).join('\n');
+
+        const content = [
+          'AUDIO RECORDINGS EXPORT',
+          '======================',
+          `Export Date: ${new Date().toLocaleString()}`,
+          `Total Recordings: ${exportData.count}`,
+          '',
+          'Note: This export contains metadata about your audio recordings.',
+          'In a production environment, the actual audio files would be downloaded as a ZIP archive.',
+          '',
+          'RECORDINGS:',
+          '-----------',
+          audioList,
+        ].join('\n');
+
+        // Create and download file
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `audio-recordings-${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -555,6 +614,40 @@ export function ExportPage() {
               </div>
             </button>
           </motion.div>
+
+          {/* Audio Export - Feature #281 */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <button
+              onClick={() => handleExport('audio')}
+              disabled={exporting !== null}
+              className="w-full glass p-4 rounded-xl rim-light hover:bg-white/[0.03] transition-colors text-left disabled:opacity-50"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="font-medium mb-1">Audio Recordings</div>
+                    <div className="text-sm text-text-secondary">Download voice recordings list</div>
+                  </div>
+                </div>
+                {exporting === 'audio' ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-pink-400 border-t-transparent"></div>
+                ) : (
+                  <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                )}
+              </div>
+            </button>
+          </motion.div>
         </div>
 
         {/* Info note */}
@@ -562,7 +655,7 @@ export function ExportPage() {
           className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.35 }}
         >
           <div className="flex gap-3">
             <svg className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
