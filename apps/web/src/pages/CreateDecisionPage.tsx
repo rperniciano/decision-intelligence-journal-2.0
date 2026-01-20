@@ -232,7 +232,17 @@ export function CreateDecisionPage() {
         }
       }
 
-      // Create decision
+      // Create decision with options atomically (Feature #165: Refresh during save doesn't corrupt data)
+      // By sending options in the initial POST, the backend handles everything in a single transaction
+      // This ensures that either everything is saved or nothing is saved - no partial/corrupt data
+      const optionsForApi = options
+        .filter(opt => opt.title.trim())
+        .map(opt => ({
+          name: opt.title,
+          pros: opt.pros,
+          cons: opt.cons,
+        }));
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions`, {
         method: 'POST',
         headers: {
@@ -246,6 +256,7 @@ export function CreateDecisionPage() {
           category: categoryName,
           emotional_state: emotionalState || undefined,
           decide_by_date: decideByDate || undefined,
+          options: optionsForApi,
         }),
       });
 
@@ -254,60 +265,6 @@ export function CreateDecisionPage() {
       }
 
       const decision = await response.json();
-
-      // Create options if any
-      if (options.length > 0) {
-        for (const option of options) {
-          if (!option.title.trim()) continue;
-
-          const optionResponse = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${decision.id}/options`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              title: option.title,
-            }),
-          });
-
-          if (!optionResponse.ok) {
-            console.error('Failed to create option:', option.title);
-            continue;
-          }
-
-          const createdOption = await optionResponse.json();
-
-          // Create pros and cons
-          for (const pro of option.pros) {
-            await fetch(`${import.meta.env.VITE_API_URL}/options/${createdOption.id}/pros-cons`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                type: 'pro',
-                content: pro,
-              }),
-            });
-          }
-
-          for (const con of option.cons) {
-            await fetch(`${import.meta.env.VITE_API_URL}/options/${createdOption.id}/pros-cons`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                type: 'con',
-                content: con,
-              }),
-            });
-          }
-        }
-      }
 
       // Navigate to the created decision
       navigate(`/decisions/${decision.id}`);
