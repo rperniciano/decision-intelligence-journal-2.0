@@ -241,7 +241,7 @@ async function testQuietHoursLogic() {
     // Cleanup
     console.log('\n[Cleanup] Deleting test data...');
     await supabase.from('DecisionsFollowUpReminders').delete().eq('id', reminder.id);
-    await supabase.from('decision_options').delete().eq('decision_id', decision.id);
+    await supabase.from('options').delete().eq('decision_id', decision.id);
     await supabase.from('decisions').delete().eq('id', decision.id);
     await supabase.auth.admin.deleteUser(user.id);
     console.log('✅ Test data cleaned up');
