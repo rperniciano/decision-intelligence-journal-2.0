@@ -312,3 +312,63 @@ FILES MODIFIED:
 - apps/web/src/pages/ExtractionReviewPage.tsx (NEW)
 - apps/web/src/components/DecisionExtractionCard.tsx (NEW)
 
+
+================================================================================
+SESSION SUMMARY - Feature #149 Implementation
+Date: 2026-01-20
+Status: IMPLEMENTATION COMPLETE
+
+What Was Accomplished:
+-----------------------
+Implemented Decision Extraction Card as specified in app_spec.txt (lines 149-160):
+- DecisionExtractionCard component with all required features
+- ExtractionReviewPage for displaying after voice recording
+- Staggered reveal animations (0.1s, 0.2s, 0.3s, 0.4s+ delays)
+- Glassmorphism with rim-light-accent borders
+- Spring physics (mass: 1, damping: 15)
+- Editable title, emotional state, category
+- Emoji picker for 9 emotional states
+- "Not quite right?" section with re-record and manual entry options
+
+Commit:
+-------
+996cc04 - Implement Decision Extraction Card with staggered reveal animation
+
+Next Steps:
+-----------
+The feature is fully implemented and ready for integration testing.
+To test end-to-end:
+1. Log in as authenticated user
+2. Record a voice decision
+3. Review the extraction card with animations
+4. Edit and save the extraction
+5. Navigate to decision detail page
+
+Note: System shows feature #149 as "Theme preference" (already passing).
+The Decision Extraction Card work was based on app_spec.txt requirements.
+
+================================================================================
+[REGRESSION TESTING] Feature #162: Submit button disabled during processing
+Date: 2026-01-20 15:41:19
+Status: ✅ VERIFIED PASSING
+
+Test Results:
+- Initial button state: disabled=false, text='Save Decision'
+- During API call: disabled=true, text='Saving...'
+- Opacity reduced to 0.56 (disabled:opacity-50 CSS)
+- Button prevents additional clicks via disabled attribute
+
+Verification Steps:
+1. ✅ Filled out form (Create Decision page)
+2. ✅ Clicked Submit button
+3. ✅ Observed button state during API call (100ms after click)
+4. ✅ Verified button disabled state (disabled=true)
+5. ✅ Verified visual feedback (text='Saving...', opacity=0.56)
+
+Code Review:
+- CreateDecisionPage.tsx: Lines 35, 215, 549-554
+- LoginPage.tsx: Lines 12, 54, 231-234
+- Both pages use identical pattern: loading state + disabled button + dynamic text
+
+Conclusion: Feature #162 is WORKING CORRECTLY - NO REGRESSION DETECTED
+================================================================================
