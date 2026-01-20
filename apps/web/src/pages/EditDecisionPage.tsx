@@ -65,6 +65,70 @@ export function EditDecisionPage() {
   const [errors, setErrors] = useState<{title?: string; chosenOption?: string; abandonReason?: string; decideByDate?: string}>({});
   const [decideByDate, setDecideByDate] = useState<string>('');
 
+  // Feature #146: Track original decision data for unsaved changes detection
+  const [originalDecision, setOriginalDecision] = useState<{
+    title: string;
+    notes: string;
+    status: string;
+    categoryId: string;
+    options: DecisionOption[];
+    chosenOptionId: string;
+    confidenceLevel: number;
+    abandonReason: string;
+    abandonNote: string;
+    decideByDate: string;
+  } | null>(null);
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = (): boolean => {
+    if (!originalDecision || !decision) return false;
+
+    return (
+      title !== originalDecision.title ||
+      notes !== originalDecision.notes ||
+      status !== originalDecision.status ||
+      categoryId !== originalDecision.categoryId ||
+      decideByDate !== originalDecision.decideByDate ||
+      chosenOptionId !== originalDecision.chosenOptionId ||
+      confidenceLevel !== originalDecision.confidenceLevel ||
+      abandonReason !== originalDecision.abandonReason ||
+      abandonNote !== originalDecision.abandonNote ||
+      // Deep compare options
+      options.length !== originalDecision.options.length ||
+      options.some((opt, i) => {
+        const origOpt = originalDecision.options[i];
+        return (
+          !origOpt ||
+          opt.id !== origOpt.id ||
+          opt.text !== origOpt.text ||
+          opt.pros.length !== origOpt.pros.length ||
+          opt.cons.length !== origOpt.cons.length ||
+          opt.pros.some((pro, j) => !origOpt.pros[j] || pro.content !== origOpt.pros[j].content) ||
+          opt.cons.some((con, j) => !origOpt.cons[j] || con.content !== origOpt.cons[j].content)
+        );
+      })
+    );
+  };
+
+  // Handle navigation with unsaved changes warning
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        // Modern browsers require this to show the confirmation dialog
+        e.preventDefault();
+        e.returnValue = ''; // Chrome requires returnValue to be set
+        return ''; // Other browsers
+      }
+    };
+
+    // Add event listener for page close/refresh
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [title, notes, status, categoryId, options, chosenOptionId, confidenceLevel, abandonReason, abandonNote, decideByDate, originalDecision]);
+
   // Fetch decision data
   useEffect(() => {
     async function fetchDecision() {
@@ -96,15 +160,32 @@ export function EditDecisionPage() {
         setOptions(data.options || []);
         setAbandonReason(data.abandon_reason || '');
         setAbandonNote(data.abandon_note || '');
+
         // Set decide_by_date if present (convert from ISO to YYYY-MM-DD format)
         // Otherwise default to today (feature #181: sensible default)
-        if (data.decide_by_date) {
-          const date = new Date(data.decide_by_date);
-          setDecideByDate(date.toISOString().split('T')[0]);
-        } else {
-          // Default to today if no decide_by_date exists
-          const today = new Date();
-          setDecideByDate(today.toISOString().split('T')[0]);
+        const initialDecideByDate = data.decide_by_date
+          ? new Date(data.decide_by_date).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0];
+        setDecideByDate(initialDecideByDate);
+
+        // Feature #146: Store original decision data for unsaved changes detection
+        setOriginalDecision({
+          title: data.title,
+          notes: data.notes || '',
+          status: data.status,
+          categoryId: data.category_id || '',
+          options: JSON.parse(JSON.stringify(data.options || [])), // Deep clone
+          chosenOptionId: data.chosen_option_id || '',
+          confidenceLevel: data.confidence_level || 3,
+          abandonReason: data.abandon_reason || '',
+          abandonNote: data.abandon_note || '',
+          decideByDate: initialDecideByDate,
+        });
+
+        // Set chosen option and confidence if decision is already decided
+        if (data.status === 'decided') {
+          setChosenOptionId(data.chosen_option_id || '');
+          setConfidenceLevel(data.confidence_level || 3);
         }
       } catch (error) {
         console.error('Error fetching decision:', error);
@@ -711,7 +792,17 @@ export function EditDecisionPage() {
   };
 
   const handleCancel = () => {
-    navigate(`/decisions/${id}`);
+    // Feature #146: Check for unsaved changes before navigating away
+    if (hasUnsavedChanges()) {
+      const confirmMessage = 'You have unsaved changes. Are you sure you want to leave without saving?';
+      if (window.confirm(confirmMessage)) {
+        navigate(`/decisions/${id}`);
+      }
+      // If user cancels, stay on the page
+    } else {
+      // No unsaved changes, navigate normally
+      navigate(`/decisions/${id}`);
+    }
   };
 
   if (loading) {

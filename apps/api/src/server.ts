@@ -1599,17 +1599,38 @@ async function registerRoutes() {
           .order('check_in_number', { ascending: true });
 
         if (outcomesError) {
-          if (outcomesError.code === 'PGRST204') {
+          // Feature #77: Check if outcomes table doesn't exist (various error codes)
+          // 42P01 = relation does not exist, PGRST204 = table not found in cache
+          if (outcomesError.code === 'PGRST204' || outcomesError.code === '42P01' ||
+              outcomesError.message?.includes('does not exist') ||
+              outcomesError.message?.includes('relation')) {
             // Outcomes table doesn't exist, fall back to old method (single outcome on decision)
             server.log.warn('Outcomes table not found, using legacy single outcome format');
 
-            const { data: decision, error: decisionError } = await supabase
-              .from('decisions')
-              .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
-              .eq('id', id)
-              .eq('user_id', userId)
-              .is('deleted_at', null)
-              .maybeSingle();
+            // First try with outcome_satisfaction column (if it exists)
+            let decision, decisionError;
+            try {
+              const result = await supabase
+                .from('decisions')
+                .select('id, user_id, outcome, outcome_notes, outcome_satisfaction, outcome_recorded_at')
+                .eq('id', id)
+                .eq('user_id', userId)
+                .is('deleted_at', null)
+                .maybeSingle();
+              decision = result.data;
+              decisionError = result.error;
+            } catch (e: any) {
+              // Column doesn't exist, try without it
+              const result = await supabase
+                .from('decisions')
+                .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
+                .eq('id', id)
+                .eq('user_id', userId)
+                .is('deleted_at', null)
+                .maybeSingle();
+              decision = result.data;
+              decisionError = result.error;
+            }
 
             if (decisionError || !decision) {
               reply.code(404);
@@ -1623,7 +1644,7 @@ async function registerRoutes() {
                   id: decision.id,
                   result: decision.outcome,
                   notes: decision.outcome_notes,
-                  satisfaction: null,
+                  satisfaction: (decision as any).outcome_satisfaction || null,
                   recordedAt: decision.outcome_recorded_at,
                   check_in_number: 1
                 }],
@@ -1780,7 +1801,11 @@ async function registerRoutes() {
 
         } catch (tableError: any) {
           // Feature #77: Fall back to legacy single outcome format if outcomes table doesn't exist
-          if (tableError.code === 'PGRST204' || tableError.message?.includes('outcomes')) {
+          // Check for various error codes that indicate table doesn't exist
+          if (tableError.code === 'PGRST204' || tableError.code === '42P01' ||
+              tableError.message?.includes('does not exist') ||
+              tableError.message?.includes('relation') ||
+              tableError.message?.includes('outcomes')) {
             server.log.warn('Outcomes table not found, using legacy single outcome format');
 
             // Legacy: Update the decision with outcome data
@@ -2178,9 +2203,23 @@ async function registerRoutes() {
 
           filteredDecisions = filteredDecisions.filter(decision => {
             const followUpAt = new Date(decision.follow_up_date);
-            const shouldShow = spansMidnight
-              ? (followUpAt < todayQuietStart || now >= todayQuietEnd)
-              : (followUpAt < todayQuietStart || now >= todayQuietEnd);
+
+            // During quiet hours, only show decisions that were due BEFORE quiet hours started
+            // Decisions due during quiet hours should be hidden until quiet hours end
+            let shouldShow: boolean;
+
+            if (spansMidnight) {
+              // Quiet hours span midnight (e.g., 22:00 to 08:00)
+              // Show if follow-up was before quiet hours started yesterday
+              // todayQuietStart is today at 22:00, but we want yesterday's quiet start
+              const yesterdayQuietStart = new Date(todayQuietStart);
+              yesterdayQuietStart.setDate(yesterdayQuietStart.getDate() - 1);
+              shouldShow = followUpAt < yesterdayQuietStart;
+            } else {
+              // Quiet hours within same day (e.g., 18:00 to 19:00)
+              // Show if follow-up was before quiet hours started today
+              shouldShow = followUpAt < todayQuietStart;
+            }
 
             server.log.info({
               decisionTitle: decision.title,
@@ -2254,3 +2293,4 @@ async function start() {
 }
 
 start();
+ 

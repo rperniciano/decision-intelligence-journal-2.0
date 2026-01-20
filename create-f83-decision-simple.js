@@ -52,7 +52,7 @@ async function findExistingUserAndCreateDecision() {
     user_id: userId,
     title: 'F83_TEST_DECISION_OPTIONS',
     description: 'Test decision for Feature #83 - option editing workflow',
-    status: 'considering',
+    status: 'draft',
     created_at: new Date().toISOString()
   };
 
@@ -71,27 +71,26 @@ async function findExistingUserAndCreateDecision() {
 
   // Create options
   const options = [
-    { name: 'Option A - Keep Original', pros: 3, cons: 2 },
-    { name: 'Option B - Modified Choice', pros: 2, cons: 3 },
-    { name: 'Option C - To Be Deleted', pros: 1, cons: 5 },
-    { name: 'Option D - Neutral Ground', pros: 2, cons: 2 }
+    { title: 'Option A - Keep Original', description: 'This option should remain unchanged' },
+    { title: 'Option B - Modified Choice', description: 'This option will be renamed' },
+    { title: 'Option C - To Be Deleted', description: 'This option will be removed' },
+    { title: 'Option D - Neutral Ground', description: 'This option should remain unchanged' }
   ];
 
   for (const opt of options) {
     const { error: optError } = await supabase
-      .from('decision_options')
+      .from('options')
       .insert({
         decision_id: decision.id,
-        name: opt.name,
-        pros_count: opt.pros,
-        cons_count: opt.cons,
+        title: opt.title,
+        description: opt.description,
         created_at: new Date().toISOString()
       });
 
     if (optError) {
-      console.error(`❌ Error creating option "${opt.name}":`, optError.message);
+      console.error(`❌ Error creating option "${opt.title}":`, optError.message);
     } else {
-      console.log(`  ✅ Created option: ${opt.name}`);
+      console.log(`  ✅ Created option: ${opt.title}`);
     }
   }
 
@@ -105,7 +104,7 @@ async function findExistingUserAndCreateDecision() {
   console.log('\nTest Plan:');
   console.log('  1. Navigate to decision detail page');
   console.log('  2. Click Edit button');
-  console.log('  3. Rename "Option B" → "Option B - RENAMED"');
+  console.log('  3. Rename "Option B - Modified Choice" → "Option B - RENAMED"');
   console.log('  4. Add new option "Option E - New Addition"');
   console.log('  5. Delete "Option C - To Be Deleted"');
   console.log('  6. Save changes');
