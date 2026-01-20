@@ -60,9 +60,13 @@ export class DecisionService {
 
       // Feature #200: Apply date range filtering to count query
       if (filters?.fromDate) {
-        countQuery = countQuery.gte('created_at', filters.fromDate);
+        // Handle date-only string (YYYY-MM-DD) by converting to ISO timestamp at midnight
+        const startDate = new Date(filters.fromDate);
+        startDate.setHours(0, 0, 0, 0);
+        countQuery = countQuery.gte('created_at', startDate.toISOString());
       }
       if (filters?.toDate) {
+        // Handle date-only string (YYYY-MM-DD) by converting to ISO timestamp at end of day
         const endDate = new Date(filters.toDate);
         endDate.setHours(23, 59, 59, 999);
         countQuery = countQuery.lte('created_at', endDate.toISOString());
@@ -111,9 +115,13 @@ export class DecisionService {
 
       // Feature #200: Apply date range filtering to main query
       if (filters?.fromDate) {
-        query = query.gte('created_at', filters.fromDate);
+        // Handle date-only string (YYYY-MM-DD) by converting to ISO timestamp at midnight
+        const startDate = new Date(filters.fromDate);
+        startDate.setHours(0, 0, 0, 0);
+        query = query.gte('created_at', startDate.toISOString());
       }
       if (filters?.toDate) {
+        // Handle date-only string (YYYY-MM-DD) by converting to ISO timestamp at end of day
         const endDate = new Date(filters.toDate);
         endDate.setHours(23, 59, 59, 999);
         query = query.lte('created_at', endDate.toISOString());
