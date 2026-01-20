@@ -27,6 +27,7 @@ export class DecisionService {
   static async getDecisions(userId: string, filters?: {
     status?: string;
     categoryId?: string;
+    emotion?: string; // Feature #201: emotion filtering
     search?: string;
     outcome?: string; // Feature #203: outcome filtering (better, as_expected, worse)
     limit?: number;
@@ -49,6 +50,9 @@ export class DecisionService {
       }
       if (filters?.categoryId) {
         countQuery = countQuery.eq('category_id', filters.categoryId);
+      }
+      if (filters?.emotion) {
+        countQuery = countQuery.eq('detected_emotional_state', filters.emotion);
       }
       if (filters?.search) {
         countQuery = countQuery.ilike('title', `%${filters.search}%`);
@@ -102,6 +106,10 @@ export class DecisionService {
 
       if (filters?.categoryId) {
         query = query.eq('category_id', filters.categoryId);
+      }
+
+      if (filters?.emotion) {
+        query = query.eq('detected_emotional_state', filters.emotion);
       }
 
       if (filters?.search) {
