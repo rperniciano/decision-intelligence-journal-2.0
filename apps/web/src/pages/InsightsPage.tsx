@@ -144,6 +144,152 @@ function DecisionScore({ score, trend }: { score: number; trend: number }) {
   );
 }
 
+// Feature #218: Level display component
+function LevelDisplay({ levelData }: { levelData: LevelData }) {
+  const percentage = (levelData.currentXP / levelData.xpToNextLevel) * 100;
+
+  return (
+    <motion.div
+      className="glass p-5 rounded-2xl rim-light"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent-700 flex items-center justify-center text-white font-bold text-lg">
+            {levelData.level}
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg">Level {levelData.level}</h3>
+            <p className="text-text-secondary text-sm">Total XP: {levelData.totalXP}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-text-secondary">Next Level</p>
+          <p className="font-medium text-accent">{levelData.xpToNextLevel} XP</p>
+        </div>
+      </div>
+
+      {/* XP Progress Bar */}
+      <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
+        <motion.div
+          className="absolute top-0 left-0 h-full bg-gradient-to-r from-accent to-accent-700 rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        />
+      </div>
+
+      {/* XP Progress Text */}
+      <div className="flex justify-between mt-2 text-xs text-text-secondary">
+        <span>{levelData.currentXP} XP</span>
+        <span>{levelData.xpToNextLevel} XP to Level {levelData.level + 1}</span>
+      </div>
+    </motion.div>
+  );
+}
+
+// Feature #218: Streak display component
+function StreakDisplay({ streakData }: { streakData: StreakData }) {
+  return (
+    <motion.div
+      className="glass p-5 rounded-2xl rim-light"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg">{streakData.currentStreak} Day Streak</h3>
+            <p className="text-text-secondary text-sm">Keep it going!</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-text-secondary">Best</p>
+          <p className="font-medium text-orange-400">{streakData.longestStreak} days</p>
+        </div>
+      </div>
+
+      {/* Streak Visual Indicator */}
+      <div className="flex gap-1 mt-3">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div
+            key={i}
+            className={`flex-1 h-2 rounded-full transition-colors ${
+              i < Math.min(streakData.currentStreak, 7)
+                ? 'bg-gradient-to-r from-orange-500 to-red-600'
+                : 'bg-white/10'
+            }`}
+          />
+        ))}
+      </div>
+      {streakData.currentStreak === 0 && (
+        <p className="text-xs text-text-secondary mt-2">Record a decision today to start your streak!</p>
+      )}
+    </motion.div>
+  );
+}
+
+// Feature #218: Achievement card component
+function AchievementCard({ achievement, index }: { achievement: Achievement; index: number }) {
+  return (
+    <motion.div
+      className={`glass p-4 rounded-xl rim-light ${achievement.unlocked ? 'opacity-100' : 'opacity-50'}`}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: achievement.unlocked ? 1 : 0.5, scale: 1 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      whileHover={achievement.unlocked ? { scale: 1.02 } : {}}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`text-3xl ${achievement.unlocked ? '' : 'grayscale opacity-50'}`}>
+          {achievement.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className={`font-semibold text-sm ${achievement.unlocked ? 'text-white' : 'text-text-secondary'}`}>
+              {achievement.name}
+            </h4>
+            {!achievement.unlocked && (
+              <span className="text-xs px-2 py-0.5 bg-white/10 rounded-full text-text-secondary">Locked</span>
+            )}
+          </div>
+          <p className="text-xs text-text-secondary mb-2">{achievement.description}</p>
+
+          {/* Progress bar for achievements with progress */}
+          {achievement.maxProgress && achievement.progress !== undefined && (
+            <div className="mt-2">
+              <div className="flex justify-between text-xs text-text-secondary mb-1">
+                <span>Progress</span>
+                <span>{achievement.progress}/{achievement.maxProgress}</span>
+              </div>
+              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-accent rounded-full transition-all duration-500"
+                  style={{ width: `${(achievement.progress / achievement.maxProgress) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {achievement.unlocked && achievement.unlockedAt && (
+            <p className="text-xs text-accent mt-1">
+              Unlocked {new Date(achievement.unlockedAt).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // Empty state when no data
 function EmptyState() {
   return (
@@ -173,6 +319,30 @@ function EmptyState() {
       </Link>
     </motion.div>
   );
+}
+
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  unlockedAt?: string;
+  progress?: number;
+  maxProgress?: number;
+}
+
+interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastRecordDate: string | null;
+}
+
+interface LevelData {
+  level: number;
+  currentXP: number;
+  xpToNextLevel: number;
+  totalXP: number;
 }
 
 interface InsightsData {
@@ -215,6 +385,10 @@ interface InsightsData {
     highConfidence: { count: number; positiveRate: number };
     correlation: string;
   } | null;
+  // Feature #218: Gamification elements
+  achievements: Achievement[];
+  streakData: StreakData;
+  levelData: LevelData;
 }
 
 export function InsightsPage() {
@@ -258,6 +432,10 @@ export function InsightsPage() {
           positionBias: insights.positionBias,
           timingPattern: insights.timingPattern || null, // Feature #90
           confidencePattern: insights.confidencePattern || null, // Feature #210
+          // Feature #218: Gamification elements
+          achievements: insights.achievements || [],
+          streakData: insights.streakData || { currentStreak: 0, longestStreak: 0, lastRecordDate: null },
+          levelData: insights.levelData || { level: 1, currentXP: 0, xpToNextLevel: 10, totalXP: 0 },
         });
       } catch (error: any) {
         // Feature #268: Silently ignore abort errors
@@ -476,6 +654,26 @@ export function InsightsPage() {
             {/* Decision Score */}
             <section className="mb-8">
               <DecisionScore score={decisionScore} trend={scoreTrend} />
+            </section>
+
+            {/* Feature #218: Gamification - Level and Streak */}
+            <section className="mb-8 grid grid-cols-2 gap-4">
+              <LevelDisplay levelData={insightsData!.levelData} />
+              <StreakDisplay streakData={insightsData!.streakData} />
+            </section>
+
+            {/* Feature #218: Gamification - Achievements */}
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold mb-4">Achievements</h2>
+              <div className="grid grid-cols-1 gap-3">
+                {insightsData!.achievements.map((achievement, index) => (
+                  <AchievementCard
+                    key={achievement.id}
+                    achievement={achievement}
+                    index={index}
+                  />
+                ))}
+              </div>
             </section>
 
             {/* Pattern Cards */}

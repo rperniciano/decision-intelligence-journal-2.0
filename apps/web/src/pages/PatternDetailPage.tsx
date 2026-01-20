@@ -156,7 +156,7 @@ function PatternDetailPage() {
           case 'emotionalimpact':
             const emotions = Object.entries(insights.emotionalPatterns);
             const sortedEmotions = emotions
-              .map(([emotion, outcomes]) => ({
+              .map(([emotion, outcomes]: [string, any]) => ({
                 emotion,
                 successRate: outcomes.better / (outcomes.better + outcomes.worse + outcomes.as_expected || 1),
                 totalDecisions: outcomes.better + outcomes.worse + outcomes.as_expected,

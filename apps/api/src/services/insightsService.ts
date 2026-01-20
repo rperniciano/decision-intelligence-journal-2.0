@@ -505,6 +505,20 @@ export class InsightsService {
       };
     }
 
+    // Feature #218: Gamification - Calculate achievements
+    const achievements = this.calculateAchievements(
+      totalDecisions,
+      decisionsWithOutcomes.length,
+      positiveOutcomes,
+      allDecisions
+    );
+
+    // Feature #218: Gamification - Calculate streak
+    const streakData = this.calculateStreak(allDecisions);
+
+    // Feature #218: Gamification - Calculate level based on XP
+    const levelData = this.calculateLevel(totalDecisions, decisionsWithOutcomes.length, decisionScore);
+
     return {
       totalDecisions,
       decisionsWithOutcomes: decisionsWithOutcomes.length,
@@ -520,6 +534,292 @@ export class InsightsService {
       positionBias,
       timingPattern, // Feature #90
       confidencePattern, // Feature #210: Confidence vs outcome correlation
+      // Feature #218: Gamification elements
+      achievements,
+      streakData,
+      levelData,
     };
+  }
+
+  /**
+   * Feature #218: Calculate achievements based on user's decision patterns
+   */
+  private static calculateAchievements(
+    totalDecisions: number,
+    decisionsWithOutcomes: number,
+    positiveOutcomes: number,
+    allDecisions: any[]
+  ): Achievement[] {
+    const achievements: Achievement[] = [
+      {
+        id: 'first_decision',
+        name: 'First Step',
+        description: 'Record your first decision',
+        icon: '🎯',
+        unlocked: totalDecisions >= 1,
+      },
+      {
+        id: 'five_decisions',
+        name: 'Building Momentum',
+        description: 'Record 5 decisions',
+        icon: '📈',
+        unlocked: totalDecisions >= 5,
+      },
+      {
+        id: 'ten_decisions',
+        name: 'Decision Maker',
+        description: 'Record 10 decisions',
+        icon: '🎯',
+        unlocked: totalDecisions >= 10,
+      },
+      {
+        id: 'twenty_five_decisions',
+        name: 'Committed',
+        description: 'Record 25 decisions',
+        icon: '💪',
+        unlocked: totalDecisions >= 25,
+      },
+      {
+        id: 'fifty_decisions',
+        name: 'Dedicated',
+        description: 'Record 50 decisions',
+        icon: '🏆',
+        unlocked: totalDecisions >= 50,
+      },
+      {
+        id: 'hundred_decisions',
+        name: 'Master Decision Maker',
+        description: 'Record 100 decisions',
+        icon: '👑',
+        unlocked: totalDecisions >= 100,
+      },
+      {
+        id: 'first_outcome',
+        name: 'Closure',
+        description: 'Record your first outcome',
+        icon: '✅',
+        unlocked: decisionsWithOutcomes >= 1,
+      },
+      {
+        id: 'five_outcomes',
+        name: 'Reflective',
+        description: 'Record 5 outcomes',
+        icon: '🔄',
+        unlocked: decisionsWithOutcomes >= 5,
+      },
+      {
+        id: 'ten_outcomes',
+        name: 'Learning Machine',
+        description: 'Record 10 outcomes',
+        icon: '🧠',
+        unlocked: decisionsWithOutcomes >= 10,
+      },
+      {
+        id: 'positive_streak',
+        name: 'Hot Streak',
+        description: 'Have 5 positive outcomes in a row',
+        icon: '🔥',
+        unlocked: false, // Will calculate below
+      },
+      {
+        id: 'night_owl',
+        name: 'Night Owl',
+        description: 'Make a decision after midnight',
+        icon: '🦉',
+        unlocked: allDecisions.some(d => {
+          const hour = new Date(d.created_at).getHours();
+          return hour >= 0 && hour < 5;
+        }),
+      },
+      {
+        id: 'early_bird',
+        name: 'Early Bird',
+        description: 'Make a decision before 7 AM',
+        icon: '🐦',
+        unlocked: allDecisions.some(d => {
+          const hour = new Date(d.created_at).getHours();
+          return hour >= 5 && hour < 7;
+        }),
+      },
+      {
+        id: 'thorough',
+        name: 'Thorough',
+        description: 'Create a decision with 4+ options',
+        icon: '📋',
+        unlocked: allDecisions.some(d => d.options?.length >= 4),
+      },
+      {
+        id: 'confident',
+        name: 'Confident',
+        description: 'Make a decision with confidence level 5',
+        icon: '💪',
+        unlocked: allDecisions.some(d => d.confidence_level === 5),
+      },
+      {
+        id: 'perfectionist',
+        name: 'Perfectionist',
+        description: 'Add 10+ pros/cons to a decision',
+        icon: '✨',
+        unlocked: allDecisions.some(d => {
+          const prosConsCount = d.options?.reduce((sum: number, opt: any) =>
+            sum + (opt.pros_cons?.length || 0), 0) || 0;
+          return prosConsCount >= 10;
+        }),
+      },
+    ];
+
+    // Calculate positive streak achievement
+    const positiveStreak = this.calculatePositiveStreak(allDecisions);
+    const positiveStreakAchievement = achievements.find(a => a.id === 'positive_streak');
+    if (positiveStreakAchievement) {
+      positiveStreakAchievement.unlocked = positiveStreak >= 5;
+      positiveStreakAchievement.progress = positiveStreak;
+      positiveStreakAchievement.maxProgress = 5;
+    }
+
+    // Set unlocked dates for unlocked achievements
+    achievements.forEach(achievement => {
+      if (achievement.unlocked && !achievement.unlockedAt) {
+        achievement.unlockedAt = new Date().toISOString();
+      }
+    });
+
+    return achievements;
+  }
+
+  /**
+   * Feature #218: Calculate current streak and longest streak
+   */
+  private static calculateStreak(allDecisions: any[]): StreakData {
+    if (allDecisions.length === 0) {
+      return {
+        currentStreak: 0,
+        longestStreak: 0,
+        lastRecordDate: null,
+      };
+    }
+
+    // Get unique dates (YYYY-MM-DD) from decisions
+    const dates = allDecisions
+      .map(d => {
+        const date = new Date(d.created_at);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      })
+      .filter((date, index, self) => self.indexOf(date) === index)
+      .sort()
+      .reverse();
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Calculate current streak
+    let currentStreak = 0;
+    let checkDate = new Date(today);
+
+    // Check if there's a decision today or yesterday to start the streak
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    if (dates.includes(todayStr) || dates.includes(yesterdayStr)) {
+      currentStreak = 1;
+      let daysToCheck = dates.includes(todayStr) ? 1 : 0;
+
+      while (true) {
+        checkDate.setDate(checkDate.getDate() - 1);
+        const dateStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+
+        if (dates.includes(dateStr)) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Calculate longest streak
+    let longestStreak = 0;
+    let tempStreak = 1;
+
+    for (let i = 0; i < dates.length - 1; i++) {
+      const currentDate = new Date(dates[i]);
+      const nextDate = new Date(dates[i + 1]);
+      const diffDays = Math.floor((currentDate.getTime() - nextDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        tempStreak++;
+      } else {
+        longestStreak = Math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak);
+
+    return {
+      currentStreak,
+      longestStreak,
+      lastRecordDate: dates[0] || null,
+    };
+  }
+
+  /**
+   * Feature #218: Calculate user level based on XP
+   * XP is earned from:
+   * - Each decision: 10 XP
+   * - Each outcome recorded: 20 XP
+   * - Decision score milestones: bonus XP
+   */
+  private static calculateLevel(
+    totalDecisions: number,
+    outcomesCount: number,
+    decisionScore: number
+  ): LevelData {
+    // Base XP from decisions and outcomes
+    let totalXP = totalDecisions * 10 + outcomesCount * 20;
+
+    // Bonus XP for high decision score
+    if (decisionScore >= 90) totalXP += 100;
+    else if (decisionScore >= 80) totalXP += 75;
+    else if (decisionScore >= 70) totalXP += 50;
+    else if (decisionScore >= 60) totalXP += 25;
+
+    // Calculate level (each level requires more XP)
+    // Level formula: level = floor(sqrt(XP / 10)) + 1
+    const level = Math.floor(Math.sqrt(totalXP / 10)) + 1;
+
+    // XP needed for current level
+    const xpForCurrentLevel = Math.pow(level - 1, 2) * 10;
+    const xpForNextLevel = Math.pow(level, 2) * 10;
+
+    return {
+      level,
+      currentXP: totalXP - xpForCurrentLevel,
+      xpToNextLevel: xpForNextLevel - totalXP,
+      totalXP,
+    };
+  }
+
+  /**
+   * Feature #218: Calculate consecutive positive outcomes
+   */
+  private static calculatePositiveStreak(allDecisions: any[]): number {
+    let maxStreak = 0;
+    let currentStreak = 0;
+
+    // Sort by date ascending to check in chronological order
+    const sortedDecisions = [...allDecisions].sort((a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    for (const decision of sortedDecisions) {
+      if (decision.outcome === 'better') {
+        currentStreak++;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      } else if (decision.outcome && decision.outcome !== 'better') {
+        currentStreak = 0;
+      }
+    }
+
+    return maxStreak;
   }
 }
