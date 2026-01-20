@@ -1,3 +1,112 @@
+# Feature #13: Cannot access another user's decision by ID manipulation - Session Summary
+
+**Date**: 2026-01-20
+**Feature**: #13 - Cannot access another user's decision by ID manipulation
+**Status**: ✅ PASSING
+**Mode**: Single Feature Mode (Feature #13 ONLY)
+
+---
+
+## Feature Details
+
+**Category**: Security & Access Control
+**Priority**: 295
+**Description**: Verify row-level security prevents cross-user data access
+
+---
+
+## Session Overview
+
+This session focused on verifying **Feature #13**, which ensures that users cannot access decisions belonging to other users by manipulating the decision ID in URLs or API calls. This is a critical security feature for maintaining data isolation between users.
+
+---
+
+## Verification Results
+
+### Security Tests Passed (5/5)
+✅ Users can only access their own decisions (GET) - 200 OK
+✅ Users cannot access other users' decisions (GET) - 404 Not Found
+✅ Users cannot update other users' decisions (PATCH) - 410 Gone
+✅ Users cannot delete other users' decisions (DELETE) - 404 Not Found
+✅ Data remains unchanged after unauthorized access attempts
+
+### Defense in Depth Verified
+- ✅ **Layer 1**: Authentication middleware validates JWT tokens
+- ✅ **Layer 2**: Service layer enforces user_id equality (.eq('user_id', userId))
+- ✅ **Layer 3**: Database RLS policies provide final barrier
+- ✅ **Layer 4**: 404 responses prevent ID enumeration attacks
+
+---
+
+## Security Implementation
+
+The application implements defense in depth with multiple security layers:
+
+### 1. API Authentication Middleware
+```typescript
+// apps/api/src/middleware/auth.ts
+// Verifies JWT token on every protected request
+request.user = { id: user.id, email: user.email };
+```
+
+### 2. Service Layer User Isolation
+```typescript
+// apps/api/src/services/decisionService.ts
+static async getDecisionById(decisionId: string, userId: string) {
+  const { data, error } = await supabase
+    .from('decisions')
+    .select('*')
+    .eq('id', decisionId)
+    .eq('user_id', userId)  // <-- User isolation enforced here
+    .is('deleted_at', null)
+    .single();
+}
+```
+
+### 3. Row Level Security (Database)
+- Supabase PostgreSQL policies enforce `auth.uid() = user_id`
+- Even if service layer is bypassed, database blocks cross-user access
+
+---
+
+## Test Data Created
+
+**Test Users**:
+1. User A: `f13-user-a-1768889347562@example.com` (bd86c691-3373-44dd-8687-7c4958563b91)
+2. User B: `f13-user-b-1768889347562@example.com` (594871d2-ffd8-417f-a410-1bab33590d4f)
+
+**Test Decision**:
+- ID: `0eb4d37c-cc06-4f75-a121-4406d4129021`
+- Owner: User A
+- Verified inaccessible by User B
+
+---
+
+## Files Created
+
+1. **test-feature-13-security.mjs** - Comprehensive security test suite
+2. **SESSION-FEATURE-13-SUMMARY.md** - Detailed session documentation
+
+---
+
+## Conclusion
+
+**Feature #13: VERIFIED PASSING ✅**
+
+No code changes were required - the security feature was already fully implemented with proper defense in depth. Users cannot access other users' decisions through ID manipulation attacks.
+
+---
+
+## Session Statistics
+- Feature completed: #13 (Cannot access another user's decision by ID manipulation)
+- Progress: 240/291 features (82.5%)
+- Security tests: 5/5 passed
+- Attack vectors tested: 3 (GET, PATCH, DELETE)
+- Security layers verified: 4
+- Code changes: 0 (already implemented)
+
+---
+
 # Feature #10: Logout clears all session data - Session Summary
 
 **Date**: 2026-01-20
@@ -627,3 +736,113 @@ The API configuration regression has been FIXED. However, Feature #96 must remai
 - Does not affect the fix applied in this session
 
 ---
+
+# Feature #96: Restore soft-deleted decision - PASSING ✅
+
+**Date**: 2026-01-20
+**Status**: ✅ VERIFIED PASSING
+
+## Implementation Summary
+
+### What Was Built
+- **Single Decision Restore API Endpoint**: POST /decisions/:id/restore
+- **Individual Restore Button**: Added to decision cards in trash view
+- **Full Integration**: Both List and Timeline views support individual restore
+
+### Code Changes
+
+#### Backend (apps/api/src/server.ts)
+- Added route: `api.post('/decisions/:id/restore', ...)` (lines 375-403)
+- Validates user authentication
+- Calls `DecisionService.restoreDecision(decisionId, userId)`
+- Returns 404 if not found/unauthorized
+- Returns 200 with restored decision on success
+
+#### Frontend (apps/web/src/pages/HistoryPage.tsx)
+- Added `handleSingleRestore()` function (lines 932-961)
+  - Confirmation dialog before restore
+  - Calls new API endpoint
+  - Updates UI to remove restored decision from trash
+  - Shows success alert
+- Updated `DecisionCard` component:
+  - Added `activeFilter` and `onRestore` props
+  - Shows "Restore" button when `activeFilter === 'trash'` (lines 153-165)
+  - Button stops propagation to avoid navigation
+- Updated `TimelineView` component:
+  - Added `activeFilter` and `onRestore` props
+  - Passes props to DecisionCard
+- Updated main HistoryPage component:
+  - Passes `handleSingleRestore` to both List and Timeline views
+
+### Verification Steps Completed
+
+1. ✅ Created test user: f96-test-1768888401473@example.com
+2. ✅ Created test decision: "F96 Test Decision - Restore Me - 1768888401473"
+3. ✅ Soft deleted decision (set deleted_at)
+4. ✅ Navigated to History → Trash filter
+5. ✅ Verified decision appears in trash
+6. ✅ **List View Test**: Clicked "Restore" button → Confirmed → Success alert → Decision removed from trash
+7. ✅ Verified decision appears in "All" filter after restore
+8. ✅ Soft deleted decision again
+9. ✅ **Timeline View Test**: Switched to Timeline view → Clicked "Restore" button → Confirmed → Success alert → Decision removed from trash
+10. ✅ All data intact after restore (title, status, category, dates)
+
+### Technical Verification
+
+#### API Endpoint
+- ✅ POST /api/v1/decisions/:id/restore returns 200 OK
+- ✅ Returns 404 if decision not found
+- ✅ Returns 401 if not authenticated
+- ✅ Only restores own decisions (RLS enforced)
+
+#### Frontend
+- ✅ Zero console errors
+- ✅ Restore button only shows in trash view
+- ✅ Confirmation dialog before restore
+- ✅ Success alert after restore
+- ✅ UI updates immediately (decision removed from trash)
+- ✅ Works in both List and Timeline views
+
+#### Security
+- ✅ Authenticated request required
+- ✅ User can only restore their own decisions
+- ✅ Row Level Security enforced via DecisionService
+
+### Screenshots
+- `feature-96-restore-success.png` - List view with restored decision showing in "All" filter
+- `feature-96-timeline-restore.png` - Timeline view showing empty trash after restore
+
+### Test Data
+- **User**: f96-test-1768888401473@example.com / Test1234!
+- **Decision ID**: 40193cca-b13b-4a2b-a5fb-34f99bd5fd83
+
+### What Previously Existed
+- ✅ Soft delete functionality (deleted_at column)
+- ✅ Bulk soft delete endpoint (POST /decisions/bulk-delete)
+- ✅ Bulk restore endpoint (POST /decisions/bulk-restore)
+- ✅ Trash filter in History page
+- ✅ DecisionService.restoreDecision() function
+
+### What Was Added
+- ✅ Single decision restore endpoint (POST /decisions/:id/restore)
+- ✅ Individual restore button on decision cards
+- ✅ Single restore handler function
+
+## Conclusion
+
+Feature #96 is now **PASSING** ✅
+
+Users can now restore individual soft-deleted decisions from trash using a single-click "Restore" button on each decision card, in addition to the existing bulk restore functionality.
+
+---
+
+## Session Statistics
+- Feature completed: #96 (Restore soft-deleted decision)
+- Progress: 239/291 features (82.1%)
+- Files changed: 15
+- Lines added: 427
+- Browser automation tests: 2 restore cycles (List view + Timeline view)
+- Screenshots: 2
+- Test users: 1
+- Console errors: 0
+
