@@ -446,6 +446,60 @@ async function registerRoutes() {
       }
     });
 
+    // Abandon a decision (Feature #88)
+    api.post('/decisions/:id/abandon', async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const userId = request.user?.id;
+
+        if (!userId) {
+          return reply.code(401).send({ error: 'Unauthorized' });
+        }
+
+        if (!id) {
+          return reply.code(400).send({ error: 'Decision ID is required' });
+        }
+
+        const body = request.body as {
+          abandonReason: string;
+          abandonNote?: string;
+        };
+
+        if (!body.abandonReason) {
+          return reply.code(400).send({ error: 'abandonReason is required' });
+        }
+
+        const decision = await DecisionService.abandonDecision(
+          id,
+          userId,
+          body.abandonReason,
+          body.abandonNote
+        );
+
+        if (!decision) {
+          return reply.code(404).send({ error: 'Decision not found or unauthorized' });
+        }
+
+        return {
+          message: 'Decision abandoned successfully',
+          decision
+        };
+      } catch (error: any) {
+        server.log.error(error);
+
+        // Handle specific error codes
+        if (error.code === 'NOT_FOUND') {
+          return reply.code(404).send({ error: error.message });
+        }
+
+        if (error.code === 'CONFLICT') {
+          return reply.code(409).send({ error: error.message });
+        }
+
+        return reply.code(500).send({ error: 'Internal server error' });
+      }
+    });
+
     // Bulk permanent delete (hard delete from database)
     api.post('/decisions/bulk-permanent-delete', async (request, reply) => {
       try {

@@ -704,4 +704,68 @@ export class DecisionService {
       throw error;
     }
   }
+
+  /**
+   * Abandon a decision (Feature #88)
+   * Updates decision status to 'abandoned' with reason and optional note
+   */
+  static async abandonDecision(
+    decisionId: string,
+    userId: string,
+    abandonReason: string,
+    abandonNote?: string
+  ) {
+    try {
+      // First verify the decision belongs to the user
+      const { data: existingDecision, error: fetchError } = await supabase
+        .from('decisions')
+        .select('id, user_id, status')
+        .eq('id', decisionId)
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching decision for abandon:', fetchError);
+        throw fetchError;
+      }
+
+      if (!existingDecision) {
+        const error: any = new Error('Decision not found or unauthorized');
+        error.code = 'NOT_FOUND';
+        throw error;
+      }
+
+      // Check if already abandoned
+      if (existingDecision.status === 'abandoned') {
+        const error: any = new Error('Decision is already abandoned');
+        error.code = 'CONFLICT';
+        throw error;
+      }
+
+      // Update the decision
+      const { data: updatedDecision, error: updateError } = await supabase
+        .from('decisions')
+        .update({
+          status: 'abandoned',
+          abandon_reason: abandonReason,
+          abandon_note: abandonNote || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', decisionId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error abandoning decision:', updateError);
+        throw updateError;
+      }
+
+      return updatedDecision;
+    } catch (error) {
+      console.error('Error in abandonDecision:', error);
+      throw error;
+    }
+  }
 }

@@ -154,6 +154,11 @@ export function DecisionDetailPage() {
   const [isDeleted, setIsDeleted] = useState(false); // Feature #266: Track if decision was deleted
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Feature #88: Abandon decision state
+  const [showAbandonModal, setShowAbandonModal] = useState(false);
+  const [isAbandoning, setIsAbandoning] = useState(false);
+  const [abandonReason, setAbandonReason] = useState('');
+  const [abandonNote, setAbandonNote] = useState('');
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
   const [outcomeResult, setOutcomeResult] = useState<string>('');
   const [outcomeSatisfaction, setOutcomeSatisfaction] = useState<number>(3);
@@ -438,6 +443,58 @@ export function DecisionDetailPage() {
       setError('Failed to delete decision');
       setIsDeleting(false);
       setShowDeleteModal(false);
+    }
+  };
+
+  // Feature #88: Handle abandoning a decision
+  const handleAbandon = async () => {
+    if (!id || !abandonReason) return;
+
+    try {
+      setIsAbandoning(true);
+
+      // Get auth token
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // Abandon decision via API
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}/abandon`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          abandonReason,
+          abandonNote: abandonNote || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to abandon decision');
+      }
+
+      // Show success message
+      showSuccess('Decision abandoned');
+
+      // Refresh decision data
+      fetchDecision();
+
+      // Close modal
+      setShowAbandonModal(false);
+      setAbandonReason('');
+      setAbandonNote('');
+    } catch (err: any) {
+      console.error('Error abandoning decision:', err);
+      showError(err.message || 'Failed to abandon decision');
+    } finally {
+      setIsAbandoning(false);
     }
   };
 
@@ -915,6 +972,15 @@ export function DecisionDetailPage() {
               Edit Decision
             </button>
           </Link>
+          {/* Feature #88: Abandon button - only show for non-abandoned decisions */}
+          {decision.status !== 'abandoned' && (
+            <button
+              onClick={() => setShowAbandonModal(true)}
+              className="px-4 py-2.5 glass glass-hover rounded-xl text-sm font-medium text-text-secondary"
+            >
+              Abandon
+            </button>
+          )}
           <button
             onClick={() => setShowDeleteModal(true)}
             className="px-4 py-2.5 glass glass-hover rounded-xl text-sm font-medium text-rose-400"
@@ -936,6 +1002,78 @@ export function DecisionDetailPage() {
         cancelText="Cancel"
         isLoading={isDeleting}
       />
+
+      {/* Feature #88: Abandon confirmation modal */}
+      {showAbandonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md glass rounded-2xl p-6 rim-light"
+          >
+            <h3 className="text-xl font-semibold mb-2">Abandon Decision</h3>
+            <p className="text-sm text-text-secondary mb-6">
+              Why are you abandoning this decision?
+            </p>
+
+            {/* Abandon reason selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Reason <span className="text-rose-400">*</span>
+              </label>
+              <select
+                value={abandonReason}
+                onChange={(e) => setAbandonReason(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 transition-colors"
+                required
+              >
+                <option value="">Select a reason...</option>
+                <option value="too_complex">Too complex to decide</option>
+                <option value="no_longer_relevant">No longer relevant</option>
+                <option value="outside_influence">Outside factors decided for me</option>
+                <option value="not_important">Not important anymore</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            {/* Optional note */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Note <span className="text-text-secondary">(optional)</span>
+              </label>
+              <textarea
+                value={abandonNote}
+                onChange={(e) => setAbandonNote(e.target.value)}
+                placeholder="Add any additional context..."
+                rows={3}
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 transition-colors resize-none"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAbandonModal(false);
+                  setAbandonReason('');
+                  setAbandonNote('');
+                }}
+                disabled={isAbandoning}
+                className="flex-1 px-4 py-2.5 glass glass-hover rounded-xl text-sm font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAbandon}
+                disabled={!abandonReason || isAbandoning}
+                className="flex-1 px-4 py-2.5 bg-text-secondary/20 text-text-secondary font-medium rounded-xl hover:bg-text-secondary/30 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAbandoning ? 'Abandoning...' : 'Abandon Decision'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Outcome recording modal */}
       {showOutcomeModal && (
