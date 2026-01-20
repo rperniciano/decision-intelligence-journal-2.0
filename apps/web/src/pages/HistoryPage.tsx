@@ -762,7 +762,7 @@ export function HistoryPage() {
           emotionalState: d.emotional_state,
           createdAt: d.created_at,
           decidedAt: d.decided_at,
-          decideByDate: d.follow_up_date,
+          decideByDate: d.decide_by_date, // Feature #258: Map decide_by_date from API response
           chosenOption: d.options?.find((opt: any) => opt.isChosen)?.text,
         }));
 

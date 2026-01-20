@@ -204,7 +204,7 @@ export class DecisionService {
         emotional_state: d.detected_emotional_state,
         created_at: d.created_at,
         decided_at: d.decided_at,
-        decide_by_date: d.decide_by_date,
+        decide_by_date: d.follow_up_date, // Feature #258: Map follow_up_date to decide_by_date
         options: (d.options || []).map((opt: any) => ({
           id: opt.id,
           text: opt.title,
@@ -369,6 +369,7 @@ export class DecisionService {
           audio_duration_seconds: dto.audio_duration_seconds,
           decided_at: dto.decided_at,
           decide_by_date: dto.decide_by_date,
+          ai_confidence: dto.ai_confidence, // Feature #112: Store AI confidence for display
         })
         .select()
         .single();
@@ -649,7 +650,7 @@ export class DecisionService {
         emotional_state: d.detected_emotional_state,
         created_at: d.created_at,
         decided_at: d.decided_at,
-        decide_by_date: d.decide_by_date,
+        decide_by_date: d.follow_up_date, // Feature #258: Map follow_up_date to decide_by_date
         options: (d.options || []).map((opt: any) => ({
           id: opt.id,
           text: opt.title,
