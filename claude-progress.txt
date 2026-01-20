@@ -4363,3 +4363,52 @@ The trash recovery workflow is fully functional:
 This is a well-implemented soft delete system with proper recovery functionality.
 
 Progress: 280/291 passing (96.2%)
+
+================================================================================
+[FEATURE VERIFICATION] Category Performance - Feature from app_spec.txt line 207
+Date: 2026-01-20
+Status: ✅ VERIFIED WORKING
+
+FEATURE DESCRIPTION:
+-------------------
+Category Performance: success rate per category, decision count
+
+VERIFICATION RESULTS:
+--------------------
+✅ Backend: insightsService.ts calculates topCategories with category, count, withOutcomes, and positiveRate
+✅ Frontend: InsightsPage.tsx displays Category Performance card
+✅ Format: "Career: 9 decisions (67% success)"
+✅ Calculation accuracy verified: 6 better / 9 total = 67% success rate
+
+TEST DATA:
+---------
+User: f207-test@example.com
+Password: test123456
+
+Created 30 decisions across 5 categories:
+- Career: 9 decisions (67% success)
+- Finance: 6 decisions (50% success)
+- Health: 6 decisions (50% success)
+- Housing: 6 decisions (50% success)
+- Personal: 3 decisions (100% success)
+
+VERIFICATION:
+------------
+✅ Logged in as test user
+✅ Navigated to Insights page
+✅ Category Performance card displays correctly
+✅ Shows decision count per category
+✅ Shows success rate percentage
+✅ Data comes from real database (not mock)
+
+SCREENSHOT:
+----------
+verification/f207-category-performance-verified.png
+
+NOTES:
+------
+This feature was implemented in commit 68abbae and already marked as passing.
+This session verified the feature continues to work correctly.
+
+Progress: 281/291 passing (96.6%)
+================================================================================

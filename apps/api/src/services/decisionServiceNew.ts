@@ -529,13 +529,17 @@ export class DecisionService {
             .from('decisions')
             .select(`
               category_id,
-              category:categories(name)
+              categories(name)
             `)
             .eq('id', decisionId)
             .single();
 
           // Calculate reminder days based on category (AI-adjusted by decision type)
-          const categoryName = decisionWithCategory?.category?.name || null;
+          // Note: categories is returned as an array by Supabase
+          const categoryArray = decisionWithCategory?.categories as any;
+          const categoryName = Array.isArray(categoryArray) && categoryArray.length > 0
+            ? categoryArray[0].name
+            : null;
           const reminderDays = this.getReminderDaysForCategory(categoryName);
 
           const reminderDate = new Date();
