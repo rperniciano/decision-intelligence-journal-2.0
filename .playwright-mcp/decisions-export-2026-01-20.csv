@@ -1,7 +1,6 @@
 Title,Status,Category,Emotional State,Confidence Level,Chosen Option,Options,Notes,Created Date,Decided Date,Abandoned Date
-F281_TEST: Decision Without Audio,draft,Uncategorized,calm,,,; ,This decision was created manually without recording,"20/01/2026, 04:02:21",,
-F281_TEST: Car Purchase Recording,draft,Uncategorized,neutral,,,; ,Weighed the pros and cons of buying vs leasing,"20/01/2026, 04:02:21",,
-F281_TEST: Apartment Decision Recording,in_progress,Uncategorized,anxious,,,; ,Still thinking about which apartment to rent,"20/01/2026, 04:02:21",,
-F281_TEST: Job Offer Recording,decided,Uncategorized,excited,,,; ,Recorded my thoughts about the new job offer,"20/01/2026, 04:02:20","20/01/2026, 04:02:20",
-F281_TEST: Decision Without Audio,draft,Uncategorized,calm,,,,This decision was created manually without recording,"20/01/2026, 04:00:57",,
-F281_TEST: Job Offer Recording,decided,Uncategorized,excited,,,,Recorded my thoughts about the new job offer,"20/01/2026, 04:00:56","20/01/2026, 04:00:56",
+F279_TEST: Finance Decision 2,draft,Uncategorized,,,,,,"20/01/2026, 03:24:58",,
+F279_TEST: Finance Decision 1,decided,Uncategorized,,,,,,"20/01/2026, 03:24:58","20/01/2026, 03:24:57",
+F279_TEST: Personal Decision 1,draft,Uncategorized,,,,,,"20/01/2026, 03:24:58",,
+F279_TEST: Career Decision 2,in_progress,Uncategorized,,,,,,"20/01/2026, 03:24:57",,
+F279_TEST: Career Decision 1,decided,Uncategorized,,,,,,"20/01/2026, 03:24:57","20/01/2026, 03:24:57",

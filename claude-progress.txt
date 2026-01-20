@@ -605,3 +605,75 @@ The code is production-ready and implements all necessary performance optimizati
 **Session Outcome**: Feature marked as not in-progress pending manual verification.
 **Next Action**: Manually clear port 4017, restart servers, and perform browser performance testing.
 **Confidence Level**: HIGH - Code analysis indicates requirement will be met
+
+## Feature #127: API Error Responses Parsed and Displayed - Regression Test
+
+**Date**: 2026-01-20 03:58:52 UTC
+**Status**: ✅ VERIFIED PASSING - NO REGRESSION
+
+### Test Summary
+
+Tested 3 scenarios:
+1. ✅ Invalid email format - "Please enter a valid email address"
+2. ✅ Short password - "Password must be at least 6 characters"
+3. ✅ Invalid credentials - "Invalid login credentials" (API error)
+
+### Technical Verification
+
+- ✅ API error messages displayed correctly (not generic)
+- ✅ Client-side validation shows specific messages
+- ✅ Error propagation working: API → AuthContext → LoginPage
+- ✅ Zero JavaScript console errors
+- ✅ Proper ARIA alerts for accessibility
+
+### Screenshots
+
+- feature-127-login-page.png
+- feature-127-email-validation-error.png
+- feature-127-api-error-displayed.png
+- feature-127-password-validation-error.png
+
+### Conclusion
+
+**Feature #127: NO REGRESSION DETECTED**
+
+All error messages are specific and actionable. The application correctly:
+- Parses API error responses
+- Displays exact error messages from backend
+- Shows client-side validation errors
+- Maintains accessibility with proper ARIA alerts
+
+---
+
+### Feature #279: Export Filtered Data Only Includes Filtered - Regression Test
+
+**Date**: 2026-01-20
+**Status**: ✅ VERIFIED PASSING - NO REGRESSION
+
+### Test Summary
+Regression test completed for filtered export functionality.
+
+### Verification Steps
+1. ✅ Applied Career category filter on History page
+2. ✅ Verified sessionStorage contains filter state: {category: 'f0427913-ec86-4ec4-b135-3c4d2b91c2d3'}
+3. ✅ Navigated to Export page - UI shows: 'Export will include only filtered decisions from your History view.'
+4. ✅ Network request confirms: /decisions?limit=1000&category=f0427913-ec86-4ec4-b135-3c4d2b91c2d3
+5. ✅ Zero JavaScript console errors
+
+### Screenshots
+- feature-279-career-filter-applied.png
+- feature-279-export-page-filtered-message.png
+- feature-279-final-verification.png
+
+### Conclusion
+**Feature #279: NO REGRESSION DETECTED**
+
+All core functionality working:
+- Filter state stored in sessionStorage on History page
+- Export page retrieves and applies filter state
+- Export API requests include filter parameters
+- UI correctly indicates filtered export
+
+The implementation successfully transfers filter state from History to Export page and applies it to export requests.
+
+---
