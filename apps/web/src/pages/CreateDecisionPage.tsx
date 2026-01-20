@@ -44,6 +44,7 @@ export function CreateDecisionPage() {
   const [emotionalState, setEmotionalState] = useState<string>('');
   const [options, setOptions] = useState<Option[]>([]);
   const [decideByDate, setDecideByDate] = useState<string>('');
+  const [titleError, setTitleError] = useState<string>('');
   const [dateError, setDateError] = useState<string>('');
 
   // Fetch categories
@@ -176,10 +177,29 @@ export function CreateDecisionPage() {
     setDateError(error);
   };
 
+  // Handle title change - clear error when user starts typing
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+    if (titleError) {
+      setTitleError('');
+    }
+  };
+
   const handleSave = async () => {
     try {
+      // Clear previous errors
+      setTitleError('');
+      setDateError('');
+      setError(null);
+
       if (!title.trim()) {
-        setError('Please enter a decision title');
+        setTitleError('Please enter a decision title');
+        return;
+      }
+
+      // Validate minimum title length
+      if (title.trim().length < 3) {
+        setTitleError('Title must be at least 3 characters long');
         return;
       }
 
@@ -346,10 +366,21 @@ export function CreateDecisionPage() {
               id="decision-title"
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+              onChange={handleTitleChange}
+              className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-text-primary focus:outline-none focus:ring-1 transition-all ${
+                titleError
+                  ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/50'
+                  : 'border-white/10 focus:border-accent/50 focus:ring-accent/50'
+              }`}
               placeholder="What decision are you making?"
+              aria-invalid={titleError ? 'true' : 'false'}
+              aria-describedby={titleError ? 'title-error' : undefined}
             />
+            {titleError && (
+              <p id="title-error" className="mt-2 text-sm text-red-400" role="alert">
+                {titleError}
+              </p>
+            )}
           </div>
 
           {/* Category */}
