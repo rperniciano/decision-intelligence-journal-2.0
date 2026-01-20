@@ -1,6 +1,6 @@
 Title,Status,Category,Emotional State,Confidence Level,Chosen Option,Options,Notes,Created Date,Decided Date,Abandoned Date
-F279_TEST: Finance Decision 2,draft,Uncategorized,,,,,,"20/01/2026, 03:24:58",,
-F279_TEST: Finance Decision 1,decided,Uncategorized,,,,,,"20/01/2026, 03:24:58","20/01/2026, 03:24:57",
-F279_TEST: Personal Decision 1,draft,Uncategorized,,,,,,"20/01/2026, 03:24:58",,
-F279_TEST: Career Decision 2,in_progress,Uncategorized,,,,,,"20/01/2026, 03:24:57",,
-F279_TEST: Career Decision 1,decided,Uncategorized,,,,,,"20/01/2026, 03:24:57","20/01/2026, 03:24:57",
+Home Purchase,in_progress,Uncategorized,,,,,Deciding between buying a house or continuing to rent,"20/01/2026, 06:27:26",,
+Learning New Skill,draft,Uncategorized,,,,,Should I invest time in learning Rust programming language?,"20/01/2026, 06:27:26",,
+Vacation Destination,decided,Uncategorized,,,,,"Choosing between Japan, Italy, or New Zealand for summer vacation","20/01/2026, 06:27:26",,
+Freelance Project,decided,Uncategorized,,,,,Should I take on the freelance web development project?,"20/01/2026, 06:27:26",,
+Career Change Decision,decided,Uncategorized,,,,,Should I accept the new job offer at TechCorp?,"20/01/2026, 06:27:26",,

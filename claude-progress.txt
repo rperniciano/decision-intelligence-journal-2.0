@@ -244,3 +244,49 @@ The application properly implements secure session termination with complete cli
 **Latest Commit**: e427f24
 
 ---
+
+=== Feature #277 Regression Test - mar 20 gen 2026 06:31:24 ===
+Status: ✅ NO REGRESSION DETECTED
+
+Feature: CSV export headers correct
+
+Verification Steps Completed:
+1. ✅ Export as CSV - File downloaded successfully
+2. ✅ Open file - CSV file readable and valid
+3. ✅ Verify header row present - 11 columns found
+4. ✅ Verify column names meaningful - All headers clear and descriptive
+5. ✅ Verify data rows follow headers - 5 decisions exported correctly
+
+CSV Headers Found:
+1. Title
+2. Status
+3. Category
+4. Emotional State
+5. Confidence Level
+6. Chosen Option
+7. Options
+8. Notes
+9. Created Date
+10. Decided Date
+11. Abandoned Date
+
+Test Results:
+- Header row present: ✅ PASS
+- Column names meaningful: ✅ PASS
+- Data rows follow structure: ✅ PASS
+- Console errors during export: ✅ ZERO
+- Data completeness: ✅ All 5 decisions exported
+
+Screenshots:
+- verification/feature-277-export-page.png
+- verification/feature-277-after-export.png
+
+Downloaded File:
+- .playwright-mcp/decisions-export-2026-01-20.csv
+
+Conclusion: Feature #277 is PASSING - no regression found.
+
+Test User: f277-csv-test-1768886846413@example.com
+
+---
+
