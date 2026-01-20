@@ -5938,3 +5938,105 @@ Cannot work as designed without schema changes.
 
 Progress: 281/291 passing (96.6%)
 
+
+================================================================================
+[REGRESSION TESTING] Feature #118: Duplicate email registration shows error
+Date: 2026-01-20 18:36:42 UTC
+Status: ✅ PASSING - NO REGRESSION DETECTED
+
+FEATURE DESCRIPTION:
+-------------------
+Verify duplicate handling in registration
+
+VERIFICATION STEPS:
+-------------------
+✅ Step 1: Initial Registration
+   - Navigated to /register
+   - Registered new user: f118-duplicate-test-1769025302@example.com
+   - Registration successful - "Check your email" message displayed
+
+✅ Step 2: Duplicate Registration Attempt
+   - Navigated to /register again
+   - Attempted registration with SAME email
+   - API returned 422 status code (correct)
+   - Error message displayed: "User already registered"
+
+✅ Step 3: Error Message Verification
+   - Clear error about email taken: "User already registered" ✅
+   - NOT a generic "error" message ✅
+   - Suggestion to login instead: "Already have an account? Sign in instead" ✅
+   - Link to login page provided ✅
+
+SCREENSHOTS:
+----------
+- verification/f118-duplicate-email-error.png
+
+DOCUMENTATION:
+-------------
+- verification/f118-regression-test-summary.md
+
+CONSOLE OUTPUT:
+-------------
+- 422 status code (Unprocessable Entity) - correct for validation error
+- No JavaScript errors
+
+CONCLUSION:
+-----------
+Feature #118 is WORKING CORRECTLY with no regression detected.
+
+The duplicate email error handling is complete and user-friendly:
+- Clear, specific error message
+- Helpful suggestion to sign in instead
+- Direct link to login page
+- Proper HTTP status code (422)
+
+Status: NO REGRESSION DETECTED
+Progress: 286/291 passing (98.3%)
+
+================================================================================
+
+[SESSION SUMMARY] Feature #135 Skip and Regression Testing
+Date: 2026-01-20 18:37 UTC
+
+ASSIGNED FEATURE: #135 - Reminder API Integration
+STATUS: ⏸️ SKIPPED - External Blocker (Database Schema)
+
+WORK COMPLETED:
+--------------
+
+1. Feature #135 Investigation
+   - Confirmed code is COMPLETE at both frontend and backend
+   - Identified database schema blocker: Missing columns in DecisionsFollowUpReminders
+   - Missing columns: remind_at (TIMESTAMPTZ) and user_id (UUID)
+   - Migration script ready: migrations/fix-reminders-table-f101.sql
+   - Action: Skipped to end of queue (priority 357 → 364)
+
+2. Regression Testing
+   - Feature #118: Duplicate email registration shows error
+   - Result: PASSING - No regression detected
+   - Verified: Clear error messages, helpful suggestions, proper HTTP codes
+
+BLOCKERS IDENTIFIED:
+-------------------
+Feature #135: Database schema migration requires manual execution
+- Cannot execute DDL commands without Supabase Dashboard access
+- Migration is ready and documented
+- Will work immediately after migration
+
+NEXT SESSION RECOMMENDATIONS:
+---------------------------
+1. Execute database migration in Supabase Dashboard for reminders table
+2. Work on Feature #77 (multiple check-ins) if migration not done
+3. Continue systematic regression testing of passing features
+
+CURRENT STATISTICS:
+------------------
+Passing: 286/291 (98.3%)
+In Progress: 4
+Pending: 1 (Feature #135 - blocked by migration)
+
+FILES CREATED:
+-------------
+- verification/f118-duplicate-email-error.png
+- verification/f118-regression-test-summary.md
+
