@@ -41,8 +41,6 @@ async function createDecision() {
       title: 'F93 Test Decision',
       content: 'Testing if decisions remain linked after category edit',
       category_id: categoryData.id,
-      emotional_state: 'neutral',
-      confidence_level: 5,
       status: 'active'
     })
     .select()

@@ -114,41 +114,31 @@ async function setupF83TestData() {
     const categoryId = categories[0].id;
     console.log('✅ Using category ID:', categoryId);
 
-    // Step 4: Create a test decision with multiple options
-    console.log('\n4. Creating test decision with options...');
+    // Step 4: Create a test decision
+    console.log('\n4. Creating test decision...');
 
     const decisionId = uuidv4();
     const now = new Date().toISOString();
+
+    // First, get a category name
+    const { data: categoryData } = await supabase
+      .from('categories')
+      .select('name')
+      .eq('id', categoryId)
+      .single();
+
+    const categoryName = categoryData?.name || 'General';
 
     const decisionData = {
       id: decisionId,
       user_id: userId,
       title: 'F83 Test Decision - Edit Options',
-      status: 'pending',
-      category_id: categoryId,
-      options: [
-        {
-          id: 'opt-1',
-          title: 'Option A - Original',
-          description: 'First option to be renamed',
-          pros: ['Pro 1', 'Pro 2'],
-          cons: ['Con 1']
-        },
-        {
-          id: 'opt-2',
-          title: 'Option B - Original',
-          description: 'Second option to be renamed',
-          pros: ['Pro 3'],
-          cons: ['Con 2', 'Con 3']
-        },
-        {
-          id: 'opt-3',
-          title: 'Option C - To Be Deleted',
-          description: 'This option will be removed during testing',
-          pros: ['Pro 4'],
-          cons: ['Con 4']
-        }
-      ],
+      status: 'draft',
+      category: categoryName,
+      emotional_state: null,
+      options: [], // Will be populated from options table
+      notes: null,
+      transcription: null,
       created_at: now,
       updated_at: now
     };
@@ -158,6 +148,88 @@ async function setupF83TestData() {
       .insert(decisionData)
       .select()
       .single();
+
+    if (decisionError) {
+      console.error('❌ Error creating decision:', decisionError.message);
+      console.error('Details:', decisionError);
+      process.exit(1);
+    }
+
+    console.log('✅ Test decision created successfully!');
+    console.log('   Decision ID:', insertedDecision.id);
+    console.log('   Title:', insertedDecision.title);
+
+    // Step 5: Create options for the decision
+    console.log('\n5. Creating options...');
+
+    const optionsData = [
+      {
+        id: uuidv4(),
+        decision_id: decisionId,
+        title: 'Option A - Original',
+        is_chosen: false,
+        created_at: now,
+        updated_at: now
+      },
+      {
+        id: uuidv4(),
+        decision_id: decisionId,
+        title: 'Option B - Original',
+        is_chosen: false,
+        created_at: now,
+        updated_at: now
+      },
+      {
+        id: uuidv4(),
+        decision_id: decisionId,
+        title: 'Option C - To Be Deleted',
+        is_chosen: false,
+        created_at: now,
+        updated_at: now
+      }
+    ];
+
+    const { data: insertedOptions, error: optionsError } = await supabase
+      .from('options')
+      .insert(optionsData)
+      .select();
+
+    if (optionsError) {
+      console.error('❌ Error creating options:', optionsError.message);
+      process.exit(1);
+    }
+
+    console.log('✅ Created', insertedOptions.length, 'options');
+
+    // Step 6: Create pros and cons for each option
+    console.log('\n6. Creating pros and cons...');
+
+    const prosConsData = [
+      // Option A pros/cons
+      { id: uuidv4(), option_id: optionsData[0].id, type: 'pro', content: 'Pro 1', display_order: 1 },
+      { id: uuidv4(), option_id: optionsData[0].id, type: 'pro', content: 'Pro 2', display_order: 2 },
+      { id: uuidv4(), option_id: optionsData[0].id, type: 'con', content: 'Con 1', display_order: 1 },
+
+      // Option B pros/cons
+      { id: uuidv4(), option_id: optionsData[1].id, type: 'pro', content: 'Pro 3', display_order: 1 },
+      { id: uuidv4(), option_id: optionsData[1].id, type: 'con', content: 'Con 2', display_order: 1 },
+      { id: uuidv4(), option_id: optionsData[1].id, type: 'con', content: 'Con 3', display_order: 2 },
+
+      // Option C pros/cons
+      { id: uuidv4(), option_id: optionsData[2].id, type: 'pro', content: 'Pro 4', display_order: 1 },
+      { id: uuidv4(), option_id: optionsData[2].id, type: 'con', content: 'Con 4', display_order: 1 },
+    ];
+
+    const { error: prosConsError } = await supabase
+      .from('pros_cons')
+      .insert(prosConsData);
+
+    if (prosConsError) {
+      console.error('❌ Error creating pros/cons:', prosConsError.message);
+      process.exit(1);
+    }
+
+    console.log('✅ Created', prosConsData.length, 'pros/cons');
 
     if (decisionError) {
       console.error('❌ Error creating decision:', decisionError.message);
