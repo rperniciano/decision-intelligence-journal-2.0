@@ -19,6 +19,11 @@ export function RecordPage() {
   const stopButtonRef = useRef<HTMLButtonElement>(null);
   const [statusAnnouncement, setStatusAnnouncement] = useState<string>('');
 
+  // Track mounted state to prevent state updates after unmount
+  const isMountedRef = useRef<boolean>(true);
+  // AbortController for cancelling polling requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const handleStartRecording = async () => {
     // Prevent double-clicks - guard against multiple simultaneous recording attempts
     if (isStartingRecording || isRecording) {
@@ -91,42 +96,65 @@ export function RecordPage() {
     const maxAttempts = 60; // 60 attempts * 2 seconds = 2 minutes max
     let attempts = 0;
 
-    while (attempts < maxAttempts) {
-      // Poll for status
-      const statusResponse = await fetch(
-        `${import.meta.env.VITE_API_URL}/recordings/${jobId}/status`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+    // Create new AbortController for this polling session
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    try {
+      while (attempts < maxAttempts) {
+        // Check if component is still mounted and not aborted
+        if (!isMountedRef.current || abortController.signal.aborted) {
+          throw new Error('Polling cancelled - component unmounted');
         }
-      );
 
-      if (!statusResponse.ok) {
-        throw new Error('Failed to check processing status');
-      }
+        // Poll for status
+        const statusResponse = await fetch(
+          `${import.meta.env.VITE_API_URL}/recordings/${jobId}/status`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            signal: abortController.signal, // Allow aborting the request
+          }
+        );
 
-      const statusData = await statusResponse.json();
-
-      // Check if completed
-      if (statusData.status === 'completed') {
-        if (!statusData.decisionId) {
-          throw new Error('Processing completed but no decision was created');
+        // Check again after async operation
+        if (!isMountedRef.current) {
+          throw new Error('Polling cancelled - component unmounted during request');
         }
-        return statusData.decisionId;
+
+        if (!statusResponse.ok) {
+          throw new Error('Failed to check processing status');
+        }
+
+        const statusData = await statusResponse.json();
+
+        // Check if completed
+        if (statusData.status === 'completed') {
+          if (!statusData.decisionId) {
+            throw new Error('Processing completed but no decision was created');
+          }
+          return statusData.decisionId;
+        }
+
+        // Check if failed
+        if (statusData.status === 'failed') {
+          throw new Error(statusData.errorMessage || 'Processing failed');
+        }
+
+        // Wait before next poll
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // Poll every 2 seconds
+        attempts++;
       }
 
-      // Check if failed
-      if (statusData.status === 'failed') {
-        throw new Error(statusData.errorMessage || 'Processing failed');
+      throw new Error('Processing timed out. Please try again.');
+    } finally {
+      // Clean up abort controller
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
       }
-
-      // Wait before next poll
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Poll every 2 seconds
-      attempts++;
+      abortController.abort();
     }
-
-    throw new Error('Processing timed out. Please try again.');
   };
 
   const processRecording = async (audioBlob?: Blob) => {
@@ -175,12 +203,23 @@ export function RecordPage() {
       // Start polling for job completion
       const decisionId = await pollJobStatus(result.jobId, session.access_token);
 
-      // Navigate to the created decision
-      navigate(`/decisions/${decisionId}`);
+      // Only navigate and update state if component is still mounted
+      if (isMountedRef.current) {
+        // Navigate to the created decision
+        navigate(`/decisions/${decisionId}`);
+      }
     } catch (err) {
       console.error('Error processing recording:', err);
-      setError((err as Error).message || 'Transcription failed. Please try again or enter manually.');
-      setIsProcessing(false);
+
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        const errorMessage = (err as Error).message;
+        // Don't show error for cancelled polling (user navigated away)
+        if (!errorMessage.includes('cancelled')) {
+          setError(errorMessage || 'Transcription failed. Please try again or enter manually.');
+        }
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -239,6 +278,21 @@ export function RecordPage() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleKeyDown]);
+
+  // Cleanup on unmount - abort any pending polling and mark as unmounted
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+
+      // Abort any pending polling requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, []);
 
   // Focus management: focus stop button when recording starts
   useEffect(() => {

@@ -174,3 +174,31 @@ useEffect(() => {
 - Progress: 213/291 features (73.2%)
 - Files modified: 5
 - useEffect hooks fixed: 8
+[Testing] Feature #103 (Export data as CSV) regression test - VERIFIED PASSING ✅
+[Testing] Date: 2026-01-20 00:57:54
+[Testing] Verification steps:
+  - Navigated to Export page
+  - Clicked CSV Format button
+  - File downloaded successfully
+  - CSV contains correct headers and data
+  - No console errors
+  - API calls successful (200 OK)
+
+
+# Regression Testing - 2026-01-20 (Feature #179)
+## Feature #179: Permanent delete removes all traces - VERIFIED PASSING ✅
+
+### Test Summary
+Successfully verified that permanent delete completely removes decisions from:
+1. Trash folder - ✅ Confirmed empty
+2. History (All) - ✅ Not present
+3. Search results - ✅ Not found
+4. Database - ✅ Returns 404
+
+### Test Details
+- Test user: test_f269@example.com
+- Decision ID: 410ae618-0e4e-4e89-a8f4-f6b4f5034a95
+- Verification: 5/5 steps passed (100%)
+- No regression detected
+
+Full details: feature-179-verification-summary.md

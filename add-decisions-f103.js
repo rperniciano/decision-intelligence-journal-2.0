@@ -34,17 +34,17 @@ async function addDecisions() {
   // Add a simple test decision
   const decision = {
     title: 'Test Decision for CSV Export',
-    status: 'deliberating',
+    status: 'draft',
     category: 'Testing',
-    emotionalState: 'excited',
+    emotional_state: 'excited',
     options: [
       {
-        name: 'Option A',
+        title: 'Option A',
         pros: ['Higher salary', 'Better location'],
         cons: ['Longer hours'],
       },
       {
-        name: 'Option B',
+        title: 'Option B',
         pros: ['Work-life balance'],
         cons: ['Lower salary'],
       },
