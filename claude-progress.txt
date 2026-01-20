@@ -223,3 +223,143 @@ The only issue found was the missing mapping in the update function, which has b
 
 ---
 
+
+---
+## Feature #131: Pagination parameters work correctly - REGRESSION TEST ✅
+
+**Date:** January 20, 2026
+**Feature ID:** 131
+**Category:** UI-Backend Integration
+**Test Type:** Regression Testing
+
+### Test Summary
+Feature #131 was verified and found to be **WORKING CORRECTLY**.
+
+### Feature Requirements
+The feature requires that:
+1. Many decisions exist (to test pagination)
+2. Users can navigate to page 2
+3. Request includes page/offset/cursor params
+4. Different decisions appear on page 2
+5. Page indicators are correct
+
+### Test Setup
+- Created test user: pagination-test-131@example.com
+- Created 25 test decisions via API
+- Page size: 10 decisions per page
+- Expected: 3 pages total
+
+### Verification Steps Completed
+
+#### ✅ Step 1: Have many decisions
+- Created 25 test decisions successfully
+- Verified on dashboard: "25 Total Decisions"
+
+#### ✅ Step 2: Navigate to page 2
+- Clicked page 2 button
+- URL changed to: `http://localhost:5173/history?page=2`
+- Navigation successful
+
+#### ✅ Step 3: Verify request includes pagination params
+**API Request - Page 1:**
+```
+GET /api/v1/decisions?sort=date_desc&limit=10
+```
+
+**API Request - Page 2:**
+```
+GET /api/v1/decisions?sort=date_desc&cursor=2026-01-20T06:31:11.20261+00:00&limit=10
+```
+
+**API Request - Page 3:**
+```
+GET /api/v1/decisions?sort=date_desc&cursor=2026-01-20T06:31:07.270366+00:00&limit=10
+```
+
+✅ **All requests include `limit` parameter**
+✅ **Pages 2 and 3 include `cursor` parameter for pagination**
+✅ **Cursor value changes between pages** (cursor-based pagination)
+
+#### ✅ Step 4: Verify different decisions on page 2
+- **Page 1:** Decisions #25 through #16 (10 decisions)
+- **Page 2:** Decisions #15 through #6 (10 decisions) - **COMPLETELY DIFFERENT** ✅
+- **Page 3:** Decisions #5 through #1 (5 decisions) - **COMPLETELY DIFFERENT** ✅
+
+#### ✅ Step 5: Verify page indicators correct
+- **Page 1:** 
+  - "Go to previous page" button: DISABLED ✅
+  - Page 1 button: ACTIVE ✅
+  - Page 2 button: ENABLED ✅
+  - Page 3 button: ENABLED ✅
+  - "Go to next page" button: ENABLED ✅
+
+- **Page 2:**
+  - "Go to previous page" button: ENABLED ✅
+  - Page 1 button: ENABLED ✅
+  - Page 2 button: ACTIVE ✅
+  - Page 3 button: ENABLED ✅
+  - "Go to next page" button: ENABLED ✅
+
+- **Page 3:**
+  - "Go to previous page" button: ENABLED ✅
+  - Page 1 button: ENABLED ✅
+  - Page 2 button: ENABLED ✅
+  - Page 3 button: ACTIVE ✅
+  - "Go to next page" button: DISABLED (last page) ✅
+
+### Additional Tests Passed
+
+#### ✅ Navigation buttons work correctly
+- "Go to next page" button: Works
+- "Go to previous page" button: Works
+- Clicking page number buttons: Works
+- URL updates correctly: `?page=1`, `?page=2`, `?page=3`
+
+#### ✅ Console errors
+- **No console errors** during pagination navigation ✅
+
+#### ✅ API responses
+- All API requests return **200 OK** ✅
+- Data loads successfully on each page ✅
+
+### Screenshots
+1. **feature-131-pagination-page-1-final.png** - Page 1 with decisions #25-#16
+2. **feature-131-pagination-page-2-final.png** - Page 2 with decisions #15-#6
+3. **feature-131-pagination-page-3.png** - Page 3 with decisions #5-#1
+
+### Technical Details
+
+**Pagination Implementation:**
+- Type: Cursor-based pagination (not offset-based)
+- Page size: 10 decisions per page
+- Cursor parameter: Timestamp-based cursor for ordering
+- Sort order: `date_desc` (newest first)
+
+**Network Analysis:**
+- Page 1: No cursor (first page)
+- Page 2: `cursor=2026-01-20T06:31:11.20261+00:00` (timestamp of last item on page 1)
+- Page 3: `cursor=2026-01-20T06:31:07.270366+00:00` (timestamp of last item on page 2)
+
+**UI/UX Behavior:**
+- Active page button is visually highlighted
+- Previous/next buttons disable appropriately at boundaries
+- URL updates to reflect current page
+- Page transitions are smooth with no flicker
+
+### Conclusion
+
+**Feature #131: VERIFIED PASSING ✅**
+
+All verification steps completed successfully:
+- ✅ Pagination parameters (limit, cursor) are sent correctly
+- ✅ Different decisions appear on each page
+- ✅ Page indicators are accurate
+- ✅ Navigation buttons work correctly
+- ✅ No console errors
+- ✅ API responses successful
+- ✅ UI updates correctly
+
+**No regression found.** The pagination feature is working as expected.
+
+---
+[Testing] Feature #131 verified - still passing
