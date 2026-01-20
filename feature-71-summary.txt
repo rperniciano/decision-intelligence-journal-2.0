@@ -1,0 +1,60 @@
+# Feature #71: Pending reviews reflect actual due decisions - PASSING ✅
+
+**Date**: January 20, 2026
+**Feature**: #71 - Pending reviews reflect actual due decisions
+**Category**: Real Data Verification
+**Status**: ✅ PASSING
+
+## Feature Requirements
+
+Verify pending reviews are real:
+1. Create and complete a decision with reminder
+2. Set reminder to past date (or use test)
+3. Navigate to dashboard
+4. Verify decision appears in Pending Reviews
+5. Complete the review
+6. Verify removed from Pending Reviews
+
+## Implementation Summary
+
+### Bug Fix: API Endpoint Not Filtering by Outcome
+
+The `/api/v1/pending-reviews` endpoint was NOT filtering decisions where an outcome had already been recorded. This meant decisions would remain in Pending Reviews even after the user completed the review.
+
+**Fix Applied:**
+Added `.is('outcome', null)` filter to the query in `apps/api/src/server.ts` (line 1911).
+
+## Testing Results
+
+### ✅ Test 1: Decision with Past Due Date Appears in Pending Reviews
+- Created test decision: "TEST F71 - Should I buy a new laptop"
+- Set follow_up_date to current time
+- Decision appeared in Pending Reviews section ✅
+
+### ✅ Test 2: Recording Outcome Removes Decision from Pending Reviews
+- Recorded outcome: "Better"
+- Returned to dashboard
+- Pending Reviews section now empty ✅
+
+### ✅ Test 3: Database Verification - Real Data (No Mock)
+- Decision exists in real Supabase database
+- Outcome: "better" recorded at 2026-01-20T11:42:04.332+00:00
+- No mock data detected
+
+### ✅ Test 4: API Endpoint Correctly Filters
+- Added .is('outcome', null) filter
+- Only decisions without outcomes appear in Pending Reviews
+
+## Screenshots
+
+1. verification/feature-71-pending-reviews-shows-real-data.png
+2. verification/feature-71-after-outcome-no-pending-reviews.png
+
+## Conclusion
+
+Feature #71: VERIFIED PASSING ✅
+
+The Pending Reviews functionality now correctly shows only decisions with past due dates AND no recorded outcome, and removes them after outcome is recorded.
+
+**Commit**: bfe4779
+**Progress**: 255/291 features (87.6%)
