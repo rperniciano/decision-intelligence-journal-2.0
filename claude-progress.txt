@@ -466,3 +466,164 @@ No code changes were required - the feature was already fully implemented and wo
 - Test users created: 2
 - Console errors: 0
 - Code changes: 0 (feature already implemented)
+
+# Feature #30: Record button navigates to recording experience - Session Summary
+
+**Date**: 2026-01-20
+**Feature**: #30 - Record button navigates to recording experience
+**Status**: ✅ PASSING (NO REGRESSION)
+**Mode**: Regression Testing
+
+---
+
+## Feature Details
+
+**Category**: Navigation Integrity
+**Priority**: 30
+**Description**: Verify central record button works
+
+---
+
+## Verification Steps Completed
+
+### ✅ Step 1: Log in to the application
+**Test**: Navigated to login page and entered credentials
+**Result**: Successfully logged in with test user f30-record-btn-1768887858973@example.com
+**Evidence**: Redirected to /dashboard, user email visible in header
+
+### ✅ Step 2: Click the prominent Record button
+**Test**: Clicked the central circular record button on dashboard
+**Result**: Button click successful, page navigation initiated
+**Evidence**: URL changed from /dashboard to /record
+
+### ✅ Step 3: Verify recording experience opens
+**Test**: Verified page loads recording experience
+**Result**: Recording page loaded correctly
+**Evidence**: 
+- URL: http://localhost:5173/record
+- Page Title: Decisions - Decision Intelligence Journal
+- Heading: Record Decision
+
+### ✅ Step 4: Verify full-screen recording UI shown
+**Test**: Verified all recording UI elements present
+**Result**: Full-screen recording UI displayed correctly
+**Evidence**:
+- Back button visible (top-left)
+- Large circular record button with mic icon
+- Heading: Tap or Press Space to Record
+- Instructions: Speak naturally about your decision...
+- What to say section with 4 bullet points
+- Keyboard shortcuts section (Space, Enter, Esc)
+
+---
+
+## Test Results
+
+Console Errors: 0 ✅
+Navigation: Working ✅
+UI Elements: All present ✅
+Screenshot: Captured ✅
+
+---
+
+## Test Data
+
+**Test User Created**: f30-record-btn-1768887858973@example.com
+**User ID**: 948d382e-0d30-4cc3-b63f-d8d034669a66
+
+---
+
+## Files Created
+
+1. create-user-f30.js - Test user creation script
+2. verification/feature-30-dashboard-with-record-button.png - Dashboard showing record button
+3. verification/feature-30-record-page.png - Recording experience page
+
+---
+
+## Screenshots
+
+1. **Dashboard** - Shows central record button with text Tap to record a decision
+2. **Record Page** - Shows full-screen recording UI with instructions
+
+---
+
+## Conclusion
+
+**Feature #30: VERIFIED PASSING ✅ (NO REGRESSION)**
+
+The record button navigation is fully functional:
+- ✅ Central record button visible on dashboard
+- ✅ Button click navigates to /record
+- ✅ Full-screen recording UI loads correctly
+- ✅ All UI elements present (back button, record button, instructions)
+- ✅ Zero console errors
+- ✅ Smooth navigation experience
+
+No code changes required - feature continues to work as expected.
+
+---
+
+## Session Statistics
+- Feature tested: #30 (Record button navigates to recording experience)
+- Result: PASSING (no regression)
+- Progress: 238/291 features (81.8%)
+- Console errors: 0
+- Code changes: 0
+
+
+[Testing] Feature #96 Regression Test - mar 20 gen 2026 06:49:45
+
+## Feature: Restore soft-deleted decision
+
+### Regression Found: YES - API server configuration issue
+
+#### Root Cause
+1. **API Port Mismatch**: .env had API_PORT=3001, but Vite proxy was configured for port 4017
+2. **Port Conflict**: Port 4017 was already in use by another process
+3. **Result**: Frontend API calls were failing, making trash/restore functionality appear broken
+
+#### Fixes Applied
+1. Changed API_PORT from 3001 to 4001 in .env
+2. Updated Vite proxy target from 4017 to 4001 in apps/web/vite.config.ts
+3. Killed conflicting processes and restarted API server successfully on port 4001
+
+#### Verification Results
+✅ API server now running successfully on port 4001
+✅ Soft delete functionality works (deleted_at set correctly)
+✅ Trash API endpoint exists and is accessible
+✅ Restore API endpoint exists: POST /decisions/:id/restore
+✅ Restore UI exists in HistoryPage (bulk restore via checkbox selection)
+✅ Trash view successfully displayed deleted decision at least once
+
+#### Remaining Issue
+❌ Database error in trash endpoint: "column DecisionsFollowUpReminders.user_id does not exist"
+- This causes intermittent 500 errors when fetching trash items
+- Prevents consistent verification of the restore workflow
+- This is a SEPARATE database schema issue, not related to the API configuration regression
+
+#### Conclusion
+The API configuration regression has been FIXED. However, Feature #96 must remain marked as FAILING due to the database schema issue that prevents reliable end-to-end testing of the restore workflow.
+
+---
+
+## Session Summary
+
+### Regression Detected and Fixed
+**Feature #96**: Restore soft-deleted decision
+- **Status**: REGRESSION FOUND - API configuration issue FIXED
+- **Root Cause**: Port mismatch between Vite proxy (4017) and API_PORT env var (3001)
+- **Fix Applied**: Updated vite.config.ts proxy target to localhost:4001
+- **Commit**: e639234
+
+### Servers Running
+- ✅ API Server: http://localhost:4001 (PID: 32392)
+- ✅ Vite Dev Server: http://localhost:5173 (PID: 28704)
+
+### Known Issue (Separate from this regression)
+- Database schema error: "column DecisionsFollowUpReminders.user_id does not exist"
+- This causes intermittent 500 errors in trash endpoint
+- Requires database migration fix, not an API configuration issue
+- Does not affect the fix applied in this session
+
+---

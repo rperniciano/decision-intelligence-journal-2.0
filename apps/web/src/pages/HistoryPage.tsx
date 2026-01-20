@@ -85,12 +85,16 @@ function DecisionCard({
   decision,
   index,
   isSelected,
-  onToggleSelect
+  onToggleSelect,
+  activeFilter,
+  onRestore
 }: {
   decision: Decision;
   index: number;
   isSelected: boolean;
   onToggleSelect: (id: string) => void;
+  activeFilter?: string;
+  onRestore?: (id: string) => void;
 }) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -145,6 +149,20 @@ function DecisionCard({
                   {isOverdue(decision.decideByDate, decision.status) && <OverdueBadge />}
                 </div>
                 <span className="text-xs text-text-secondary">{formatDate(decision.createdAt)}</span>
+                {/* Show restore button when viewing trash */}
+                {activeFilter === 'trash' && onRestore && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onRestore(decision.id);
+                    }}
+                    className="mt-2 px-3 py-1 text-xs bg-accent/20 text-accent hover:bg-accent/30 rounded-lg transition-colors"
+                    aria-label="Restore decision"
+                  >
+                    Restore
+                  </button>
+                )}
               </div>
             </div>
             {decision.chosenOption && (
@@ -210,10 +228,14 @@ function TimelineView({
   decisions,
   selectedDecisions,
   onToggleSelect,
+  activeFilter,
+  onRestore
 }: {
   decisions: Decision[];
   selectedDecisions: Set<string>;
   onToggleSelect: (id: string) => void;
+  activeFilter?: string;
+  onRestore?: (id: string) => void;
 }) {
   // Group decisions by month/year (e.g., "January 2026", "December 2025")
   const groupDecisions = () => {
@@ -260,6 +282,8 @@ function TimelineView({
                 index={index}
                 isSelected={selectedDecisions.has(decision.id)}
                 onToggleSelect={onToggleSelect}
+                activeFilter={activeFilter}
+                onRestore={onRestore}
               />
             ))}
           </div>
@@ -905,6 +929,44 @@ export function HistoryPage() {
     }
   };
 
+  // Single decision restore handler
+  const handleSingleRestore = async (decisionId: string) => {
+    if (!window.confirm('Restore this decision?')) {
+      return;
+    }
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+
+      if (!token) {
+        alert('Not authenticated');
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${decisionId}/restore`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to restore decision');
+      }
+
+      const result = await response.json();
+
+      // Remove restored decision from trash list
+      setDecisions(prev => prev.filter(d => d.id !== decisionId));
+
+      alert('Decision restored successfully');
+    } catch (error) {
+      console.error('Error restoring decision:', error);
+      alert('Failed to restore decision. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen pb-20">
       <SkipLink />
@@ -1283,6 +1345,8 @@ export function HistoryPage() {
                       index={index}
                       isSelected={selectedDecisions.has(decision.id)}
                       onToggleSelect={toggleDecisionSelection}
+                      activeFilter={activeFilter}
+                      onRestore={handleSingleRestore}
                     />
                   ))}
                 </div>
@@ -1343,6 +1407,8 @@ export function HistoryPage() {
                 decisions={paginatedDecisions}
                 selectedDecisions={selectedDecisions}
                 onToggleSelect={toggleDecisionSelection}
+                activeFilter={activeFilter}
+                onRestore={handleSingleRestore}
               />
             )}
 
