@@ -1237,10 +1237,37 @@ async function registerRoutes() {
       }
 
       try {
-        // Fetch all user's decisions
+        // Feature #275: JSON export contains all records with complete related data
+        // Fetch all user's decisions with options, pros/cons, and category
+        // Note: Using !options_decision_id_fkey to specify the relationship (decision -> options)
         const { data: decisions, error } = await supabase
           .from('decisions')
-          .select('*')
+          .select(`
+            *,
+            category:category_id(
+              id,
+              name,
+              slug,
+              icon,
+              color
+            ),
+            options!options_decision_id_fkey(
+              id,
+              title,
+              description,
+              display_order,
+              is_chosen,
+              ai_extracted,
+              pros_cons(
+                id,
+                type,
+                content,
+                weight,
+                display_order,
+                ai_extracted
+              )
+            )
+          `)
           .eq('user_id', userId)
           .is('deleted_at', null)
           .order('created_at', { ascending: false });
