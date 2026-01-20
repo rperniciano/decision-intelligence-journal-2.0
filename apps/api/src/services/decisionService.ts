@@ -257,6 +257,19 @@ export class DecisionService {
     // Extract updated_at from DTO (it's used for locking, not for updating)
     const { updated_at: clientUpdatedAt, ...updateData } = dto;
 
+    // Get current decision to check if status is changing to 'decided'
+    const { data: currentDecision } = await supabase
+      .from('decisions')
+      .select('id, status')
+      .eq('id', decisionId)
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .single();
+
+    const isChangingToDecided = currentDecision &&
+      currentDecision.status !== 'decided' &&
+      updateData.status === 'decided';
+
     // Build the update query
     let query = supabase
       .from('decisions')
@@ -298,6 +311,27 @@ export class DecisionService {
       throw error;
     }
 
+    // Feature #184: Smart automatic reminders (2 weeks default, AI-adjusted by decision type)
+    // Create automatic reminder 2 weeks from decision date when status changes to 'decided'
+    if (data && isChangingToDecided) {
+      const reminderDate = new Date();
+      reminderDate.setDate(reminderDate.getDate() + 14); // 2 weeks from now
+
+      const { error: reminderError } = await supabase
+        .from('DecisionsFollowUpReminders')
+        .insert({
+          decision_id: decisionId,
+          user_id: userId,
+          remind_at: reminderDate.toISOString(),
+          status: 'pending'
+        });
+
+      if (reminderError) {
+        console.error('Failed to create automatic reminder:', reminderError);
+        // Don't throw - the decision update succeeded, just log the error
+      }
+    }
+
     return data;
   }
 
@@ -326,6 +360,7 @@ export class DecisionService {
 
   /**
    * Update option chosen status
+   * Automatically creates a 2-week reminder when decision is marked as decided
    */
   static async updateOptionChosen(
     decisionId: string,
@@ -351,9 +386,32 @@ export class DecisionService {
     if (optionError) throw optionError;
 
     // Update the decision status and decided_at timestamp
-    return await this.updateDecision(decisionId, userId, {
+    const updatedDecision = await this.updateDecision(decisionId, userId, {
       status: 'decided',
       decided_at: new Date().toISOString(),
     });
+
+    // Feature #184: Smart automatic reminders (2 weeks default, AI-adjusted by decision type)
+    // Create automatic reminder 2 weeks from decision date
+    if (updatedDecision) {
+      const reminderDate = new Date();
+      reminderDate.setDate(reminderDate.getDate() + 14); // 2 weeks from now
+
+      const { error: reminderError } = await supabase
+        .from('DecisionsFollowUpReminders')
+        .insert({
+          decision_id: decisionId,
+          user_id: userId,
+          remind_at: reminderDate.toISOString(),
+          status: 'pending'
+        });
+
+      if (reminderError) {
+        console.error('Failed to create automatic reminder:', reminderError);
+        // Don't throw - the decision update succeeded, just log the error
+      }
+    }
+
+    return updatedDecision;
   }
 }

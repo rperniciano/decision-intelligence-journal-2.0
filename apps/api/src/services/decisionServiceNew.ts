@@ -367,7 +367,7 @@ export class DecisionService {
       // First verify the decision belongs to the user and get current version
       const { data: existing, error: fetchError } = await supabase
         .from('decisions')
-        .select('id, decided_at, updated_at')
+        .select('id, status, decided_at, updated_at')
         .eq('id', decisionId)
         .eq('user_id', userId)
         .is('deleted_at', null)
@@ -389,6 +389,9 @@ export class DecisionService {
         (conflictError as any).currentData = { id: existing.id, updated_at: existing.updated_at };
         throw conflictError;
       }
+
+      // Feature #184: Track if status is changing to 'decided' for automatic reminder creation
+      const isChangingToDecided = existing.status !== 'decided' && dto.status === 'decided';
 
       // Prepare update data (exclude updated_at from the actual update)
       const updateData: any = {};
@@ -430,6 +433,34 @@ export class DecisionService {
 
       if (updateError) {
         throw updateError;
+      }
+
+      // Feature #184: Smart automatic reminders (2 weeks default, AI-adjusted by decision type)
+      // Create automatic reminder 2 weeks from decision date when status changes to 'decided'
+      if (isChangingToDecided) {
+        try {
+          const reminderDate = new Date();
+          reminderDate.setDate(reminderDate.getDate() + 14); // 2 weeks from now
+
+          const { error: reminderError } = await supabase
+            .from('DecisionsFollowUpReminders')
+            .insert({
+              decision_id: decisionId,
+              user_id: userId,
+              remind_at: reminderDate.toISOString(),
+              status: 'pending'
+            });
+
+          if (reminderError) {
+            console.error('Failed to create automatic reminder:', reminderError);
+            // Don't throw - the decision update succeeded, just log the error
+          } else {
+            console.log(`Feature #184: Automatic reminder created for decision ${decisionId} at ${reminderDate.toISOString()}`);
+          }
+        } catch (reminderError) {
+          console.error('Exception creating automatic reminder:', reminderError);
+          // Don't throw - the decision update succeeded
+        }
       }
 
       // Return the complete decision with all relations
