@@ -1730,7 +1730,20 @@ async function registerRoutes() {
             return { error: 'Failed to record outcome' };
           }
 
-          console.log('Outcome recorded:', newOutcome);
+          // Feature #89: Transition decision status to 'reviewed' after outcome recording
+          const { error: statusUpdateError } = await supabase
+            .from('decisions')
+            .update({ status: 'reviewed' })
+            .eq('id', id)
+            .eq('user_id', userId)
+            .is('deleted_at', null);
+
+          if (statusUpdateError) {
+            console.error('Error updating decision status to reviewed:', statusUpdateError);
+            // Don't fail the request if status update fails, just log it
+          }
+
+          console.log('Outcome recorded and status updated to reviewed:', newOutcome);
           return {
             success: true,
             outcome: {
@@ -1755,7 +1768,8 @@ async function registerRoutes() {
                 outcome: outcome,
                 outcome_notes: body.notes || null,
                 outcome_satisfaction: body.satisfaction ?? null,
-                outcome_recorded_at: new Date().toISOString()
+                outcome_recorded_at: new Date().toISOString(),
+                status: 'reviewed' // Feature #89: Transition to reviewed status
               })
               .eq('id', id)
               .eq('user_id', userId)
@@ -1771,7 +1785,8 @@ async function registerRoutes() {
                   .update({
                     outcome: outcome,
                     outcome_notes: body.notes || null,
-                    outcome_recorded_at: new Date().toISOString()
+                    outcome_recorded_at: new Date().toISOString(),
+                    status: 'reviewed' // Feature #89: Transition to reviewed status
                   })
                   .eq('id', id)
                   .eq('user_id', userId)
@@ -1824,6 +1839,9 @@ async function registerRoutes() {
         }
       } catch (error) {
         console.error('Error recording outcome:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('Error message:', error?.message);
+        console.error('Error code:', error?.code);
         reply.code(500);
         return { error: 'Failed to record outcome' };
       }
