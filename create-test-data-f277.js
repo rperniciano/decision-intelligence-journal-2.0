@@ -22,8 +22,19 @@ async function createTestData() {
   let userId;
 
   if (existingAuthUser) {
-    console.log('User already exists in auth, deleting old data...');
+    console.log('User already exists in auth, updating password and deleting old data...');
     userId = existingAuthUser.id;
+
+    // Update user password
+    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+      password: password,
+    });
+
+    if (updateError) {
+      console.error('Error updating password:', updateError);
+    } else {
+      console.log('Password updated successfully');
+    }
 
     // Delete existing decisions
     await supabase

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { SkipLink } from '../components/SkipLink';
 import { supabase } from '../lib/supabase';
+import jsPDF from 'jspdf';
 
 export function ExportPage() {
   const [exporting, setExporting] = useState<string | null>(null);
@@ -124,9 +125,233 @@ export function ExportPage() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      } else {
-        // PDF not implemented yet
-        alert(`Export as ${format.toUpperCase()} - Coming soon!`);
+      } else if (format === 'pdf') {
+        // Fetch all decisions for PDF export
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions?limit=1000`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch decisions for PDF export');
+        }
+
+        const data = await response.json();
+        const decisions = data.decisions || [];
+
+        if (decisions.length === 0) {
+          alert('No decisions to export');
+          return;
+        }
+
+        // Create PDF document
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 20;
+        const maxWidth = pageWidth - 2 * margin;
+        let yPosition = margin;
+
+        // Helper function to check if we need a new page
+        const checkNewPage = (neededSpace: number) => {
+          if (yPosition + neededSpace > pageHeight - margin) {
+            doc.addPage();
+            yPosition = margin;
+          }
+        };
+
+        // Helper function to wrap text
+        const wrapText = (text: string, maxWidth: number): string[] => {
+          const lines: string[] = [];
+          const words = text.split(' ');
+          let currentLine = '';
+
+          words.forEach(word => {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            const metrics = doc.getTextWidth(testLine);
+            if (metrics > maxWidth && currentLine) {
+              lines.push(currentLine);
+              currentLine = word;
+            } else {
+              currentLine = testLine;
+            }
+          });
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+          return lines;
+        };
+
+        // Title page
+        doc.setFontSize(24);
+        doc.setTextColor(0, 212, 170); // Accent color (#00d4aa)
+        doc.text('Decision Intelligence Journal', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 15;
+
+        doc.setFontSize(14);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Exported on ' + new Date().toLocaleDateString(), pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 10;
+        doc.text(`Total Decisions: ${decisions.length}`, pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 20;
+
+        // Add page for each decision
+        decisions.forEach((decision: any, index: number) => {
+          // Add new page for each decision after the first
+          if (index > 0) {
+            doc.addPage();
+            yPosition = margin;
+          }
+
+          // Decision title
+          checkNewPage(20);
+          doc.setFontSize(16);
+          doc.setTextColor(20, 20, 20);
+          const titleLines = wrapText(decision.title || 'Untitled', maxWidth);
+          titleLines.forEach((line, i) => {
+            doc.text(line, margin, yPosition + (i * 7));
+          });
+          yPosition += titleLines.length * 7 + 5;
+
+          // Decision metadata
+          doc.setFontSize(10);
+          doc.setTextColor(100, 100, 100);
+
+          // Status with color coding
+          const statusColors: Record<string, number[]> = {
+            draft: [150, 150, 150],
+            in_progress: [0, 150, 255],
+            decided: [0, 200, 100],
+            abandoned: [200, 100, 100],
+          };
+          const statusColor = statusColors[decision.status] || [100, 100, 100];
+          doc.setTextColor(...statusColor);
+          doc.text(`Status: ${decision.status || 'N/A'}`, margin, yPosition);
+          yPosition += 6;
+
+          doc.setTextColor(100, 100, 100);
+          doc.text(`Category: ${decision.category_name || 'Uncategorized'}`, margin, yPosition);
+          yPosition += 6;
+
+          if (decision.emotional_state) {
+            doc.text(`Emotional State: ${decision.emotional_state}`, margin, yPosition);
+            yPosition += 6;
+          }
+
+          if (decision.confidence_level) {
+            doc.text(`Confidence: ${decision.confidence_level}`, margin, yPosition);
+            yPosition += 6;
+          }
+
+          if (decision.created_at) {
+            doc.text(`Created: ${new Date(decision.created_at).toLocaleString()}`, margin, yPosition);
+            yPosition += 6;
+          }
+
+          if (decision.decided_at) {
+            doc.text(`Decided: ${new Date(decision.decided_at).toLocaleString()}`, margin, yPosition);
+            yPosition += 6;
+          }
+
+          if (decision.abandoned_at) {
+            doc.text(`Abandoned: ${new Date(decision.abandoned_at).toLocaleString()}`, margin, yPosition);
+            yPosition += 6;
+          }
+          yPosition += 5;
+
+          // Options section
+          if (decision.options && decision.options.length > 0) {
+            checkNewPage(15);
+            doc.setFontSize(12);
+            doc.setTextColor(20, 20, 20);
+            doc.text('Options:', margin, yPosition);
+            yPosition += 7;
+
+            doc.setFontSize(10);
+            decision.options.forEach((option: any) => {
+              checkNewPage(12);
+              const isChosen = option.is_chosen ? '✓ ' : '  ';
+              const optionText = `${isChosen}${option.title || 'Untitled'}`;
+              const optionLines = wrapText(optionText, maxWidth - 5);
+              optionLines.forEach((line, i) => {
+                if (i === 0) {
+                  doc.setTextColor(option.is_chosen ? 0 : 100, option.is_chosen ? 200 : 100, option.is_chosen ? 100 : 100);
+                } else {
+                  doc.setTextColor(100, 100, 100);
+                }
+                doc.text(line, margin + 5, yPosition + (i * 6));
+              });
+              yPosition += optionLines.length * 6 + 3;
+
+              // Option pros/cons if available
+              if (option.pros && option.pros.length > 0) {
+                doc.setTextColor(80, 80, 80);
+                const prosText = `Pros: ${option.pros.map((p: any) => p.text).join(', ')}`;
+                const prosLines = wrapText(prosText, maxWidth - 10);
+                prosLines.forEach((line, i) => {
+                  doc.text(line, margin + 10, yPosition + (i * 5));
+                });
+                yPosition += prosLines.length * 5 + 2;
+              }
+
+              if (option.cons && option.cons.length > 0) {
+                doc.setTextColor(80, 80, 80);
+                const consText = `Cons: ${option.cons.map((c: any) => c.text).join(', ')}`;
+                const consLines = wrapText(consText, maxWidth - 10);
+                consLines.forEach((line, i) => {
+                  doc.text(line, margin + 10, yPosition + (i * 5));
+                });
+                yPosition += consLines.length * 5 + 2;
+              }
+            });
+            yPosition += 5;
+          }
+
+          // Notes section
+          if (decision.notes) {
+            checkNewPage(15);
+            doc.setFontSize(12);
+            doc.setTextColor(20, 20, 20);
+            doc.text('Notes:', margin, yPosition);
+            yPosition += 7;
+
+            doc.setFontSize(10);
+            doc.setTextColor(80, 80, 80);
+            const notesLines = wrapText(decision.notes, maxWidth);
+            notesLines.forEach((line) => {
+              checkNewPage(6);
+              doc.text(line, margin, yPosition);
+              yPosition += 6;
+            });
+          }
+
+          // Outcome section if available
+          if (decision.outcome && decision.outcome.result) {
+            checkNewPage(15);
+            doc.setFontSize(12);
+            doc.setTextColor(20, 20, 20);
+            doc.text('Outcome:', margin, yPosition);
+            yPosition += 7;
+
+            doc.setFontSize(10);
+            doc.setTextColor(80, 80, 80);
+            const outcomeLines = wrapText(`Result: ${decision.outcome.result}`, maxWidth);
+            outcomeLines.forEach((line) => {
+              checkNewPage(6);
+              doc.text(line, margin, yPosition);
+              yPosition += 6;
+            });
+
+            if (decision.outcome.satisfaction) {
+              doc.text(`Satisfaction: ${decision.outcome.satisfaction}/5`, margin, yPosition);
+              yPosition += 6;
+            }
+          }
+        });
+
+        // Save the PDF
+        doc.save(`decisions-export-${new Date().toISOString().split('T')[0]}.pdf`);
       }
     } catch (error) {
       console.error('Export error:', error);
