@@ -190,6 +190,19 @@ interface InsightsData {
     totalCount: number;
     percentage: number;
   } | null;
+  timingPattern: { // Feature #90
+    bestHours: number[];
+    worstHours: number[];
+    lateNightDecisions: {
+      count: number;
+      positiveRate: number;
+    };
+    weekdayBreakdown: Array<{
+      day: number;
+      count: number;
+      positiveRate: number;
+    }>;
+  } | null;
 }
 
 export function InsightsPage() {
@@ -230,6 +243,7 @@ export function InsightsPage() {
           categoryDistribution: insights.categoryDistribution,
           decisionScore: insights.decisionScore,
           positionBias: insights.positionBias,
+          timingPattern: insights.timingPattern || null, // Feature #90
         });
       } catch (error: any) {
         // Feature #268: Silently ignore abort errors
@@ -291,6 +305,22 @@ export function InsightsPage() {
 
   const hasPositionBias = insightsData?.positionBias !== null;
 
+  // Feature #90: Calculate timing bias pattern
+  const timingBiasPattern = insightsData?.timingPattern ? (() => {
+    const tp = insightsData.timingPattern;
+    if (tp.lateNightDecisions.count > 0) {
+      return `Late night: ${Math.round(tp.lateNightDecisions.positiveRate * 100)}% positive`;
+    }
+    if (tp.bestHours.length > 0) {
+      const hour = tp.bestHours[0];
+      const timeStr = hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`;
+      return `Best: ${timeStr}`;
+    }
+    return 'Not enough data';
+  })() : 'Not enough data';
+
+  const hasTimingPattern = insightsData?.timingPattern !== null;
+
   const patterns = [
     {
       title: 'Outcome Rate',
@@ -337,6 +367,25 @@ export function InsightsPage() {
         </svg>
       ),
     },
+    // Feature #90: Timing Bias pattern card
+    ...(hasTimingPattern ? [{
+      title: 'Timing Bias',
+      description: insightsData?.timingPattern?.lateNightDecisions.count && insightsData.timingPattern.lateNightDecisions.count > 0
+        ? 'Your late-night decision performance'
+        : 'Your best hours for decisions',
+      value: timingBiasPattern,
+      patternId: 'timing-bias',
+      trend: insightsData?.timingPattern?.lateNightDecisions.positiveRate && insightsData.timingPattern.lateNightDecisions.positiveRate < 0.5
+        ? { direction: 'down' as const, value: 'Avoid late night' }
+        : insightsData?.timingPattern?.bestHours.length > 0
+        ? { direction: 'up' as const, value: 'Best time' }
+        : undefined,
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    }] : []),
     ...(hasPositionBias ? [{
       title: 'Position Bias',
       description: hasPositionBias && insightsData?.positionBias?.position === 1

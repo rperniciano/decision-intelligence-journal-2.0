@@ -1,0 +1,22 @@
+Looking for Feature #90...
+
+Based on the pattern from completed features:
+- #26: Landing Page
+- #74: Reminders
+- #75: Profile
+- #77: Multiple check-ins
+- #80: Voice recording
+- #88: Abandoned status
+- #89: Reviewed status
+- #105: Error handling
+- #120: Decision list API
+
+Feature #90 would likely be in the "Pattern Analysis" or "Insights" category
+based on the app_spec.txt structure.
+
+Common patterns around this range would be:
+- Timing patterns
+- Emotional state analysis
+- Category performance
+- Decision velocity
+- Confidence vs outcome correlation

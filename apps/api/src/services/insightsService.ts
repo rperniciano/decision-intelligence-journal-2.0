@@ -43,6 +43,21 @@ export interface PositionBiasPattern {
   percentage: number;
 }
 
+// Feature #90: Timing patterns - best/worst hours for decisions
+export interface TimingPattern {
+  bestHours: number[];
+  worstHours: number[];
+  lateNightDecisions: {
+    count: number;
+    positiveRate: number;
+  };
+  weekdayBreakdown: Array<{
+    day: number;
+    count: number;
+    positiveRate: number;
+  }>;
+}
+
 export interface InsightsData {
   totalDecisions: number;
   decisionsWithOutcomes: number;
@@ -56,6 +71,7 @@ export interface InsightsData {
   bestEmotionalState: EmotionalPattern | null;
   topCategories: CategoryPattern[];
   positionBias: PositionBiasPattern | null;
+  timingPattern: TimingPattern | null; // Feature #90
 }
 
 export class InsightsService {
@@ -214,6 +230,96 @@ export class InsightsService {
       positionBias = highestBias;
     }
 
+    // Feature #90: Calculate timing patterns (best/worst hours for decisions)
+    let timingPattern: TimingPattern | null = null;
+
+    if (decisionsWithOutcomes.length >= 5) {
+      // Hour-by-hour statistics (0-23)
+      const hourlyStats: Map<number, { positive: number; total: number }> = new Map();
+      for (let i = 0; i < 24; i++) {
+        hourlyStats.set(i, { positive: 0, total: 0 });
+      }
+
+      // Weekday statistics (0=Sunday, 6=Saturday)
+      const weekdayStats: Map<number, { positive: number; total: number }> = new Map();
+      for (let i = 0; i < 7; i++) {
+        weekdayStats.set(i, { positive: 0, total: 0 });
+      }
+
+      // Late-night decisions (10pm - 6am)
+      let lateNightCount = 0;
+      let lateNightPositive = 0;
+
+      decisionsWithOutcomes.forEach(d => {
+        const createdAt = new Date(d.created_at);
+        const hour = createdAt.getHours();
+        const day = createdAt.getDay();
+
+        // Update hourly stats
+        const hourStats = hourlyStats.get(hour)!;
+        hourStats.total++;
+        if (d.outcome === 'better') {
+          hourStats.positive++;
+        }
+
+        // Update weekday stats
+        const dayStats = weekdayStats.get(day)!;
+        dayStats.total++;
+        if (d.outcome === 'better') {
+          dayStats.positive++;
+        }
+
+        // Check if late night (10pm-6am, i.e., hours 22-23 and 0-5)
+        if (hour >= 22 || hour < 6) {
+          lateNightCount++;
+          if (d.outcome === 'better') {
+            lateNightPositive++;
+          }
+        }
+      });
+
+      // Calculate positive rate for each hour
+      const hourlyRates: Array<{ hour: number; rate: number; count: number }> = [];
+      hourlyStats.forEach((stats, hour) => {
+        if (stats.count >= 2) { // Only consider hours with at least 2 decisions
+          const rate = stats.positive / stats.total;
+          hourlyRates.push({ hour, rate, count: stats.total });
+        }
+      });
+
+      // Sort by positive rate
+      hourlyRates.sort((a, b) => b.rate - a.rate);
+
+      // Best hours (top 3 by positive rate)
+      const bestHours = hourlyRates.slice(0, 3).map(h => h.hour);
+
+      // Worst hours (bottom 3 by positive rate)
+      const worstHours = hourlyRates.slice(-3).reverse().map(h => h.hour);
+
+      // Late night positive rate
+      const lateNightPositiveRate = lateNightCount > 0 ? lateNightPositive / lateNightCount : 0;
+
+      // Weekday breakdown
+      const weekdayBreakdown = Array.from(weekdayStats.entries())
+        .map(([day, stats]) => ({
+          day,
+          count: stats.total,
+          positiveRate: stats.total > 0 ? stats.positive / stats.total : 0,
+        }))
+        .filter(wd => wd.count > 0) // Only include days with decisions
+        .sort((a, b) => a.day - b.day); // Sort by day
+
+      timingPattern = {
+        bestHours,
+        worstHours,
+        lateNightDecisions: {
+          count: lateNightCount,
+          positiveRate: lateNightPositiveRate,
+        },
+        weekdayBreakdown,
+      };
+    }
+
     return {
       totalDecisions,
       decisionsWithOutcomes: decisionsWithOutcomes.length,
@@ -227,6 +333,7 @@ export class InsightsService {
       bestEmotionalState,
       topCategories,
       positionBias,
+      timingPattern, // Feature #90
     };
   }
 }
