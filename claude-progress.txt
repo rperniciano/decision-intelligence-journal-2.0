@@ -683,3 +683,98 @@ end-to-end browser testing. All verification steps completed successfully.
 [Testing] Screenshots: feature126-recording-page.png, feature126-regression-test-complete.png
 [Testing] Summary: feature126-regression-test-summary.md
 
+
+# Testing Session - 2026-01-20 (Feature #277)
+## Feature #277: CSV export headers correct - VERIFIED PASSING ✅
+
+### Implementation Summary
+
+**Feature:** Verify CSV format and completeness
+**Category:** Export/Import
+
+### What This Feature Verifies
+
+This feature verifies that the CSV export functionality:
+1. Exports data successfully to CSV format
+2. Includes a proper header row with meaningful column names
+3. Contains all decision records from the database
+4. Has matching counts between database and CSV
+
+### Test Steps Completed
+
+1. **Export as CSV** ✅
+   - Logged in via browser
+   - Navigated to Settings → Export Data
+   - Clicked "CSV Format" button
+   - File downloaded successfully as decisions-export-2026-01-20.csv
+
+2. **Open file** ✅
+   - CSV file saved to .playwright-mcp directory
+   - File readable and properly formatted
+
+3. **Verify header row present** ✅
+   - Header row contains 11 columns:
+     * Title
+     * Status
+     * Category
+     * Emotional State
+     * Confidence Level
+     * Chosen Option
+     * Options
+     * Notes
+     * Created Date
+     * Decided Date
+     * Abandoned Date
+
+4. **Verify column names meaningful** ✅
+   - All column names are descriptive and human-readable
+   - Column names match the data they contain
+   - Proper CSV formatting with comma separation
+
+5. **Verify data rows follow headers** ✅
+   - 5 data rows present (matching database)
+   - All decisions exported with correct data
+   - No missing or truncated data
+
+### Verification Results
+
+**Database Count:** 5 decisions
+**CSV Count:** 5 data rows + 1 header row = 6 total lines
+**Match:** ✅ COUNTS MATCH
+
+**Decisions Exported:**
+1. F277_TEST: Job Offer Decision 1 (draft)
+2. F277_TEST: Job Offer Decision 2 (in_progress)
+3. F277_TEST: Job Offer Decision 3 (decided)
+4. F277_TEST: Apartment Lease Decision (abandoned)
+5. F277_TEST: Car Purchase Decision (draft)
+
+**Browser Tests:**
+- ✅ Logged in successfully
+- ✅ Navigated to Export page
+- ✅ Downloaded CSV file
+- ✅ Verified structure complete
+- ✅ Verified all decisions present
+- ✅ Zero console errors
+
+**Screenshots:**
+- feature-277-export-page.png - Export page before download
+- feature-277-after-export.png - After successful CSV export
+- feature-277-history-page.png - All 5 decisions visible in History view
+
+### Session Statistics
+- Feature completed: #277 (CSV export headers correct)
+- Progress: 222/291 features (76.3%)
+- Browser tests: 1 scenario
+- Screenshots: 3
+- Test data: 1 user, 1 category, 5 decisions
+
+### Conclusion
+
+**Feature #277: VERIFIED PASSING ✅**
+
+The CSV export successfully includes a proper header row with meaningful column names,
+and all decision records are present in the export. All verification steps completed
+successfully through end-to-end browser testing.
+
+---
