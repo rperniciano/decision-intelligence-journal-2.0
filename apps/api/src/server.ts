@@ -1895,7 +1895,7 @@ async function registerRoutes() {
 
         // Query decisions table for pending outcome reviews
         // A decision needs a review if it has a follow_up_date that has passed
-        // but hasn't been notified yet (or outcome not recorded)
+        // but outcome hasn't been recorded yet
         const { data: decisions, error } = await supabase
           .from('decisions')
           .select(`
@@ -1908,6 +1908,7 @@ async function registerRoutes() {
           `)
           .eq('user_id', userId)
           .not('follow_up_date', 'is', null)
+          .is('outcome', null) // Feature #71: Only show decisions without outcomes
           .lte('follow_up_date', new Date().toISOString())
           .order('follow_up_date', { ascending: true });
 
