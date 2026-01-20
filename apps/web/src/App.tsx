@@ -23,6 +23,7 @@ const EditDecisionPage = lazy(() => import('./pages/EditDecisionPage').then(m =>
 const CreateDecisionPage = lazy(() => import('./pages/CreateDecisionPage').then(m => ({ default: m.CreateDecisionPage })));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
+const PatternDetailPage = lazy(() => import('./pages/PatternDetailPage').then(m => ({ default: m.PatternDetailPage })));
 
 // Landing Page Component
 function LandingPage() {
@@ -229,6 +230,16 @@ function App() {
               <ProtectedRoute>
                 <Suspense fallback={<PageLoader />}>
                   <InsightsPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/insights/patterns/:patternId"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <PatternDetailPage />
                 </Suspense>
               </ProtectedRoute>
             }

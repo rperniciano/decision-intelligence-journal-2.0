@@ -13,6 +13,7 @@ function PatternCard({
   trend,
   icon,
   index,
+  patternId,
 }: {
   title: string;
   description: string;
@@ -20,6 +21,7 @@ function PatternCard({
   trend?: { direction: 'up' | 'down' | 'neutral'; value: string };
   icon: React.ReactNode;
   index: number;
+  patternId: string;
 }) {
   const trendColors = {
     up: 'text-emerald-400',
@@ -46,12 +48,15 @@ function PatternCard({
   };
 
   return (
-    <motion.div
-      className="glass p-5 rounded-2xl rim-light min-w-[280px] max-w-[320px] flex-shrink-0"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.4 }}
-    >
+    <Link to={`/insights/patterns/${patternId}`}>
+      <motion.div
+        className="glass p-5 rounded-2xl rim-light min-w-[280px] max-w-[320px] flex-shrink-0 cursor-pointer hover:scale-[1.02] transition-transform"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1, duration: 0.4 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
           {icon}
@@ -66,7 +71,8 @@ function PatternCard({
       <h3 className="font-semibold text-lg mb-1">{title}</h3>
       <p className="text-text-secondary text-sm mb-3">{description}</p>
       <div className="text-2xl font-bold text-gradient">{value}</div>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 }
 
@@ -290,6 +296,7 @@ export function InsightsPage() {
       title: 'Outcome Rate',
       description: 'Your positive outcome percentage',
       value: outcomeRate,
+      patternId: 'outcome-rate',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -300,6 +307,7 @@ export function InsightsPage() {
       title: 'Emotional Impact',
       description: 'Your most successful mindset',
       value: bestEmotionalState,
+      patternId: 'emotional-impact',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
@@ -310,6 +318,7 @@ export function InsightsPage() {
       title: 'Category Performance',
       description: 'Your most-used category',
       value: categoryPerformance,
+      patternId: 'category-performance',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
@@ -320,6 +329,7 @@ export function InsightsPage() {
       title: 'Decision Count',
       description: 'Total decisions tracked',
       value: insightsData ? `${insightsData.totalDecisions} decisions` : 'Not enough data',
+      patternId: 'decision-count',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
@@ -333,6 +343,7 @@ export function InsightsPage() {
         ? 'You tend to choose the first option'
         : `Your most chosen option position`,
       value: positionBiasPattern,
+      patternId: 'position-bias',
       trend: hasPositionBias && insightsData?.positionBias?.percentage && insightsData.positionBias.percentage >= 50
         ? { direction: 'up' as const, value: 'Primacy bias' }
         : undefined,
@@ -381,6 +392,7 @@ export function InsightsPage() {
                     value={pattern.value}
                     icon={pattern.icon}
                     index={index}
+                    patternId={pattern.patternId}
                   />
                 ))}
               </div>

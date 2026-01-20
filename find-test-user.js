@@ -6,8 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-async function findAnyTestUser() {
-  // List recent users from auth
+async function findConfirmedUser() {
   const { data, error } = await supabase.auth.admin.listUsers();
 
   if (error) {
@@ -16,13 +15,20 @@ async function findAnyTestUser() {
   }
 
   if (data && data.users && data.users.length > 0) {
-    const user = data.users[0];
-    console.log('Found user:', user.email);
-    console.log('ID:', user.id);
-    console.log('Confirmed:', user.email_confirmed_at ? 'Yes' : 'No');
+    console.log('All users:');
+    data.users.forEach(u => {
+      const confirmed = u.email_confirmed_at ? '✓' : '✗';
+      console.log(`  [${confirmed}] ${u.email}`);
+    });
+
+    // Find first confirmed user
+    const confirmedUser = data.users.find(u => u.email_confirmed_at);
+    if (confirmedUser) {
+      console.log('\nFirst confirmed user:', confirmedUser.email);
+    }
   } else {
     console.log('No users found');
   }
 }
 
-findAnyTestUser();
+findConfirmedUser();

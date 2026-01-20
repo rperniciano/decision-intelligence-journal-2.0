@@ -7,7 +7,8 @@ const supabase = createClient(
 );
 
 async function confirmUser() {
-  const email = 'testingsession@example.com';
+  const email = 'audio-test-f125@example.com';
+  const password = 'TestPass123!';
 
   const { data: users, error: listError } = await supabase.auth.admin.listUsers();
   if (listError) {
@@ -21,14 +22,18 @@ async function confirmUser() {
     return;
   }
 
+  // Confirm email and set password
   const { error } = await supabase.auth.admin.updateUserById(user.id, {
-    email_confirmed_at: new Date().toISOString()
+    email_confirm: true,
+    password: password
   });
 
   if (error) {
-    console.error('Error confirming user:', error);
+    console.error('Error updating user:', error);
   } else {
-    console.log('User confirmed successfully!');
+    console.log('User confirmed and password set successfully!');
+    console.log('Email:', email);
+    console.log('Password:', password);
   }
 }
 
