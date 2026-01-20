@@ -6813,3 +6813,91 @@ Documentation created: verification/f77-session-2-summary.md
 
 ================================================================================
 
+
+
+================================================================================
+[FEATURE #77] SESSION 2 - EXTERNAL BLOCKER DOCUMENTED
+Date: 2026-01-20
+Status: ⚠️ SKIPPED - External Blocker (priority 365 → 368)
+Agent: Single Feature Mode assigned to Feature #77
+
+SESSION OUTCOME:
+---------------
+Feature #77 SKIPPED to end of queue due to genuine external blocker.
+
+CODE VERIFICATION:
+------------------
+✅ Frontend: DecisionDetailPage.tsx
+   - Outcome interface with check_in_number field (line 25)
+   - fetchOutcomes() calls GET /decisions/:id/outcomes (line 324)
+   - Displays outcomes with check-in badges (line 1081)
+   
+✅ Backend: server.ts
+   - GET /decisions/:id/outcomes (lines 1584-1698)
+     * Queries outcomes table ordered by check_in_number
+     * Fallback logic for missing table (PGRST205/PGRST204/42P01)
+   
+   - POST /decisions/:id/outcomes (lines 1700-1900+)
+     * Auto-calculates next check_in_number
+     * Inserts with check_in_number
+     * Fallback to legacy format if table missing
+
+EXTERNAL BLOCKER:
+-----------------
+❌ Outcomes table does not exist in database
+   Error: PGRST205 - Could not find table in schema cache
+   
+❌ Cannot execute migration without:
+   - Database password for PostgreSQL connection
+   - Supabase Dashboard access to run SQL manually
+   - Supabase CLI with authentication
+
+ATTEMPTS MADE:
+--------------
+1. ❌ execute-outcomes-migration.js (pg client)
+      Requires DATABASE_URL or SUPABASE_DB_PASSWORD
+      
+2. ❌ npx supabase db push
+      Requires --password flag or linked project
+      
+3. ❌ Browser automation to Supabase Dashboard
+      Requires manual login
+
+RESOLUTION OPTIONS:
+------------------
+Once ANY of these is done, feature will work immediately:
+
+Option 1: Supabase Dashboard (RECOMMENDED)
+- Go to: https://supabase.com/dashboard/project/doqojfsldvajmlscpwhu/sql
+- Execute: apps/api/migrations/create_outcomes_table.sql
+- Time: 2-3 minutes
+
+Option 2: Supabase CLI with password
+- Add SUPABASE_DB_PASSWORD to .env
+- Run: npx supabase db push -p $SUPABASE_DB_PASSWORD
+
+Option 3: Direct PostgreSQL connection
+- Add DATABASE_URL to .env
+- Run: node execute-outcomes-migration.js
+
+DOCUMENTATION CREATED:
+---------------------
+- verification/f77-session-2-summary.md (comprehensive documentation)
+- execute-outcomes-migration.js (migration script, needs credentials)
+- claude-progress.txt (session summary)
+
+ACTION TAKEN:
+------------
+Feature #77 SKIPPED: priority 365 → 368 (end of queue)
+
+This is a GENUINE EXTERNAL BLOCKER requiring manual intervention.
+
+PROGRESS:
+---------
+Before: 286/291 passing (98.3%)
+After: 286/291 passing (98.3%)
+
+Feature #77 will be testable once migration is executed manually.
+
+================================================================================
+
