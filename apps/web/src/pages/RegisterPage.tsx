@@ -9,6 +9,12 @@ export function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const isSubmittingRef = useRef(false);
@@ -19,16 +25,42 @@ export function RegisterPage() {
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+    // Client-side validation with accessible error messages
+    const newFieldErrors: {
+      name?: string;
+      email?: string;
+      password?: string;
+      confirmPassword?: string;
+    } = {};
+
+    if (!name.trim()) {
+      newFieldErrors.name = 'Name is required';
     }
 
-    // Validate password length
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!email.trim()) {
+      newFieldErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newFieldErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!password) {
+      newFieldErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newFieldErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (!confirmPassword) {
+      newFieldErrors.confirmPassword = 'Please confirm your password';
+    } else if (password !== confirmPassword) {
+      newFieldErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      // Set general error for screen readers
+      setError('Please fix the errors below and try again.');
       return;
     }
 
@@ -155,7 +187,7 @@ export function RegisterPage() {
           </div>
 
           {/* Email/Password form */}
-          <form onSubmit={handleEmailRegister} className="space-y-4">
+          <form onSubmit={handleEmailRegister} className="space-y-4" noValidate>
             {error && (
               <motion.div
                 role="alert"
@@ -184,10 +216,29 @@ export function RegisterPage() {
                 id="name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (fieldErrors.name) {
+                    setFieldErrors(prev => ({ ...prev, name: undefined }));
+                  }
+                }}
+                aria-invalid={fieldErrors.name ? 'true' : 'false'}
+                aria-describedby={fieldErrors.name ? 'name-error' : undefined}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
                 placeholder="Your name"
               />
+              {fieldErrors.name && (
+                <motion.div
+                  id="name-error"
+                  role="alert"
+                  aria-live="polite"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 text-sm text-error"
+                >
+                  {fieldErrors.name}
+                </motion.div>
+              )}
             </div>
 
             <div>
@@ -198,11 +249,30 @@ export function RegisterPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) {
+                    setFieldErrors(prev => ({ ...prev, email: undefined }));
+                  }
+                }}
+                aria-invalid={fieldErrors.email ? 'true' : 'false'}
+                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                 required
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
                 placeholder="you@example.com"
               />
+              {fieldErrors.email && (
+                <motion.div
+                  id="email-error"
+                  role="alert"
+                  aria-live="polite"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 text-sm text-error"
+                >
+                  {fieldErrors.email}
+                </motion.div>
+              )}
             </div>
 
             <div>
@@ -213,13 +283,39 @@ export function RegisterPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) {
+                    setFieldErrors(prev => ({ ...prev, password: undefined }));
+                  }
+                }}
+                aria-invalid={fieldErrors.password ? 'true' : 'false'}
+                aria-describedby={
+                  fieldErrors.password
+                    ? 'password-error'
+                    : 'password-requirement'
+                }
                 required
                 minLength={6}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
                 placeholder="••••••••"
               />
-              <p className="mt-1 text-xs text-text-secondary">Minimum 6 characters</p>
+              {fieldErrors.password ? (
+                <motion.div
+                  id="password-error"
+                  role="alert"
+                  aria-live="polite"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 text-sm text-error"
+                >
+                  {fieldErrors.password}
+                </motion.div>
+              ) : (
+                <p id="password-requirement" className="mt-1 text-xs text-text-secondary">
+                  Minimum 6 characters
+                </p>
+              )}
             </div>
 
             <div>
@@ -230,12 +326,31 @@ export function RegisterPage() {
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (fieldErrors.confirmPassword) {
+                    setFieldErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                  }
+                }}
+                aria-invalid={fieldErrors.confirmPassword ? 'true' : 'false'}
+                aria-describedby={fieldErrors.confirmPassword ? 'confirm-password-error' : undefined}
                 required
                 minLength={6}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
                 placeholder="••••••••"
               />
+              {fieldErrors.confirmPassword && (
+                <motion.div
+                  id="confirm-password-error"
+                  role="alert"
+                  aria-live="polite"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 text-sm text-error"
+                >
+                  {fieldErrors.confirmPassword}
+                </motion.div>
+              )}
             </div>
 
             <button

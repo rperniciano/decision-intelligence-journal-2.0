@@ -7,6 +7,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
   const isSubmittingRef = useRef(false);
 
@@ -20,6 +21,29 @@ export function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
+
+    // Client-side validation with accessible error messages
+    const newFieldErrors: { email?: string; password?: string } = {};
+
+    if (!email.trim()) {
+      newFieldErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newFieldErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!password) {
+      newFieldErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newFieldErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      // Set general error for screen readers
+      setError('Please fix the errors below and try again.');
+      return;
+    }
 
     // Prevent duplicate submissions
     if (isSubmittingRef.current) {
@@ -109,7 +133,7 @@ export function LoginPage() {
           </div>
 
           {/* Email/Password form */}
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={handleEmailLogin} className="space-y-4" noValidate>
             {error && (
               <motion.div
                 role="alert"
@@ -130,11 +154,30 @@ export function LoginPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) {
+                    setFieldErrors(prev => ({ ...prev, email: undefined }));
+                  }
+                }}
+                aria-invalid={fieldErrors.email ? 'true' : 'false'}
+                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                 required
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
                 placeholder="you@example.com"
               />
+              {fieldErrors.email && (
+                <motion.div
+                  id="email-error"
+                  role="alert"
+                  aria-live="polite"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 text-sm text-error"
+                >
+                  {fieldErrors.email}
+                </motion.div>
+              )}
             </div>
 
             <div>
@@ -145,12 +188,31 @@ export function LoginPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) {
+                    setFieldErrors(prev => ({ ...prev, password: undefined }));
+                  }
+                }}
+                aria-invalid={fieldErrors.password ? 'true' : 'false'}
+                aria-describedby={fieldErrors.password ? 'password-error' : undefined}
                 required
                 minLength={6}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200"
                 placeholder="••••••••"
               />
+              {fieldErrors.password && (
+                <motion.div
+                  id="password-error"
+                  role="alert"
+                  aria-live="polite"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 text-sm text-error"
+                >
+                  {fieldErrors.password}
+                </motion.div>
+              )}
             </div>
 
             <div className="flex items-center justify-end">
