@@ -46,6 +46,7 @@ export function EditDecisionPage() {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [decision, setDecision] = useState<Decision | null>(null);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
@@ -640,6 +641,8 @@ export function EditDecisionPage() {
       return;
     }
 
+    setSaving(true);
+
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
@@ -687,6 +690,7 @@ export function EditDecisionPage() {
         // Redirect to login with return URL
         const returnUrl = encodeURIComponent(`/decisions/${id}/edit`);
         navigate(`/login?returnTo=${returnUrl}`);
+        setSaving(false);
         return;
       }
 
@@ -702,6 +706,7 @@ export function EditDecisionPage() {
     } catch (error) {
       console.error('Error saving decision:', error);
       showError('Failed to save decision. Please try again.');
+      setSaving(false);
     }
   };
 
@@ -1181,17 +1186,19 @@ export function EditDecisionPage() {
           <div className="flex gap-3 pt-4">
             <motion.button
               onClick={handleSave}
-              className="flex-1 px-6 py-3 bg-accent text-bg-deep font-medium rounded-full hover:bg-accent-400 transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              disabled={saving}
+              className="flex-1 px-6 py-3 bg-accent text-bg-deep font-medium rounded-full hover:bg-accent-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={{ scale: saving ? 1 : 1.02 }}
+              whileTap={{ scale: saving ? 1 : 0.98 }}
             >
-              Save Changes
+              {saving ? 'Saving...' : 'Save Changes'}
             </motion.button>
             <motion.button
               onClick={handleCancel}
-              className="px-6 py-3 glass glass-hover rounded-full transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              disabled={saving}
+              className="px-6 py-3 glass glass-hover rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={{ scale: saving ? 1 : 1.02 }}
+              whileTap={{ scale: saving ? 1 : 0.98 }}
             >
               Cancel
             </motion.button>
