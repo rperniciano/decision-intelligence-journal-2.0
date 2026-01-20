@@ -16,6 +16,17 @@ interface DecisionOption {
   isChosen?: boolean;
 }
 
+// Feature #77: Multiple outcomes support
+interface Outcome {
+  id: string;
+  result: 'better' | 'worse' | 'as_expected';
+  satisfaction: number | null;
+  notes: string | null;
+  recordedAt: string;
+  check_in_number: number;
+  scheduled_for?: string;
+}
+
 interface Decision {
   id: string;
   title: string;
@@ -27,9 +38,9 @@ interface Decision {
   options: DecisionOption[];
   notes?: string;
   transcription?: string;
-  outcome?: string;
-  outcome_notes?: string;
-  outcome_recorded_at?: string;
+  outcome?: string; // Legacy single outcome
+  outcome_notes?: string; // Legacy
+  outcome_recorded_at?: string; // Legacy
   abandon_reason?: string;
   abandon_note?: string;
 }
@@ -148,6 +159,8 @@ export function DecisionDetailPage() {
   const [outcomeSatisfaction, setOutcomeSatisfaction] = useState<number>(3);
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [isRecordingOutcome, setIsRecordingOutcome] = useState(false);
+  // Feature #77: Multiple outcomes state
+  const [outcomes, setOutcomes] = useState<Outcome[]>([]);
 
   // Reminder state
   const [showReminderModal, setShowReminderModal] = useState(false);
@@ -257,6 +270,37 @@ export function DecisionDetailPage() {
     }
 
     fetchReminders();
+
+    // Feature #77: Fetch outcomes for this decision
+    async function fetchOutcomes() {
+      if (!id) return;
+
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        const token = session.session?.access_token;
+
+        if (!token) return;
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/decisions/${id}/outcomes`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          signal, // Feature #268: Pass abort signal
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setOutcomes(data.outcomes || []);
+        }
+      } catch (err: any) {
+        // Feature #268: Silently ignore abort errors
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching outcomes:', err);
+        }
+      }
+    }
+
+    fetchOutcomes();
 
     // Feature #268: Cleanup function - abort fetch on unmount or id change
     return () => {
@@ -442,7 +486,7 @@ export function DecisionDetailPage() {
 
       const data = await response.json();
 
-      // Update local decision state
+      // Feature #77: Update local decision state and outcomes list
       if (decision && data.success) {
         setDecision({
           ...decision,
@@ -450,6 +494,9 @@ export function DecisionDetailPage() {
           outcome_notes: data.outcome.notes,
           outcome_recorded_at: data.outcome.recordedAt,
         });
+
+        // Add new outcome to outcomes list
+        setOutcomes(prev => [...prev, data.outcome]);
       }
 
       // Close modal and reset form
@@ -634,7 +681,8 @@ export function DecisionDetailPage() {
         )}
 
         {/* Outcome */}
-        {decision.outcome && (
+        {/* Feature #77: Display multiple outcomes with check-in numbers */}
+        {(outcomes.length > 0 || decision.outcome) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -642,29 +690,95 @@ export function DecisionDetailPage() {
             className="mb-6"
           >
             <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">
-              Outcome
+              {outcomes.length > 1 ? 'Check-ins' : 'Outcome'}
             </h3>
-            <div className="glass p-4 rounded-xl rim-light-accent">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  decision.outcome === 'better' ? 'bg-emerald-500/20 text-emerald-400' :
-                  decision.outcome === 'worse' ? 'bg-rose-500/20 text-rose-400' :
-                  'bg-amber-500/20 text-amber-400'
-                }`}>
-                  {decision.outcome.charAt(0).toUpperCase() + decision.outcome.slice(1)}
-                </span>
-                {decision.outcome_recorded_at && (
-                  <span className="text-xs text-text-secondary">
-                    Recorded {formatDate(decision.outcome_recorded_at)}
+
+            {/* Display multiple outcomes if available */}
+            {outcomes.length > 0 ? (
+              <div className="space-y-3">
+                {outcomes.map((outcome, index) => (
+                  <div key={outcome.id} className="glass p-4 rounded-xl rim-light-accent">
+                    <div className="flex items-center gap-2 mb-2">
+                      {/* Check-in number badge */}
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent">
+                        {outcome.check_in_number === 1 ? '1st' :
+                         outcome.check_in_number === 2 ? '2nd' :
+                         outcome.check_in_number === 3 ? '3rd' :
+                         `${outcome.check_in_number}th`} check-in
+                      </span>
+
+                      {/* Result badge */}
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        outcome.result === 'better' ? 'bg-emerald-500/20 text-emerald-400' :
+                        outcome.result === 'worse' ? 'bg-rose-500/20 text-rose-400' :
+                        'bg-amber-500/20 text-amber-400'
+                      }`}>
+                        {outcome.result.charAt(0).toUpperCase() + outcome.result.slice(1).replace('_', ' ')}
+                      </span>
+
+                      {/* Date */}
+                      {outcome.recordedAt && (
+                        <span className="text-xs text-text-secondary">
+                          {formatDate(outcome.recordedAt)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Satisfaction stars */}
+                    {outcome.satisfaction && (
+                      <div className="flex items-center gap-1 mb-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <svg
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= outcome.satisfaction! ? 'text-accent' : 'text-white/20'
+                            }`}
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {outcome.notes && (
+                      <p className="text-text-secondary text-sm whitespace-pre-wrap mt-2">
+                        {outcome.notes}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : decision.outcome ? (
+              // Legacy single outcome display
+              <div className="glass p-4 rounded-xl rim-light-accent">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent">
+                    1st check-in
                   </span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    decision.outcome === 'better' ? 'bg-emerald-500/20 text-emerald-400' :
+                    decision.outcome === 'worse' ? 'bg-rose-500/20 text-rose-400' :
+                    'bg-amber-500/20 text-amber-400'
+                  }`}>
+                    {decision.outcome.charAt(0).toUpperCase() + decision.outcome.slice(1)}
+                  </span>
+                  {decision.outcome_recorded_at && (
+                    <span className="text-xs text-text-secondary">
+                      Recorded {formatDate(decision.outcome_recorded_at)}
+                    </span>
+                  )}
+                </div>
+                {decision.outcome_notes && (
+                  <p className="text-text-secondary text-sm whitespace-pre-wrap mt-2">
+                    {decision.outcome_notes}
+                  </p>
                 )}
               </div>
-              {decision.outcome_notes && (
-                <p className="text-text-secondary text-sm whitespace-pre-wrap mt-2">
-                  {decision.outcome_notes}
-                </p>
-              )}
-            </div>
+            ) : null}
           </motion.div>
         )}
 
@@ -787,13 +901,13 @@ export function DecisionDetailPage() {
           transition={{ delay: 0.4, duration: 0.3 }}
           className="flex flex-wrap gap-3"
         >
-          {/* Record Outcome button - only show if no outcome recorded and status is decided */}
-          {!decision.outcome && (decision.status === 'decided' || decision.status === 'in_progress') && (
+          {/* Record Outcome button - Feature #77: Allow multiple check-ins */}
+          {(decision.status === 'decided' || decision.status === 'in_progress' || decision.status === 'reviewed') && (
             <button
               onClick={() => setShowOutcomeModal(true)}
               className="flex-1 px-4 py-2.5 bg-accent text-bg-deep font-medium rounded-xl hover:bg-accent/90 transition-all text-sm"
             >
-              Record Outcome
+              {outcomes.length > 0 ? 'Record Another Check-in' : 'Record Outcome'}
             </button>
           )}
           <Link to={`/decisions/${id}/edit`} className="flex-1">

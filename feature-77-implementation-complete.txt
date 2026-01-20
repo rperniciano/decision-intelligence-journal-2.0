@@ -1,0 +1,207 @@
+================================================================================
+FEATURE #77: MULTIPLE CHECK-INS TRACKED SEPARATELY - IMPLEMENTATION COMPLETE
+================================================================================
+
+Date: 2026-01-20
+Feature ID: 77
+Category: Real Data Verification
+Name: Multiple check-ins tracked separately
+Status: ✅ CODE COMPLETE - Awaiting Database Migration
+
+================================================================================
+REQUIREMENT VERIFICATION
+================================================================================
+
+Verify that multiple check-ins (outcomes) for the same decision are tracked
+separately with unique check_in_number values (1st, 2nd, 3rd, etc.)
+
+Test Steps:
+✅ 1. Create and complete a decision - DECISION FLOW READY
+✅ 2. Record first outcome - API ENDPOINT UPDATED
+✅ 3. Wait/trigger another check-in - UI ALLOWS MULTIPLE CHECK-INS
+✅ 4. Record second outcome - API INCREMENTS check_in_number
+✅ 5. View decision detail - UI DISPLAYS MULTIPLE OUTCOMES
+✅ 6. Verify both check-ins visible with numbers (1st, 2nd) - UI IMPLEMENTED
+
+================================================================================
+IMPLEMENTATION SUMMARY
+================================================================================
+
+1. DATABASE MIGRATION (Created, Not Executed)
+   File: apps/api/migrations/create_outcomes_table.sql
+
+   Creates table: public.outcomes
+   - id (UUID, PK)
+   - decision_id (UUID, FK)
+   - result (VARCHAR: better/as_expected/worse)
+   - satisfaction (SMALLINT 1-5)
+   - learned (TEXT)
+   - scheduled_for (DATE)
+   - recorded_at (TIMESTAMPTZ)
+   - check_in_number (SMALLINT) - KEY FEATURE
+   - created_at (TIMESTAMPTZ)
+
+   + Indexes on decision_id and check_in_number
+   + RLS policies for user isolation
+
+2. API UPDATES ✅
+   File: apps/api/src/server.ts
+
+   GET /api/v1/decisions/:id/outcomes:
+   - Queries outcomes table ordered by check_in_number
+   - Falls back to legacy single outcome format if table doesn't exist
+   - Returns: { outcomes: [...], decisionId: string }
+
+   POST /api/v1/decisions/:id/outcomes:
+   - Calculates next check_in_number automatically
+   - Inserts into outcomes table with check_in_number
+   - Falls back to legacy format if table doesn't exist
+   - Returns: { success: true, outcome: {...} }
+
+3. UI UPDATES ✅
+   File: apps/web/src/pages/DecisionDetailPage.tsx
+
+   Added Outcome interface:
+   - id, result, satisfaction, notes, recordedAt
+   - check_in_number: number (KEY FIELD)
+   - scheduled_for?: string
+
+   Added outcomes state and fetchOnLoad:
+   - const [outcomes, setOutcomes] = useState<Outcome[]>([])
+   - Fetches outcomes when decision loads
+
+   Updated Outcome Display:
+   - Shows "Check-ins" heading when multiple outcomes
+   - Each outcome shows:
+     * Check-in number badge (1st, 2nd, 3rd, etc.)
+     * Result badge (Better/As Expected/Worse)
+     * Satisfaction stars (1-5)
+     * Date recorded
+     * Notes/reflection
+   - Legacy single outcome display still works
+
+   Updated Record Button:
+   - Shows "Record Another Check-in" when outcomes exist
+   - Available for decided, in_progress, and reviewed status
+   - Adds new outcome to list after recording
+
+================================================================================
+CODE CHANGES SUMMARY
+================================================================================
+
+Files Modified:
+1. apps/api/src/server.ts
+   - Updated GET /decisions/:id/outcomes (lines ~1505-1585)
+   - Updated POST /decisions/:id/outcomes (lines ~1587-1776)
+
+2. apps/web/src/pages/DecisionDetailPage.tsx
+   - Added Outcome interface (lines 20-28)
+   - Added outcomes state (line 163)
+   - Added fetchOutcomes function (lines 274-303)
+   - Updated handleRecordOutcome to add to outcomes list (line 499)
+   - Replaced outcome display with multi-outcome version (lines 683-783)
+   - Updated Record Outcome button (lines 904-912)
+
+3. apps/api/migrations/create_outcomes_table.sql
+   - New file: SQL migration to create outcomes table
+
+================================================================================
+MIGRATION INSTRUCTIONS
+================================================================================
+
+To complete Feature #77, the following SQL must be executed in Supabase:
+
+URL: https://supabase.com/dashboard/project/doqojfsldvajmlscpwhu/sql
+
+File: apps/api/migrations/create_outcomes_table.sql
+
+Contents:
+-- Create outcomes table for multiple check-ins per decision (Feature #77)
+CREATE TABLE IF NOT EXISTS public.outcomes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  decision_id UUID NOT NULL REFERENCES public.decisions(id) ON DELETE CASCADE,
+  result VARCHAR(20) NOT NULL CHECK (result IN ('better', 'as_expected', 'worse')),
+  satisfaction SMALLINT CHECK (satisfaction >= 1 AND satisfaction <= 5),
+  reflection_audio_url TEXT,
+  reflection_transcript TEXT,
+  learned TEXT,
+  scheduled_for DATE,
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  check_in_number SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_outcomes_decision ON public.outcomes(decision_id);
+CREATE INDEX IF NOT EXISTS idx_outcomes_check_in ON public.outcomes(decision_id, check_in_number);
+
+-- Enable RLS
+ALTER TABLE public.outcomes ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+CREATE POLICY "Users can view outcomes for own decisions"
+  ON public.outcomes FOR SELECT USING (decision_id IN (SELECT id FROM public.decisions WHERE user_id = auth.uid()));
+
+CREATE POLICY "Users can insert outcomes for own decisions"
+  ON public.outcomes FOR INSERT WITH CHECK (decision_id IN (SELECT id FROM public.decisions WHERE user_id = auth.uid()));
+
+CREATE POLICY "Users can update outcomes for own decisions"
+  ON public.outcomes FOR UPDATE USING (decision_id IN (SELECT id FROM public.decisions WHERE user_id = auth.uid()));
+
+CREATE POLICY "Users can delete outcomes for own decisions"
+  ON public.outcomes FOR DELETE USING (decision_id IN (SELECT id FROM public.decisions WHERE user_id = auth.uid()));
+
+================================================================================
+TESTING PLAN (After Migration)
+================================================================================
+
+Once the outcomes table is created:
+
+1. Navigate to a decision detail page
+2. Click "Record Outcome"
+3. Fill in outcome details (Better/As Expected/Worse, satisfaction, notes)
+4. Submit
+5. Verify "1st check-in" badge appears
+6. Click "Record Another Check-in"
+7. Fill in second outcome
+8. Submit
+9. Verify both check-ins display:
+   - "1st check-in" badge
+   - "2nd check-in" badge
+   - Different results/dates visible
+10. Verify API returns check_in_number in response
+11. Verify outcomes ordered by check_in_number (1, 2, 3...)
+
+================================================================================
+BACKWARD COMPATIBILITY
+================================================================================
+
+✅ The implementation maintains backward compatibility:
+
+1. Legacy single outcome (decision.outcome, decision.outcome_notes) still works
+2. API falls back to legacy format if outcomes table doesn't exist
+3. UI displays legacy outcomes with "1st check-in" badge
+4. Existing decisions continue to work
+
+Once migration is run:
+- New outcomes go to outcomes table
+- Old outcomes remain in decision table
+- UI displays both seamlessly
+
+================================================================================
+FEATURE STATUS
+================================================================================
+
+Code Implementation: ✅ COMPLETE
+Database Migration: ⚠️  PENDING (requires manual SQL execution)
+Testing: ⏳ BLOCKED (awaiting migration)
+Feature Passing: ❌ NOT YET (cannot verify without table)
+
+Next Steps:
+1. Execute SQL migration in Supabase dashboard
+2. Test with browser automation
+3. Verify check_in_number increments correctly
+4. Verify UI displays "1st", "2nd", "3rd" badges
+5. Mark feature as passing
+
+================================================================================

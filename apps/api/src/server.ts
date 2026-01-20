@@ -1503,6 +1503,7 @@ async function registerRoutes() {
     });
 
     // Outcomes
+    // Feature #77: Multiple check-ins tracked separately
     api.get('/decisions/:id/outcomes', async (request, reply) => {
       const { id } = request.params as { id: string };
       const userId = request.user?.id;
@@ -1512,40 +1513,78 @@ async function registerRoutes() {
         return { error: 'Unauthorized' };
       }
 
-      // Verify the decision belongs to the user (Feature #15)
-      // Don't select outcome_satisfaction as the column may not exist
-      const { data: decision, error: decisionError } = await supabase
-        .from('decisions')
-        .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
-        .eq('id', id)
-        .eq('user_id', userId)
-        .is('deleted_at', null)
-        .maybeSingle();
+      try {
+        // Feature #77: Try to query from the new outcomes table first
+        const { data: outcomes, error: outcomesError } = await supabase
+          .from('outcomes')
+          .select('*')
+          .eq('decision_id', id)
+          .order('check_in_number', { ascending: true });
 
-      if (decisionError || !decision) {
-        // Decision not found or doesn't belong to user - return 404 to avoid leaking information
-        reply.code(404);
-        return { error: 'Not Found', message: 'Decision not found' };
-      }
+        if (outcomesError) {
+          if (outcomesError.code === 'PGRST204') {
+            // Outcomes table doesn't exist, fall back to old method (single outcome on decision)
+            server.log.warn('Outcomes table not found, using legacy single outcome format');
 
-      // Return outcome data if it exists
-      if (decision.outcome) {
+            const { data: decision, error: decisionError } = await supabase
+              .from('decisions')
+              .select('id, user_id, outcome, outcome_notes, outcome_recorded_at')
+              .eq('id', id)
+              .eq('user_id', userId)
+              .is('deleted_at', null)
+              .maybeSingle();
+
+            if (decisionError || !decision) {
+              reply.code(404);
+              return { error: 'Not Found', message: 'Decision not found' };
+            }
+
+            // Return legacy outcome data if it exists
+            if (decision.outcome) {
+              return {
+                outcomes: [{
+                  id: decision.id,
+                  result: decision.outcome,
+                  notes: decision.outcome_notes,
+                  satisfaction: null,
+                  recordedAt: decision.outcome_recorded_at,
+                  check_in_number: 1
+                }],
+                decisionId: id
+              };
+            }
+
+            return { outcomes: [], decisionId: id };
+          }
+
+          // Some other error
+          server.log.error(outcomesError);
+          reply.code(500);
+          return { error: 'Failed to fetch outcomes' };
+        }
+
+        // Feature #77: Return outcomes from the new table
         return {
-          outcomes: [{
-            id: decision.id,
-            result: decision.outcome,
-            notes: decision.outcome_notes,
-            satisfaction: null, // outcome_satisfaction column doesn't exist in DB
-            recordedAt: decision.outcome_recorded_at
-          }],
+          outcomes: outcomes.map(o => ({
+            id: o.id,
+            result: o.result,
+            satisfaction: o.satisfaction,
+            notes: o.learned,
+            recordedAt: o.recorded_at,
+            check_in_number: o.check_in_number,
+            scheduled_for: o.scheduled_for
+          })),
           decisionId: id
         };
-      }
 
-      // No outcome recorded yet
-      return { outcomes: [], decisionId: id };
+      } catch (error) {
+        server.log.error(error);
+        reply.code(500);
+        return { error: 'Internal server error' };
+      }
     });
 
+    // Feature #77: Create outcome (supports multiple check-ins)
     api.post('/decisions/:id/outcomes', async (request, reply) => {
       const { id } = request.params as { id: string };
       const userId = request.user?.id;
@@ -1591,35 +1630,77 @@ async function registerRoutes() {
           outcome = body.result; // Pass through if already valid
         }
 
+        if (!outcome) {
+          reply.code(400);
+          return { error: 'Result is required (better, worse, or as_expected)' };
+        }
+
         console.log('Outcome recording - mapped outcome:', outcome);
 
-        // Update the decision with outcome data
-        // Note: Keep existing status, just update outcome fields
-        const { data: updated, error } = await supabase
-          .from('decisions')
-          .update({
-            outcome: outcome,
-            outcome_notes: body.notes || null,
-            outcome_satisfaction: body.satisfaction ?? null,
-            outcome_recorded_at: new Date().toISOString()
-          })
-          .eq('id', id)
-          .eq('user_id', userId)
-          .is('deleted_at', null)
-          .select()
-          .single();
+        // Feature #77: Try to insert into outcomes table (multiple check-ins support)
+        try {
+          // First, get the next check_in_number for this decision
+          const { data: existingOutcomes, error: queryError } = await supabase
+            .from('outcomes')
+            .select('check_in_number')
+            .eq('decision_id', id)
+            .order('check_in_number', { ascending: false })
+            .limit(1);
 
-        console.log('Outcome recording - supabase result:', { updated, error });
+          let nextCheckInNumber = 1;
+          if (!queryError && existingOutcomes && existingOutcomes.length > 0) {
+            nextCheckInNumber = existingOutcomes[0].check_in_number + 1;
+          }
 
-        if (error) {
-          // If column doesn't exist yet, try without it
-          if (error.message.includes('outcome_satisfaction')) {
-            console.log('outcome_satisfaction column does not exist, skipping...');
-            const { data: updated2, error: error2 } = await supabase
+          // Insert new outcome with check_in_number
+          const { data: newOutcome, error: insertError } = await supabase
+            .from('outcomes')
+            .insert({
+              decision_id: id,
+              result: outcome,
+              satisfaction: body.satisfaction ?? null,
+              learned: body.notes || null,
+              recorded_at: new Date().toISOString(),
+              check_in_number: nextCheckInNumber
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            if (insertError.code === 'PGRST204') {
+              // Outcomes table doesn't exist, fall back to legacy method
+              throw insertError;
+            }
+            console.error('Error inserting outcome:', insertError);
+            reply.code(500);
+            return { error: 'Failed to record outcome' };
+          }
+
+          console.log('Outcome recorded:', newOutcome);
+          return {
+            success: true,
+            outcome: {
+              id: newOutcome.id,
+              result: newOutcome.result,
+              satisfaction: newOutcome.satisfaction,
+              notes: newOutcome.learned,
+              recordedAt: newOutcome.recorded_at,
+              check_in_number: newOutcome.check_in_number
+            }
+          };
+
+        } catch (tableError: any) {
+          // Feature #77: Fall back to legacy single outcome format if outcomes table doesn't exist
+          if (tableError.code === 'PGRST204' || tableError.message?.includes('outcomes')) {
+            server.log.warn('Outcomes table not found, using legacy single outcome format');
+
+            // Legacy: Update the decision with outcome data
+            const { data: updated, error } = await supabase
               .from('decisions')
               .update({
                 outcome: outcome,
                 outcome_notes: body.notes || null,
+                outcome_satisfaction: body.satisfaction ?? null,
                 outcome_recorded_at: new Date().toISOString()
               })
               .eq('id', id)
@@ -1628,69 +1709,65 @@ async function registerRoutes() {
               .select()
               .single();
 
-            // Check if decision was deleted (PGRST116 = 0 rows returned)
-            if (error2 && error2.code === 'PGRST116') {
-              // Decision not found or deleted (Feature #266)
-              reply.code(410);
-              return {
-                error: 'Gone',
-                message: 'This decision has been deleted.',
-                canRedirect: true
-              };
-            }
+            if (error) {
+              // If outcome_satisfaction column doesn't exist, try without it
+              if (error.message.includes('outcome_satisfaction')) {
+                const { data: updated2, error: error2 } = await supabase
+                  .from('decisions')
+                  .update({
+                    outcome: outcome,
+                    outcome_notes: body.notes || null,
+                    outcome_recorded_at: new Date().toISOString()
+                  })
+                  .eq('id', id)
+                  .eq('user_id', userId)
+                  .is('deleted_at', null)
+                  .select()
+                  .single();
 
-            if (error2) {
-              console.error('Supabase error:', error2);
-              throw error2;
-            }
+                if (error2?.code === 'PGRST116' || !updated2) {
+                  reply.code(410);
+                  return { error: 'Gone', message: 'This decision has been deleted.', canRedirect: true };
+                }
 
-            if (!updated2) {
-              // Decision not found or deleted (Feature #266)
-              reply.code(410);
-              return {
-                error: 'Gone',
-                message: 'This decision has been deleted.',
-                canRedirect: true
-              };
+                if (error2) throw error2;
+
+                return {
+                  success: true,
+                  outcome: {
+                    id: id,
+                    result: updated2!.outcome,
+                    satisfaction: body.satisfaction,
+                    notes: updated2!.outcome_notes,
+                    recordedAt: updated2!.outcome_recorded_at,
+                    check_in_number: 1
+                  }
+                };
+              }
+
+              if (error.code === 'PGRST116' || !updated) {
+                reply.code(410);
+                return { error: 'Gone', message: 'This decision has been deleted.', canRedirect: true };
+              }
+
+              throw error;
             }
 
             return {
               success: true,
               outcome: {
                 id: id,
-                result: updated2.outcome,
-                satisfaction: body.satisfaction,
-                notes: updated2.outcome_notes,
-                recordedAt: updated2.outcome_recorded_at
+                result: updated.outcome,
+                satisfaction: updated.outcome_satisfaction,
+                notes: updated.outcome_notes,
+                recordedAt: updated.outcome_recorded_at,
+                check_in_number: 1
               }
             };
           }
-          console.error('Supabase error:', error);
-          throw error;
+
+          throw tableError;
         }
-
-        console.log('Outcome recording - supabase result:', { updated, error });
-
-        if (!updated) {
-          // Decision not found or deleted (Feature #266)
-          reply.code(410);
-          return {
-            error: 'Gone',
-            message: 'This decision has been deleted.',
-            canRedirect: true
-          };
-        }
-
-        return {
-          success: true,
-          outcome: {
-            id: id,
-            result: updated.outcome,
-            satisfaction: updated.outcome_satisfaction,
-            notes: updated.outcome_notes,
-            recordedAt: updated.outcome_recorded_at
-          }
-        };
       } catch (error) {
         console.error('Error recording outcome:', error);
         reply.code(500);
