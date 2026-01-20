@@ -280,6 +280,21 @@ export function CreateDecisionPage() {
     navigate('/history');
   };
 
+  // Feature #183: Reset form to default values (not just empty)
+  const handleReset = () => {
+    // Reset to defaults, not just empty values
+    setTitle('');
+    setNotes('');
+    setStatus('decided'); // Default status is 'decided', not empty
+    setCategoryId('');
+    setEmotionalState('');
+    setOptions([]);
+    setDecideByDate('');
+    setTitleError('');
+    setDateError('');
+    setError(null);
+  };
+
   return (
     <div className="min-h-screen pb-20">
       <SkipLink />
@@ -552,6 +567,16 @@ export function CreateDecisionPage() {
               whileTap={{ scale: saving ? 1 : 0.98 }}
             >
               {saving ? 'Saving...' : 'Save Decision'}
+            </motion.button>
+            <motion.button
+              onClick={handleReset}
+              disabled={saving}
+              className="px-6 py-3 glass glass-hover rounded-full transition-all disabled:opacity-50"
+              whileHover={{ scale: saving ? 1 : 1.02 }}
+              whileTap={{ scale: saving ? 1 : 0.98 }}
+              aria-label="Reset form to defaults"
+            >
+              Reset
             </motion.button>
             <motion.button
               onClick={handleCancel}
