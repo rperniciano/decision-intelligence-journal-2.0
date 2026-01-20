@@ -15,6 +15,7 @@ import { VoiceService } from './services/voiceService.js';
 import { jobManager } from './services/jobManager.js';
 import { InsightsService } from './services/insightsService.js';
 import { loginWithRateLimit } from './services/loginRateLimitService.js';
+import { reminderJob } from './services/reminderBackgroundJob.js';
 
 // Get directory paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -116,6 +117,17 @@ async function registerRoutes() {
   // Health check (public)
   server.get('/health', async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
+  });
+
+  // Feature #204: Reminder job stats (public, for monitoring)
+  server.get('/reminder-job/stats', async (request, reply) => {
+    try {
+      const stats = reminderJob.getStats();
+      return { stats };
+    } catch (error) {
+      server.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
   });
 
   // Feature #18: Login endpoint with rate limiting (public)
@@ -1976,6 +1988,7 @@ async function registerRoutes() {
     });
 
     // Mark a reminder as completed
+    // Feature #201: Also support rescheduling (updating remind_at)
     api.patch('/decisions/:id/reminders/:reminderId', async (request, reply) => {
       try {
         const { id, reminderId } = request.params as { id: string; reminderId: string };
@@ -1984,11 +1997,20 @@ async function registerRoutes() {
           return reply.code(401).send({ error: 'Unauthorized' });
         }
 
-        const body = request.body as { status?: string };
+        const body = request.body as { status?: string; remind_at?: string };
+
+        // Build update object dynamically
+        const updateData: any = {};
+        if (body.status) {
+          updateData.status = body.status;
+        }
+        if (body.remind_at) {
+          updateData.remind_at = body.remind_at;
+        }
 
         const { data: reminder, error } = await supabase
           .from('DecisionsFollowUpReminders')
-          .update({ status: body.status || 'completed' })
+          .update(updateData)
           .eq('id', reminderId)
           .eq('decision_id', id)
           .eq('user_id', userId)
@@ -2144,6 +2166,10 @@ async function start() {
     const host = process.env.HOST || '0.0.0.0';
 
     await server.listen({ port, host });
+
+    // Feature #204: Start background job for due reminder notifications
+    const reminderInterval = parseInt(process.env.REMINDER_CHECK_INTERVAL_MS || '60000', 10);
+    reminderJob.start(reminderInterval);
 
     console.log(`
 ╔═══════════════════════════════════════════════════════════╗
