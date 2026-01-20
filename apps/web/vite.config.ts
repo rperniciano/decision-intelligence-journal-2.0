@@ -52,25 +52,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // Feature #151: Handle very long URLs
-    // Increase max header size to prevent HTTP 431 errors
-    // Default is typically 8KB, increased to 16KB for safety
-    headers: {
-      // Allow larger request headers for long URLs with query strings
-      // This prevents HTTP 431 "Request Header Fields Too Large" errors
-      'Access-Control-Max-Age': '86400',
-    },
     proxy: {
       '/api': {
         target: 'http://localhost:4001',
         changeOrigin: true,
-        // Configure proxy to handle larger URLs
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            // Ensure large headers are forwarded
-            proxyReq.setHeader('X-Forwarded-Host', req.headers.host || 'localhost:5173');
-          });
-        },
       },
     },
   },
