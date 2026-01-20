@@ -2,6 +2,47 @@
 SESSION SUMMARY - 2026-01-20
 ================================================================================
 
+## Feature #113: Offline Recording with IndexedDB - COMPLETED ✅
+
+**Date:** 2026-01-20
+**Feature:** #113 - Offline recording with IndexedDB fallback
+**Status:** ✅ COMPLETED AND VERIFIED
+**Progress:** 284/291 passing (97.6%)
+
+### Implementation Summary
+
+Created complete IndexedDB utility for offline audio storage:
+- `apps/web/src/lib/indexedDB.ts`: IndexedDB operations (save, retrieve, delete, count)
+- `apps/web/src/pages/RecordPage.tsx`: Offline detection, fallback, auto-sync, visual indicators
+
+### Verification Tests
+
+✅ IndexedDB database creation working
+✅ Offline status detection and "Offline" badge display
+✅ Recording save to IndexedDB working
+✅ "1 pending" indicator appears when recordings saved
+✅ Auto-sync on reconnect working
+✅ Network error fallback during upload
+
+### Screenshots
+
+- verification/f113-offline-indicator-shown.png: Yellow "Offline" badge
+- verification/f113-pending-recordings-indicator.png: Teal "1 pending" badge
+- verification/f113-record-page-loaded.png: Clean interface ready for use
+
+### User Flow
+
+1. User offline → "Offline" badge appears
+2. User records → Saved to IndexedDB → "1 pending" badge appears
+3. User reconnects → Auto-sync triggers → Recording uploaded → "1 pending" disappears
+
+### Commit
+
+**Commit:** `1d8b4f8`
+**Message:** "Feature #113: Offline recording with IndexedDB - VERIFIED PASSING ✅"
+
+---
+
 This session focused on verifying features but encountered multiple blockers:
 1. Database migrations not executed (blocking #77, #88, #91, #101, #135)
 2. Significant features not yet implemented (#100, #112, #113, #114, #146)
