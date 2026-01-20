@@ -6,9 +6,10 @@ interface ToastProps {
   type?: 'success' | 'error' | 'info';
   onClose: () => void;
   duration?: number;
+  index?: number;
 }
 
-export function Toast({ message, type = 'success', onClose, duration = 3000 }: ToastProps) {
+export function Toast({ message, type = 'success', onClose, duration = 3000, index = 0 }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
@@ -46,7 +47,7 @@ export function Toast({ message, type = 'success', onClose, duration = 3000 }: T
 
   return (
     <motion.div
-      className={`fixed top-4 left-4 right-4 z-50 max-w-md mx-auto ${bgColors[type]} border backdrop-blur-xl rounded-2xl shadow-lg p-4 flex items-center gap-3`}
+      className={`w-full max-w-md ${bgColors[type]} border backdrop-blur-xl rounded-2xl shadow-lg p-4 flex items-center gap-3 pointer-events-auto`}
       initial={{ opacity: 0, y: -20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -20, scale: 0.95 }}

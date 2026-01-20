@@ -1017,3 +1017,35 @@ Progress: 233/291 features passing (80.1%)
 Commit: 046d004
 
 ---
+
+=== Feature #72 Regression Test - mar 20 gen 2026 05:42:34 ===
+Status: ✅ NO REGRESSION DETECTED
+
+Feature: Soft-deleted item in trash is real
+
+Verification Steps Completed:
+1. ✅ Created decision 'TRASH_TEST_ITEM'
+2. ✅ Deleted it (soft delete) - confirmed with modal
+3. ✅ Navigated to Trash view
+4. ✅ Verified 'TRASH_TEST_ITEM' appears in trash
+5. ✅ Restored it via 'Restore Selected' button
+6. ✅ Verified it returns to main list (All view)
+
+Technical Verification:
+- Soft delete works correctly (deleted_at set)
+- Trash filter correctly shows soft-deleted items
+- Restore functionality works (deleted_at cleared)
+- Item returns to main list after restore
+- Bulk actions appear when item selected
+- Confirmation dialogs work properly
+- Zero JavaScript console errors
+
+Screenshots:
+- feature-72-decision-created.png
+- feature-72-decision-in-trash.png
+- feature-72-trash-with-restore-option.png
+- feature-72-decision-restored.png
+
+Conclusion: Feature #72 is PASSING - no regression found.
+
+---

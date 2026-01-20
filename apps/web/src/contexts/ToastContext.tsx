@@ -44,16 +44,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast, showSuccess, showError, showInfo }}>
       {children}
-      <AnimatePresence>
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            onClose={() => removeToast(toast.id)}
-          />
-        ))}
-      </AnimatePresence>
+      <div className="fixed top-4 left-0 right-0 z-50 flex flex-col items-center gap-4 px-4 pointer-events-none">
+        <AnimatePresence>
+          {toasts.map((toast, index) => (
+            <Toast
+              key={toast.id}
+              message={toast.message}
+              type={toast.type}
+              onClose={() => removeToast(toast.id)}
+              index={index}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
     </ToastContext.Provider>
   );
 }
