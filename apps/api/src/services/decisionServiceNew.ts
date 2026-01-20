@@ -396,6 +396,8 @@ export class DecisionService {
       if (dto.title !== undefined) updateData.title = dto.title;
       if (dto.description !== undefined) updateData.description = dto.description;
       if (dto.status !== undefined) updateData.status = dto.status;
+      // Map emotional_state to detected_emotional_state for consistency
+      if (dto.emotional_state !== undefined) updateData.detected_emotional_state = dto.emotional_state;
       if (dto.detected_emotional_state !== undefined) updateData.detected_emotional_state = dto.detected_emotional_state;
       if (dto.category_id !== undefined) updateData.category_id = dto.category_id;
       if (dto.chosen_option_id !== undefined) updateData.chosen_option_id = dto.chosen_option_id;
