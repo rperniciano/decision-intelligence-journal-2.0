@@ -43,7 +43,11 @@ export function CreateDecisionPage() {
   const [categoryId, setCategoryId] = useState<string>('');
   const [emotionalState, setEmotionalState] = useState<string>('');
   const [options, setOptions] = useState<Option[]>([]);
-  const [decideByDate, setDecideByDate] = useState<string>('');
+  // Default decide-by date to today (sensible default for feature #181)
+  const [decideByDate, setDecideByDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [titleError, setTitleError] = useState<string>('');
   const [dateError, setDateError] = useState<string>('');
 

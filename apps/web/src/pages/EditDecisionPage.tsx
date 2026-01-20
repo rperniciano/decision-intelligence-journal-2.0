@@ -94,9 +94,14 @@ export function EditDecisionPage() {
         setAbandonReason(data.abandon_reason || '');
         setAbandonNote(data.abandon_note || '');
         // Set decide_by_date if present (convert from ISO to YYYY-MM-DD format)
+        // Otherwise default to today (feature #181: sensible default)
         if (data.decide_by_date) {
           const date = new Date(data.decide_by_date);
           setDecideByDate(date.toISOString().split('T')[0]);
+        } else {
+          // Default to today if no decide_by_date exists
+          const today = new Date();
+          setDecideByDate(today.toISOString().split('T')[0]);
         }
       } catch (error) {
         console.error('Error fetching decision:', error);
