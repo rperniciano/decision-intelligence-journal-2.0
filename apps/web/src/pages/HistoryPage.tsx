@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
@@ -509,6 +509,10 @@ export function HistoryPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [isPermanentlyDeleting, setIsPermanentlyDeleting] = useState(false);
+  // Feature #204: Recent searches state
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Feature #267: Cursor-based pagination state
   const [pageCursors, setPageCursors] = useState<Map<number, string>>(new Map()); // page -> cursor
@@ -582,6 +586,61 @@ export function HistoryPage() {
       abortController.abort();
     };
   }, []);
+
+  // Feature #204: Load recent searches from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('recentSearches');
+      if (saved) {
+        setRecentSearches(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading recent searches:', error);
+    }
+  }, []);
+
+  // Feature #204: Save search to recent searches
+  const saveRecentSearch = (query: string) => {
+    if (!query.trim()) return;
+
+    setRecentSearches((prev) => {
+      // Remove duplicates and add new search to the beginning
+      const filtered = prev.filter((s) => s !== query);
+      const updated = [query, ...filtered].slice(0, 10); // Keep max 10 searches
+
+      try {
+        localStorage.setItem('recentSearches', JSON.stringify(updated));
+      } catch (error) {
+        console.error('Error saving recent searches:', error);
+      }
+
+      return updated;
+    });
+    setShowRecentSearches(false);
+  };
+
+  // Feature #204: Clear a specific recent search
+  const clearRecentSearch = (search: string) => {
+    setRecentSearches((prev) => {
+      const updated = prev.filter((s) => s !== search);
+      try {
+        localStorage.setItem('recentSearches', JSON.stringify(updated));
+      } catch (error) {
+        console.error('Error clearing recent search:', error);
+      }
+      return updated;
+    });
+  };
+
+  // Feature #204: Clear all recent searches
+  const clearAllRecentSearches = () => {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem('recentSearches');
+    } catch (error) {
+      console.error('Error clearing recent searches:', error);
+    }
+  };
 
   // Fetch decisions from API
   // Feature #268: Add AbortController to prevent race conditions during rapid navigation
@@ -1024,7 +1083,7 @@ export function HistoryPage() {
 
       {/* Main content */}
       <main id="main-content" className="max-w-2xl mx-auto px-4 py-4" tabIndex={-1}>
-        {/* Search bar */}
+        {/* Search bar - Feature #204: Enhanced with recent searches */}
         <motion.div
           className="relative mb-4"
           initial={{ opacity: 0, y: 10 }}
@@ -1032,7 +1091,7 @@ export function HistoryPage() {
           transition={{ delay: 0.1 }}
         >
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary z-10"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -1041,12 +1100,81 @@ export function HistoryPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Search decisions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setShowRecentSearches(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && searchQuery.trim()) {
+                saveRecentSearch(searchQuery.trim());
+              }
+            }}
+            onBlur={() => {
+              // Delay hiding to allow clicking on recent searches
+              setTimeout(() => setShowRecentSearches(false), 200);
+            }}
             className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary placeholder-text-secondary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 transition-all"
+            aria-expanded={showRecentSearches && recentSearches.length > 0}
+            aria-haspopup="listbox"
+            aria-controls="recent-searches-list"
           />
+
+          {/* Feature #204: Recent searches dropdown */}
+          {showRecentSearches && recentSearches.length > 0 && (
+            <motion.div
+              id="recent-searches-list"
+              role="listbox"
+              className="absolute top-full left-0 right-0 mt-2 bg-surface/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl overflow-hidden z-50"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <div className="p-2">
+                <div className="flex items-center justify-between px-2 py-1">
+                  <span className="text-xs font-medium text-text-secondary uppercase tracking-wide">Recent Searches</span>
+                  <button
+                    onClick={clearAllRecentSearches}
+                    className="text-xs text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    Clear all
+                  </button>
+                </div>
+                {recentSearches.map((search, index) => (
+                  <button
+                    key={index}
+                    role="option"
+                    onClick={() => {
+                      setSearchQuery(search);
+                      saveRecentSearch(search);
+                      searchInputRef.current?.blur();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 text-left text-sm text-text-primary hover:bg-white/5 rounded-lg transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>{search}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearRecentSearch(search);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded transition-all"
+                      aria-label={`Remove "${search}" from recent searches`}
+                    >
+                      <svg className="w-3 h-3 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Active filter chips - Feature #198 */}

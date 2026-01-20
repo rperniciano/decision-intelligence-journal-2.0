@@ -28,7 +28,7 @@ async function createTestDecisions() {
       category_id: null,
       user_id: user.id,
       created_at: new Date().toISOString(),
-      emotional_state: 'confident',
+      detected_emotional_state: 'confident',
       decided_at: new Date().toISOString(),
     },
     {
@@ -37,7 +37,7 @@ async function createTestDecisions() {
       category_id: null,
       user_id: user.id,
       created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
-      emotional_state: 'thoughtful',
+      detected_emotional_state: 'thoughtful',
       decided_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     },
     {
@@ -46,7 +46,7 @@ async function createTestDecisions() {
       category_id: null,
       user_id: user.id,
       created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-      emotional_state: 'uncertain',
+      detected_emotional_state: 'uncertain',
       decided_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
@@ -55,7 +55,7 @@ async function createTestDecisions() {
       category_id: null,
       user_id: user.id,
       created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
-      emotional_state: 'anxious',
+      detected_emotional_state: 'anxious',
       decided_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
@@ -64,7 +64,7 @@ async function createTestDecisions() {
       category_id: null,
       user_id: user.id,
       created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks ago
-      emotional_state: 'calm',
+      detected_emotional_state: 'calm',
       decided_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
     },
   ];

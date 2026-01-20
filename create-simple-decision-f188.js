@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createTestDecision() {
   // Get the user
-  const { data: users, error: userError } = await supabase.auth.admin.listUsers();
+  const { data: users } = await supabase.auth.admin.listUsers();
   const user = users.users.find(u => u.email === 'test-f188@example.com');
 
   if (!user) {
@@ -17,49 +17,17 @@ async function createTestDecision() {
     return;
   }
 
-  // Create the decision with correct schema
+  // Create a simple decision without chosen option
   const decisionId = uuidv4();
-  const option1Id = uuidv4();
-  const option2Id = uuidv4();
 
-  // First, create options (since decisions has a foreign key constraint)
-  const { error: optsError } = await supabase.from('options').insert([
-    {
-      id: option1Id,
-      decision_id: decisionId,
-      name: 'Option A - Test Voice Reflection',
-      position: 0,
-      is_chosen: true,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: option2Id,
-      decision_id: decisionId,
-      name: 'Option B',
-      position: 1,
-      is_chosen: false,
-      created_at: new Date().toISOString(),
-    }
-  ]);
-
-  if (optsError) {
-    console.error('Error creating options:', optsError);
-    return;
-  }
-
-  console.log('Options created');
-
-  // Now create the decision
   const { data: decision, error: decisionError } = await supabase
     .from('decisions')
     .insert({
       id: decisionId,
       user_id: user.id,
-      category_id: null,
       title: 'Test Decision F188 - Voice Reflection',
       status: 'decided',
-      detected_emotional_state: 'neutral', // Use valid enum value
-      chosen_option_id: option1Id,
+      detected_emotional_state: 'neutral',
       decided_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -71,6 +39,29 @@ async function createTestDecision() {
     console.error('Error creating decision:', decisionError);
     return;
   }
+
+  // Create an option
+  const optionId = uuidv4();
+  const { error: optError } = await supabase.from('options').insert({
+    id: optionId,
+    decision_id: decisionId,
+    title: 'Option A - Voice Reflection Test',
+    is_chosen: true,
+    display_order: 0,
+    ai_extracted: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+
+  if (optError) {
+    console.error('Error creating option:', optError);
+  }
+
+  // Update decision with chosen option
+  await supabase
+    .from('decisions')
+    .update({ chosen_option_id: optionId })
+    .eq('id', decisionId);
 
   console.log('Test decision created successfully!');
   console.log('Decision ID:', decisionId);
