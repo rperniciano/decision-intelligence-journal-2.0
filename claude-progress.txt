@@ -717,3 +717,176 @@ Testing Results:
 Progress: 264/291 passing (90.7%)
 ================================================================================
 
+
+================================================================================
+[REGRESSION TESTING] Session Summary - Feature #25
+Date: 2026-01-20 16:14:09
+Agent: Testing Agent
+Feature: #25 - Session persists across page refresh
+Result: ✅ VERIFIED PASSING - NO REGRESSION
+
+Test Summary:
+-------------
+✅ Session successfully persists across page refreshes
+✅ User remains authenticated after F5 refresh
+✅ Dashboard content loads correctly after refresh
+✅ Navigation to other protected routes works
+✅ Session stored in localStorage correctly
+✅ Zero console errors throughout testing
+✅ All verification steps passed
+
+Test Coverage:
+--------------
+- Login flow: ✅
+- Dashboard refresh: ✅
+- History page refresh: ✅
+- Direct URL navigation: ✅
+- localStorage verification: ✅
+- Console error check: ✅
+
+Screenshots captured:
+--------------------
+- verification/f25-before-refresh.png
+- verification/f25-after-refresh.png
+- verification/f25-history-after-refresh.png
+
+Feature Status: PASSING (already passing, verified no regression)
+Progress: 264/291 features passing (90.7%)
+
+================================================================================
+
+
+================================================================================
+[REGRESSION TESTING] Feature #2: Unauthenticated user redirected from /decisions
+Date: 2026-01-20 16:18:16
+Status: ✅ VERIFIED PASSING - NO REGRESSION
+
+Feature Requirements:
+----------------------
+1. Navigate directly to /decisions without logging in
+2. Verify redirect to login page
+3. Confirm no decision data is exposed
+
+Test Execution:
+---------------
+✅ Navigated to /decisions without authentication
+   → Automatically redirected to /login
+   
+✅ Verified redirect to /dashboard
+   → Automatically redirected to /login
+   
+✅ Verified redirect to /insights
+   → Automatically redirected to /login
+
+Security Verification:
+----------------------
+✅ No decision data exposed in page content
+✅ No API calls to decision endpoints in network requests
+✅ Only static assets (favicon) loaded
+✅ Zero console errors
+✅ Zero JavaScript warnings
+✅ Protected routes properly secured by auth middleware
+
+Authentication Middleware:
+--------------------------
+- All protected routes (/decisions, /dashboard, /insights) require authentication
+- Unauthenticated users are automatically redirected to /login
+- No data leakage before authentication check
+- Proper implementation of protected route guards
+
+Screenshots:
+-----------
+1. verification/f2-redirect-to-login.png - Shows /decisions redirecting to /login
+2. verification/f2-all-routes-redirect.png - Shows all protected routes redirecting
+
+Conclusion:
+-----------
+Feature #2 is WORKING CORRECTLY - NO REGRESSION DETECTED
+
+The authentication middleware is functioning properly:
+- Unauthenticated users cannot access protected routes
+- All navigation attempts to protected routes redirect to /login
+- No decision data is exposed before authentication
+- Security implementation is solid
+
+Feature Status: PASSING (already passing, verified no regression)
+Progress: 264/291 features passing (90.7%)
+
+================================================================================
+[FEATURE #181] Date picker defaults to sensible date
+Date: 2026-01-20
+Status: ✅ VERIFIED PASSING
+
+Feature Requirements:
+- Open decide-by date picker
+- Verify defaults to today or near future
+- Not 1970 or 1900
+- Verify reasonable default behavior
+
+Implementation:
+---------------
+Modified files:
+1. apps/web/src/pages/CreateDecisionPage.tsx (line 46-50)
+   - Changed: useState<string>('')
+   - To: useState<string>(() => { const today = new Date(); return today.toISOString().split('T')[0]; })
+   - Defaults to today's date on page load
+
+2. apps/web/src/pages/EditDecisionPage.tsx (line 96-105)
+   - Added else clause to default to today when no decide_by_date exists
+   - Ensures consistent behavior between Create and Edit pages
+
+Testing Results:
+----------------
+CreateDecisionPage:
+✅ Date picker shows "2026-01-20" (today's date)
+✅ Min date: 2026-01-20 (today)
+✅ Max date: 2027-01-20 (1 year from now)
+✅ Not 1970 or 1900
+✅ User can change the date
+✅ User can clear the date (optional field)
+✅ Zero console errors
+
+EditDecisionPage:
+✅ When decision has no decide_by_date, defaults to today
+✅ Shows "2026-01-20" after page refresh
+✅ Min/max constraints work correctly
+✅ Can be modified by user
+✅ Zero console errors
+
+Mock Data Detection:
+--------------------
+✅ No mockData, fakeData, sampleData, dummyData patterns found
+✅ No TODO/FIXME comments related to date functionality
+✅ Date defaults to real current date (new Date())
+✅ Database stores actual user input
+
+Screenshots:
+-----------
+1. verification/f181-date-picker-default.png - Create page with today's date
+2. verification/f181-edit-page-date-default.png - Edit page with today's date
+
+User Experience:
+----------------
+- Date picker always shows a sensible default (today)
+- Reduces user friction - no need to manually select today's date
+- Optional field - can be cleared if not needed
+- Prevents invalid dates (min/max constraints)
+- Consistent behavior across Create and Edit pages
+
+Conclusion:
+-----------
+Feature #181 is WORKING CORRECTLY - ALL VERIFICATION STEPS PASSED
+
+The date picker now defaults to today's date instead of being empty,
+providing a sensible default that improves user experience. This prevents
+the confusion of empty or invalid dates while maintaining flexibility
+(the field remains optional and can be cleared).
+
+Statistics:
+-----------
+- Files modified: 2
+- Test scenarios: 2 (Create page, Edit page)
+- Date verifications: 5 per page
+- Console errors: 0
+- Mock data detected: 0
+- Progress: 265/291 passing (91.1%)
