@@ -9,10 +9,21 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function createUser() {
+  const email = 'test-f39-persistence@example.com';
+  const password = 'password123';
+
+  // Delete if exists
+  const { data: { users } } = await supabase.auth.admin.listUsers();
+  const existing = users.find(u => u.email === email);
+  if (existing) {
+    await supabase.auth.admin.deleteUser(existing.id);
+    console.log('Deleted existing user');
+  }
+
   // Create user with auth
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: 'test61@example.com',
-    password: 'password123',
+    email,
+    password,
     email_confirm: true
   });
 
@@ -22,6 +33,7 @@ async function createUser() {
   }
 
   console.log('Created user:', authData.user.id, authData.user.email);
+  console.log('Password:', password);
 }
 
 createUser();

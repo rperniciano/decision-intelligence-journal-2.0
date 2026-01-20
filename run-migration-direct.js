@@ -1,106 +1,167 @@
-import { createClient } from '@supabase/supabase-js';
-import { config } from 'dotenv';
-config();
+/**
+ * Direct PostgreSQL migration for Feature #88
+ * Uses direct TCP connection to Supabase PostgreSQL
+ */
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import pg from 'pg';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const { Client } = pg;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 async function runMigration() {
-  console.log('Creating outcomes table for Feature #77...\n');
+  console.log('🚀 Feature #88 Migration\n');
+
+  // Get project ID from Supabase URL
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const projectId = supabaseUrl.replace('https://', '').replace('.supabase.co', '');
+  console.log('📋 Project:', projectId);
+
+  // Try multiple connection methods
+  const connectionMethods = [
+    {
+      name: 'Direct pooler (port 6543)',
+      connectionString: `postgres://postgres.${projectId}:${process.env.SUPABASE_SERVICE_ROLE_KEY}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`
+    },
+    {
+      name: 'Pooler (port 5432)',
+      connectionString: `postgres://postgres.${projectId}:${process.env.SUPABASE_SERVICE_ROLE_KEY}@aws-0-us-east-1.pooler.supabase.com:5432/postgres`
+    },
+    {
+      name: 'Direct connection (port 5432)',
+      connectionString: `postgres://postgres.${projectId}:${process.env.SUPABASE_SERVICE_ROLE_KEY}@db.${projectId}.supabase.co:5432/postgres`
+    }
+  ];
+
+  let client = null;
+  let connectedMethod = null;
+
+  for (const method of connectionMethods) {
+    try {
+      console.log(`\n🔌 Trying: ${method.name}`);
+
+      client = new Client({
+        connectionString: method.connectionString,
+        ssl: {
+          rejectUnauthorized: false,
+          mode: 'require'
+        },
+        connectionTimeoutMillis: 10000
+      });
+
+      await client.connect();
+      connectedMethod = method;
+      console.log(`✅ Connected via ${method.name}!`);
+      break;
+
+    } catch (error) {
+      console.log(`❌ Failed: ${error.message.split('\n')[0]}`);
+      if (client) {
+        try { client.end(); } catch (e) {}
+        client = null;
+      }
+    }
+  }
+
+  if (!client) {
+    console.log('\n❌ All connection methods failed.');
+    console.log('\n🔧 Alternative: Execute SQL manually in Supabase Dashboard:');
+    console.log('https://supabase.com/dashboard/project/doqojfsldvajmlscpwhu/sql\n');
+    console.log('SQL to execute:');
+    console.log('─'.repeat(70));
+    console.log(`ALTER TABLE decisions
+ADD COLUMN IF NOT EXISTS abandon_reason VARCHAR(50);
+
+ALTER TABLE decisions
+ADD COLUMN IF NOT EXISTS abandon_note TEXT;
+
+COMMENT ON COLUMN decisions.abandon_reason IS 'Reason category for abandoned decisions';
+COMMENT ON COLUMN decisions.abandon_note IS 'Optional detailed note explaining why decision was abandoned';`);
+    console.log('─'.repeat(70));
+    return false;
+  }
 
   try {
-    // First, check if table exists
-    const { data: existingTable, error: checkError } = await supabase
-      .from('outcomes')
-      .select('*')
-      .limit(1);
+    // Check if columns exist
+    console.log('\n🔍 Checking if columns exist...');
+    const checkResult = await client.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'decisions'
+      AND column_name IN ('abandon_reason', 'abandon_note');
+    `);
 
-    if (checkError && checkError.code === 'PGRST204') {
-      console.log('Table does not exist, creating...');
-
-      // Use Supabase Management API to execute SQL
-      // We'll use a different approach - create table via INSERT with upsert
-    } else if (checkError) {
-      console.log('Error checking table:', checkError.message);
-    } else {
-      console.log('✅ Outcomes table already exists!');
-      return;
+    if (checkResult.rows.length >= 2) {
+      console.log('✅ Columns already exist!\n');
+      await client.end();
+      return true;
     }
 
-    // Direct SQL execution via Supabase SQL editor URL approach
-    console.log('\nPlease run the following SQL in Supabase SQL Editor:');
-    console.log('URL: ' + process.env.SUPABASE_URL.replace('/rest/v1', '/project/sql') + '\n');
-    console.log('---SQL BELOW---');
+    console.log('📝 Columns missing. Running migration...\n');
 
-    const sql = `
--- Create outcomes table for multiple check-ins per decision (Feature #77)
-CREATE TABLE IF NOT EXISTS public.outcomes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  decision_id UUID NOT NULL REFERENCES public.decisions(id) ON DELETE CASCADE,
-  result VARCHAR(20) NOT NULL CHECK (result IN ('better', 'as_expected', 'worse')),
-  satisfaction SMALLINT CHECK (satisfaction >= 1 AND satisfaction <= 5),
-  reflection_audio_url TEXT,
-  reflection_transcript TEXT,
-  learned TEXT,
-  scheduled_for DATE,
-  recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  check_in_number SMALLINT NOT NULL DEFAULT 1,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    // Add abandon_reason column
+    console.log('Adding abandon_reason column...');
+    await client.query(`
+      ALTER TABLE decisions
+      ADD COLUMN IF NOT EXISTS abandon_reason VARCHAR(50);
+    `);
+    console.log('✅ abandon_reason added');
 
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_outcomes_decision ON public.outcomes(decision_id);
-CREATE INDEX IF NOT EXISTS idx_outcomes_check_in ON public.outcomes(decision_id, check_in_number);
+    // Add abandon_note column
+    console.log('Adding abandon_note column...');
+    await client.query(`
+      ALTER TABLE decisions
+      ADD COLUMN IF NOT EXISTS abandon_note TEXT;
+    `);
+    console.log('✅ abandon_note added');
 
--- Enable RLS
-ALTER TABLE public.outcomes ENABLE ROW LEVEL SECURITY;
+    // Add comments
+    console.log('\nAdding column comments...');
+    await client.query(`
+      COMMENT ON COLUMN decisions.abandon_reason IS 'Reason category for abandoned decisions';
+    `);
+    await client.query(`
+      COMMENT ON COLUMN decisions.abandon_note IS 'Optional detailed note explaining why decision was abandoned';
+    `);
+    console.log('✅ Comments added');
 
--- RLS Policies
-CREATE POLICY "Users can view outcomes for own decisions"
-  ON public.outcomes
-  FOR SELECT
-  USING (
-    decision_id IN (
-      SELECT id FROM public.decisions WHERE user_id = auth.uid()
-    )
-  );
+    // Verify
+    console.log('\n🔍 Verifying migration...');
+    const verifyResult = await client.query(`
+      SELECT column_name, data_type, character_maximum_length
+      FROM information_schema.columns
+      WHERE table_name = 'decisions'
+      AND column_name IN ('abandon_reason', 'abandon_note')
+      ORDER BY column_name;
+    `);
 
-CREATE POLICY "Users can insert outcomes for own decisions"
-  ON public.outcomes
-  FOR INSERT
-  WITH CHECK (
-    decision_id IN (
-      SELECT id FROM public.decisions WHERE user_id = auth.uid()
-    )
-  );
+    console.log('\n📊 Migration results:');
+    verifyResult.rows.forEach(row => {
+      const type = row.character_maximum_length
+        ? `${row.data_type}(${row.character_maximum_length})`
+        : row.data_type;
+      console.log(`   ✓ ${row.column_name}: ${type}`);
+    });
 
-CREATE POLICY "Users can update outcomes for own decisions"
-  ON public.outcomes
-  FOR UPDATE
-  USING (
-    decision_id IN (
-      SELECT id FROM public.decisions WHERE user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Users can delete outcomes for own decisions"
-  ON public.outcomes
-  FOR DELETE
-  USING (
-    decision_id IN (
-      SELECT id FROM public.decisions WHERE user_id = auth.uid()
-    )
-  );
-`;
-
-    console.log(sql);
-    console.log('---END SQL---\n');
+    console.log('\n🎉 Feature #88 database migration complete!\n');
+    await client.end();
+    return true;
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('\n❌ Migration error:', error.message);
+    await client.end();
+    return false;
   }
 }
 
-runMigration().catch(console.error);
+runMigration().then(success => {
+  process.exit(success ? 0 : 1);
+}).catch(err => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});

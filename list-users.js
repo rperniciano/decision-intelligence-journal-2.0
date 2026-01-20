@@ -9,13 +9,12 @@ const supabase = createClient(
 
 (async () => {
   const { data: { users }, error } = await supabase.auth.admin.listUsers();
-
   if (error) {
-    console.log('Error:', error.message);
-  } else if (users && users.length > 0) {
-    console.log('Total users:', users.length);
-    users.forEach(u => console.log('  -', u.email));
-  } else {
-    console.log('No users found');
+    console.error('Error:', error.message);
+    return;
   }
+  console.log('Total users:', users.length);
+  users.slice(0, 5).forEach(u => {
+    console.log('Email:', u.email, 'ID:', u.id);
+  });
 })();

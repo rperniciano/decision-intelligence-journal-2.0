@@ -1,24 +1,38 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
-const SUPABASE_URL = 'https://doqojfsldvajmlscpwhu.supabase.co';
-const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvcW9qZnNsZHZham1sc2Nwd2h1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Nzk2Njc2NiwiZXhwIjoyMDgzNTQyNzY2fQ.y2zKyYqhH9C-sKKJwDvptLmH5yKI19uso9ZFt50_bwc';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 async function checkSchema() {
-  const { data, error } = await supabase
-    .from('decisions')
-    .select('*')
-    .limit(1);
+  console.log('Checking if remind_at and user_id columns exist...\n');
 
-  if (error) {
-    console.error('Error:', error);
-  } else if (data && data.length > 0) {
-    console.log('Columns in decisions table:');
-    console.log(Object.keys(data[0]));
-  } else {
-    console.log('No data in decisions table, checking with PostgreSQL query...');
+  // Try to query the table to see if columns exist
+  // This will fail if columns don't exist
+  try {
+    const { data, error } = await supabase
+      .from('DecisionsFollowUpReminders')
+      .select('id, remind_at, user_id')
+      .limit(1);
+
+    if (error) {
+      console.log('❌ Columns do not exist yet:');
+      console.log('   ', error.message);
+      console.log('\n✅ This confirms the migration needs to be run.\n');
+      return false;
+    }
+
+    console.log('✅ Columns exist! Migration has been executed.');
+    console.log('Data sample:', data);
+    return true;
+  } catch (err) {
+    console.log('❌ Error checking schema:', err.message);
+    return false;
   }
 }
 
-checkSchema();
+checkSchema().then(exists => {
+  process.exit(exists ? 0 : 1);
+});
