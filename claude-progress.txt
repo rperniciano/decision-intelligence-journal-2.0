@@ -796,3 +796,13 @@ Feature #24 was already fully implemented and verified in a previous session:
 Single Feature Mode assignment complete. Feature #24 is fully implemented, tested, verified, and now officially marked as passing in the backlog system.
 
 
+[Testing] Feature #58 regression test complete - VERIFIED PASSING ✅
+- Date: mar 20 gen 2026 11:40:21
+- Test: Search returns only matching real data
+- Created 2 test decisions
+- Verified search filters correctly
+- Only matching decision appears in results
+- Non-matching decision excluded
+- Console errors: 0
+- Screenshots: verification/feature-58-*.png
+
