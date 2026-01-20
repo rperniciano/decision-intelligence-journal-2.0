@@ -134,11 +134,7 @@ async function setupF83TestData() {
       user_id: userId,
       title: 'F83 Test Decision - Edit Options',
       status: 'draft',
-      category: categoryName,
-      emotional_state: null,
-      options: [], // Will be populated from options table
-      notes: null,
-      transcription: null,
+      category_id: categoryId,
       created_at: now,
       updated_at: now
     };
@@ -231,53 +227,59 @@ async function setupF83TestData() {
 
     console.log('✅ Created', prosConsData.length, 'pros/cons');
 
-    if (decisionError) {
-      console.error('❌ Error creating decision:', decisionError.message);
-      console.error('Details:', decisionError);
-      process.exit(1);
-    }
+    // Step 7: Verify and display the test data
+    console.log('\n7. Verifying test data...');
 
-    console.log('✅ Test decision created successfully!');
-    console.log('   Decision ID:', insertedDecision.id);
-    console.log('   Title:', insertedDecision.title);
-    console.log('   Options count:', insertedDecision.options.length);
-
-    // Step 5: Verify the decision
-    console.log('\n5. Verifying decision data...');
+    // Fetch the complete decision with options
     const { data: verifyData, error: verifyError } = await supabase
       .from('decisions')
-      .select('*')
-      .eq('id', insertedDecision.id)
+      .select(`
+        *,
+        options (
+          id,
+          title,
+          is_chosen,
+          pros_cons (
+            id,
+            type,
+            content,
+            display_order
+          )
+        )
+      `)
+      .eq('id', decisionId)
       .single();
 
     if (verifyError) {
       console.error('❌ Verification error:', verifyError.message);
     } else {
-      console.log('✅ Decision verified!');
+      console.log('✅ Test data verified!');
       console.log('\n📋 TEST DATA READY FOR FEATURE #83');
       console.log('================================');
       console.log('Login credentials:');
       console.log('  Email:', testEmail);
       console.log('  Password:', testPassword);
       console.log('\nTest decision:');
-      console.log('  ID:', insertedDecision.id);
-      console.log('  Title:', insertedDecision.title);
-      console.log('  Options:', insertedDecision.options.length, 'options');
-      console.log('  URL:', `http://localhost:5190/decisions/${insertedDecision.id}`);
+      console.log('  ID:', verifyData.id);
+      console.log('  Title:', verifyData.title);
+      console.log('  Status:', verifyData.status);
+      console.log('  Options:', verifyData.options.length, 'options');
+      console.log('  URL:', `http://localhost:5190/decisions/${verifyData.id}`);
       console.log('\nOption details:');
-      insertedDecision.options.forEach((opt, i) => {
+      verifyData.options.forEach((opt, i) => {
+        const pros = opt.pros_cons.filter(pc => pc.type === 'pro');
+        const cons = opt.pros_cons.filter(pc => pc.type === 'con');
         console.log(`  ${i + 1}. ${opt.title}`);
-        console.log(`     Description: ${opt.description}`);
-        console.log(`     Pros: ${opt.pros.length}, Cons: ${opt.cons.length}`);
+        console.log(`     Pros: ${pros.length}, Cons: ${cons.length}`);
       });
       console.log('\n✅ Ready for browser automation testing!');
       console.log('\nTest steps:');
       console.log('  1. Log in with f83test@example.com / test123456');
       console.log('  2. Navigate to decision detail page');
       console.log('  3. Click Edit button');
-      console.log('  4. Rename Option A to "Option A - Renamed"');
+      console.log('  4. Rename "Option A - Original" to "Option A - Renamed"');
       console.log('  5. Add new option "Option D - New"');
-      console.log('  6. Delete Option C');
+      console.log('  6. Delete "Option C - To Be Deleted"');
       console.log('  7. Save changes');
       console.log('  8. Verify all changes persisted');
     }
