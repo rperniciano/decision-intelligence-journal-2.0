@@ -94,6 +94,7 @@ export class VoiceService {
 
   /**
    * Extract decision data using OpenAI GPT-4
+   * Returns partial results with low confidence if extraction fails
    */
   static async extractDecisionData(transcript: string): Promise<ExtractionResult> {
     try {
@@ -116,7 +117,15 @@ Return ONLY valid JSON matching this structure:
   "emotionalState": "calm|confident|anxious|excited|uncertain|stressed|neutral|hopeful|frustrated",
   "suggestedCategory": "Business|Health|Relationships|Career|Finance|Education|Lifestyle|null",
   "confidence": 0.0-1.0
-}`,
+}
+
+If the transcript is unclear or incomplete, still extract what you can but set a lower confidence score.
+Confidence scoring:
+- 0.9-1.0: Very clear transcript with all required information
+- 0.7-0.9: Clear transcript with most information
+- 0.5-0.7: Unclear or incomplete transcript, some information missing
+- 0.3-0.5: Very unclear or minimal information
+- 0.0-0.3: Almost no useful information`,
           },
           {
             role: 'user',
@@ -135,15 +144,30 @@ Return ONLY valid JSON matching this structure:
       const extracted = JSON.parse(content);
 
       // Validate and normalize the extracted data
+      const confidence = typeof extracted.confidence === 'number' ? extracted.confidence : 0.5;
+
+      // Ensure we have at least minimal data
+      const options = Array.isArray(extracted.options) && extracted.options.length > 0
+        ? extracted.options
+        : [{ name: 'Option 1', pros: [], cons: [] }];
+
       return {
         title: extracted.title || 'Untitled Decision',
-        options: Array.isArray(extracted.options) ? extracted.options : [],
+        options,
         emotionalState: extracted.emotionalState || 'neutral',
         suggestedCategory: extracted.suggestedCategory || null,
-        confidence: typeof extracted.confidence === 'number' ? extracted.confidence : 0.5,
+        confidence,
       };
     } catch (error) {
-      throw new Error(`OpenAI extraction error: ${(error as Error).message}`);
+      // Return partial result with low confidence instead of throwing
+      console.error('Extraction error, returning partial result:', error);
+      return {
+        title: 'Untitled Decision',
+        options: [{ name: 'Option 1', pros: [], cons: [] }],
+        emotionalState: 'neutral',
+        suggestedCategory: null,
+        confidence: 0.2, // Very low confidence indicating extraction failed
+      };
     }
   }
 

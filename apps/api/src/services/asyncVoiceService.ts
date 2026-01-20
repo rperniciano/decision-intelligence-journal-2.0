@@ -44,7 +44,7 @@ export class AsyncVoiceService {
       jobManager.updateStatus(jobId, 'extracting', 0.7);
       const extraction = await VoiceService.extractDecisionData(transcriptionResult.transcript);
 
-      // Step 4: Create decision
+      // Step 4: Create decision (even with partial results)
       const decision = await DecisionService.createDecision(userId, {
         title: extraction.title,
         status: 'draft',
@@ -54,13 +54,14 @@ export class AsyncVoiceService {
         transcription: transcriptionResult.transcript,
         audio_url: audioUrl,
         audio_duration_seconds: transcriptionResult.duration,
+        ai_confidence: extraction.confidence, // Store confidence for display
       });
 
       if (!decision) {
         throw new Error('Failed to create decision');
       }
 
-      // Mark job as completed
+      // Mark job as completed (even with partial results)
       jobManager.markCompleted(
         jobId,
         transcriptionResult.transcript,

@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { SkipLink } from '../components/SkipLink';
+import {
+  saveRecordingToIndexedDB,
+  getPendingRecordingsCount,
+  isOnline,
+  onNetworkStatusChange,
+  type PendingRecording,
+} from '../lib/indexedDB';
 
 export function RecordPage() {
   const navigate = useNavigate();
@@ -13,6 +20,8 @@ export function RecordPage() {
   const [savedAudioBlob, setSavedAudioBlob] = useState<Blob | null>(null);
   const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isOffline, setIsOffline] = useState(!isOnline());
+  const [pendingRecordingsCount, setPendingRecordingsCount] = useState<number>(0);
   const timerRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -78,6 +87,27 @@ export function RecordPage() {
   };
 
   const handleStopRecording = () => {
+    // Validate minimum recording duration (2 seconds)
+    if (recordingTime < 2) {
+      setError('Recording is too short. Please record for at least 2 seconds.');
+      setIsRecording(false);
+
+      // Clear timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+
+      // Stop media recorder and discard
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+      }
+
+      setStatusAnnouncement('Recording stopped. Recording too short. Please try again.');
+      return;
+    }
+
     setIsRecording(false);
     setStatusAnnouncement('Recording stopped. Processing your decision.');
 
@@ -90,6 +120,76 @@ export function RecordPage() {
     // Stop media recorder
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
+    }
+  };
+
+  /**
+   * Sync pending recordings from IndexedDB when back online
+   */
+  const syncPendingRecordings = async () => {
+    if (!isMountedRef.current) return;
+
+    try {
+      const { getPendingRecordings, deleteRecordingFromIndexedDB } = await import('../lib/indexedDB');
+      const pendingRecordings = await getPendingRecordings();
+
+      if (pendingRecordings.length === 0) return;
+
+      console.log(`Syncing ${pendingRecordings.length} pending recordings...`);
+
+      for (const recording of pendingRecordings) {
+        if (!isMountedRef.current) return;
+
+        try {
+          // Get auth token
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            console.error('No session, skipping sync');
+            return;
+          }
+
+          // Create form data
+          const formData = new FormData();
+          formData.append('file', recording.audioBlob, `offline-recording-${recording.id}.webm`);
+
+          // Upload to API
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/recordings/upload`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: formData,
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+
+            // Delete from IndexedDB after successful upload
+            await deleteRecordingFromIndexedDB(recording.id);
+
+            // Update pending count
+            if (isMountedRef.current) {
+              const newCount = await getPendingRecordingsCount();
+              setPendingRecordingsCount(newCount);
+            }
+
+            console.log(`Successfully synced recording ${recording.id}`);
+
+            // Navigate to the latest successfully processed recording
+            if (isMountedRef.current && result.jobId) {
+              const decisionId = await pollJobStatus(result.jobId);
+              navigate(`/decisions/${decisionId}/review`);
+              return; // Only navigate to the first one
+            }
+          } else {
+            console.error(`Failed to sync recording ${recording.id}:`, response.statusText);
+          }
+        } catch (err) {
+          console.error(`Error syncing recording ${recording.id}:`, err);
+        }
+      }
+    } catch (err) {
+      console.error('Error in syncPendingRecordings:', err);
     }
   };
 
@@ -187,6 +287,20 @@ export function RecordPage() {
       // Save the audio blob for retry
       setSavedAudioBlob(blob);
 
+      // Check if offline - save to IndexedDB immediately
+      if (isOffline) {
+        console.log('Offline detected - saving to IndexedDB');
+        await saveRecordingToIndexedDB(blob);
+
+        // Update pending count
+        const newCount = await getPendingRecordingsCount();
+        setPendingRecordingsCount(newCount);
+
+        setIsProcessing(false);
+        setError('You are offline. Your recording has been saved and will be uploaded automatically when you reconnect.');
+        return;
+      }
+
       // Get auth token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -220,10 +334,26 @@ export function RecordPage() {
           }
         });
 
-        // Handle errors
-        xhr.addEventListener('error', () => {
+        // Handle errors - save to IndexedDB on network failure
+        xhr.addEventListener('error', async () => {
           if (isMountedRef.current) {
-            reject(new Error('Network error during upload. Please try again.'));
+            // Check if this is a network error (offline)
+            if (!isOnline()) {
+              try {
+                console.log('Network error - saving to IndexedDB');
+                await saveRecordingToIndexedDB(blob);
+
+                // Update pending count
+                const newCount = await getPendingRecordingsCount();
+                setPendingRecordingsCount(newCount);
+
+                reject(new Error('Network unavailable. Your recording has been saved and will be uploaded when you reconnect.'));
+              } catch (saveError) {
+                reject(new Error('Network error. Failed to save recording locally.'));
+              }
+            } else {
+              reject(new Error('Network error during upload. Please try again.'));
+            }
           }
         });
 
@@ -328,8 +458,33 @@ export function RecordPage() {
   useEffect(() => {
     isMountedRef.current = true;
 
+    // Update pending recordings count on mount
+    const updatePendingCount = async () => {
+      try {
+        const count = await getPendingRecordingsCount();
+        if (isMountedRef.current) {
+          setPendingRecordingsCount(count);
+        }
+      } catch (err) {
+        console.error('Failed to get pending recordings count:', err);
+      }
+    };
+    updatePendingCount();
+
+    // Monitor network status changes
+    const cleanup = onNetworkStatusChange((online) => {
+      if (isMountedRef.current) {
+        setIsOffline(!online);
+        if (online) {
+          // Trigger sync when coming back online
+          syncPendingRecordings();
+        }
+      }
+    });
+
     return () => {
       isMountedRef.current = false;
+      cleanup();
 
       // Abort any pending polling requests
       if (abortControllerRef.current) {
@@ -378,7 +533,37 @@ export function RecordPage() {
           <span className="text-sm">Back</span>
         </button>
 
-        <h1 className="text-lg font-medium">Record Decision</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-medium">Record Decision</h1>
+
+          {/* Offline indicator */}
+          {isOffline && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full"
+            >
+              <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs text-yellow-500 font-medium">Offline</span>
+            </motion.div>
+          )}
+
+          {/* Pending recordings indicator */}
+          {pendingRecordingsCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 px-3 py-1 bg-accent/10 border border-accent/20 rounded-full"
+            >
+              <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs text-accent font-medium">{pendingRecordingsCount} pending</span>
+            </motion.div>
+          )}
+        </div>
 
         <div className="w-16" /> {/* Spacer for centering */}
       </header>

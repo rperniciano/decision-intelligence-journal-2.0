@@ -225,20 +225,51 @@ export function DecisionExtractionCard({
           animate={{ opacity: 1 }}
           className="space-y-6"
         >
-          {/* Confidence indicator */}
+          {/* Confidence indicator with different severity levels */}
           {extraction.confidence < 0.8 && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 glass rounded-lg border border-amber-500/20 bg-amber-500/10"
+              className={`p-4 glass rounded-lg border ${
+                extraction.confidence < 0.5
+                  ? 'border-red-500/20 bg-red-500/10'
+                  : 'border-amber-500/20 bg-amber-500/10'
+              }`}
             >
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                  extraction.confidence < 0.5 ? 'text-red-400' : 'text-amber-400'
+                }`} fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                <p className="text-sm text-amber-200">
-                  I'm not 100% sure I understood everything correctly. Please review and edit anything that doesn't seem right.
-                </p>
+                <div className="flex-1">
+                  <p className={`text-sm mb-2 ${
+                    extraction.confidence < 0.5 ? 'text-red-200' : 'text-amber-200'
+                  }`}>
+                    {extraction.confidence < 0.3
+                      ? 'AI extraction had significant difficulties. The audio may have been unclear or incomplete. Please review carefully or enter manually.'
+                      : extraction.confidence < 0.5
+                      ? 'AI extraction partially failed. Some information may be missing or incorrect. Please review and edit.'
+                      : "I'm not 100% sure I understood everything correctly. Please review and edit anything that doesn't seem right."
+                    }
+                  </p>
+                  {extraction.confidence < 0.5 && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => navigate('/decisions/new')}
+                        className="flex-1 px-3 py-2 glass glass-hover rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Enter Manually
+                      </button>
+                      <button
+                        onClick={() => navigate(-1)}
+                        className="flex-1 px-3 py-2 bg-accent/20 hover:bg-accent/30 text-accent rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Re-record
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}

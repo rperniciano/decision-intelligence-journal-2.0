@@ -67,7 +67,7 @@ export function ExtractionReviewPage() {
           })),
           emotionalState: decision.emotionalState || decision.detected_emotional_state || 'neutral',
           suggestedCategory: decision.category || decision.categoryId || null,
-          confidence: 0.8, // Default confidence since not stored
+          confidence: decision.ai_confidence || decision.aiConfidence || 0.8, // Use stored confidence or default
         };
 
         setExtraction(extraction);
