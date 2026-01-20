@@ -551,6 +551,12 @@ export function HistoryPage() {
     sessionStorage.setItem('exportFilters', JSON.stringify(filterState));
   }, [activeFilter, selectedCategory, timeFilter, selectedEmotion, searchQuery]);
 
+  // Feature #39: Store full URL with filters for breadcrumb navigation back from detail page
+  useEffect(() => {
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    sessionStorage.setItem('historyUrlWithFilters', currentUrl);
+  }, [searchParams]); // Update whenever URL search params change
+
   // Fetch categories on mount
   // Feature #268: Add AbortController to prevent race conditions
   useEffect(() => {

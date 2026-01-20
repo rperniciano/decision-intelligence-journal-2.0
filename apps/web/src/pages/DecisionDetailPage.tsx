@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from '../components/Modal';
@@ -147,11 +147,22 @@ interface Reminder {
 export function DecisionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showSuccess, showError } = useToast(); // Feature #221: Add toast for delete confirmation
   const [decision, setDecision] = useState<Decision | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleted, setIsDeleted] = useState(false); // Feature #266: Track if decision was deleted
+
+  // Feature #39: Store referrer URL to preserve filters when navigating back
+  // Get the history URL with filters from sessionStorage (set by HistoryPage)
+  const historyUrlWithFilters = useRef<string>('/history');
+  useEffect(() => {
+    const stored = sessionStorage.getItem('historyUrlWithFilters');
+    if (stored) {
+      historyUrlWithFilters.current = stored;
+    }
+  }, []);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   // Feature #88: Abandon decision state
@@ -995,7 +1006,7 @@ export function DecisionDetailPage() {
         <Breadcrumbs
           items={[
             { label: 'Dashboard', path: '/dashboard' },
-            { label: 'History', path: '/history' },
+            { label: 'History', path: historyUrlWithFilters.current },
             { label: decision.title }
           ]}
         />
