@@ -13,6 +13,7 @@ import { DecisionService } from './services/decisionServiceNew.js';
 import { AsyncVoiceService } from './services/asyncVoiceService.js';
 import { jobManager } from './services/jobManager.js';
 import { InsightsService } from './services/insightsService.js';
+import { loginWithRateLimit } from './services/loginRateLimitService.js';
 
 // Get directory paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -116,7 +117,44 @@ async function registerRoutes() {
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
 
-  // API version prefix
+  // Feature #18: Login endpoint with rate limiting (public)
+  server.post('/api/v1/login', async (request, reply) => {
+    try {
+      const { email, password } = request.body as { email: string; password: string };
+
+      if (!email || !password) {
+        return reply.code(400).send({ error: 'Email and password are required' });
+      }
+
+      // Get client IP for rate limiting
+      const ipAddress = request.headers['x-forwarded-for'] as string ||
+                        request.headers['x-real-ip'] as string ||
+                        request.ip;
+
+      // Attempt login with rate limiting
+      const result = await loginWithRateLimit(email, password, ipAddress);
+
+      if (!result.success) {
+        return reply.code(400).send({
+          error: result.error,
+          lockoutUntil: result.lockoutUntil?.toISOString()
+        });
+      }
+
+      // Login successful - return session data for client to set
+      return reply.code(200).send({
+        success: true,
+        session: result.session,
+        user: result.session?.user
+      });
+
+    } catch (error) {
+      server.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // API version prefix (protected routes)
   server.register(async (api) => {
     // Apply auth middleware to all routes in this scope
     api.addHook('preHandler', authMiddleware);

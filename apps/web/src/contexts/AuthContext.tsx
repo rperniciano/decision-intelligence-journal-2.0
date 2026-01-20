@@ -60,11 +60,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isSupabaseConfigured) {
       return { error: { message: 'Authentication not configured' } as AuthError };
     }
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+
+    // Feature #18: Use rate-limited login endpoint
+    try {
+      const response = await fetch(`${window.location.origin}/api/v1/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        return { error: { message: data.error || 'Login failed' } as AuthError };
+      }
+
+      // Login successful - set the session in Supabase client
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+      }
+
+      return { error: null };
+    } catch (err) {
+      return { error: { message: 'Network error. Please try again.' } as AuthError };
+    }
   };
 
   const signUpWithEmail = async (email: string, password: string, name?: string) => {
