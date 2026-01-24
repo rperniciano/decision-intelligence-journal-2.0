@@ -1,3 +1,0 @@
-Feature #77 Session 3
-Status: SKIPPED - External Blocker
-Reason: outcomes table does not exist and migration cannot be executed programmatically

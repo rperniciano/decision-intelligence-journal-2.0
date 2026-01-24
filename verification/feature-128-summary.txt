@@ -1,4 +1,0 @@
-Feature #128 Regression Test - COMPLETE
-Status: PASSING ✅
-No regression found
-Date: 2026-01-20
