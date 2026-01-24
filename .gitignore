@@ -41,6 +41,12 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 
+# Vercel serverless compiled files
+apps/api/api/*.js
+apps/api/api/*.js.map
+apps/api/api/*.d.ts
+apps/api/api/*.d.ts.map
+
 # Cache
 .cache/
 .eslintcache
