@@ -121,6 +121,9 @@ importers:
       recharts:
         specifier: ^2.10.4
         version: 2.15.4(react-dom@18.3.1)(react@18.3.1)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
       zustand:
         specifier: ^4.5.0
         version: 4.5.7(@types/react@18.3.27)(react@18.3.1)
@@ -158,9 +161,6 @@ importers:
       tailwindcss:
         specifier: ^3.4.1
         version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
       vite:
         specifier: ^5.0.12
         version: 5.4.21
@@ -194,6 +194,9 @@ importers:
       remotion:
         specifier: ^4.0.242
         version: 4.0.409(react-dom@18.3.1)(react@18.3.1)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
     devDependencies:
       '@types/react':
         specifier: ^18.3.3
@@ -210,9 +213,6 @@ importers:
       tailwindcss:
         specifier: ^3.4.14
         version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
 
 packages:
 
