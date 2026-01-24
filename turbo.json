@@ -15,6 +15,18 @@
     },
     "test": {
       "dependsOn": ["^build"]
+    },
+    "studio": {
+      "cache": false,
+      "persistent": true
+    },
+    "render": {
+      "outputs": ["../../apps/web/public/videos/**"],
+      "cache": false
+    },
+    "render:all": {
+      "outputs": ["../../apps/web/public/videos/**"],
+      "cache": false
     }
   }
 }
