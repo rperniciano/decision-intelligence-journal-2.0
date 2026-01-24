@@ -6,7 +6,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SkipLink } from './components/SkipLink';
-import { VideoBackground, StepVideo } from './components/VideoBackground';
+import { VideoBackground } from './components/VideoBackground';
 import { MouseSpotlight } from './components/MouseSpotlight';
 
 // Light pages - loaded immediately (no lazy loading for these)
@@ -154,57 +154,95 @@ function LandingPage() {
           </motion.div>
         </section>
 
-        {/* How It Works Section */}
-        <section className="py-20 px-4 md:px-8 relative" aria-labelledby="how-it-works-heading">
-          <div className="max-w-6xl mx-auto">
+        {/* How It Works Section - Header */}
+        <section className="py-16 px-4 md:px-8 relative" aria-labelledby="how-it-works-heading">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-20%" }}
+            transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
+            className="text-center"
+          >
+            <h2 id="how-it-works-heading" className="text-3xl md:text-4xl font-semibold mb-4">
+              How It Works
+            </h2>
+            <p className="text-text-secondary text-lg md:text-xl max-w-2xl mx-auto">
+              Transform how you make decisions with the power of voice and AI
+            </p>
+          </motion.div>
+        </section>
+
+        {/* How It Works - Step Sections */}
+        {steps.map((step) => (
+          <section
+            key={step.number}
+            className="min-h-[70vh] md:min-h-[80vh] relative flex items-center justify-center overflow-hidden"
+            aria-labelledby={`step-${step.number}-heading`}
+          >
+            {/* Video Background */}
+            <VideoBackground
+              src={step.video}
+              opacity={0.5}
+              fallback={
+                <div className="absolute inset-0 bg-gradient-to-br from-bg-deep via-bg-deep to-[#1a1a2e]" />
+              }
+            />
+
+            {/* Radial gradient overlay for text readability */}
+            <div
+              className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(10,10,15,0.8)_0%,_rgba(10,10,15,0.5)_50%,_rgba(10,10,15,0.3)_100%)]"
+              aria-hidden="true"
+            />
+
+            {/* Content */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
-              className="text-center mb-16"
+              viewport={{ once: true, margin: "-20%" }}
+              transition={{
+                duration: 0.6,
+                ease: [0.25, 1, 0.5, 1],
+                delay: 0.2
+              }}
+              className="relative z-10 text-center px-6 py-12 md:px-8 max-w-2xl mx-auto"
             >
-              <h2 id="how-it-works-heading" className="text-3xl md:text-4xl font-semibold mb-4">
-                How It Works
-              </h2>
-              <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-                Transform how you make decisions with the power of voice and AI
+              {/* Large step number */}
+              <div
+                className="text-7xl md:text-9xl font-bold text-accent/10 font-mono mb-4 select-none"
+                aria-hidden="true"
+                style={{ textShadow: '0 0 60px rgba(0, 212, 170, 0.2)' }}
+              >
+                {step.number}
+              </div>
+
+              {/* Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent backdrop-blur-sm">
+                  <div className="w-10 h-10 flex items-center justify-center">
+                    {step.icon}
+                  </div>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3
+                id={`step-${step.number}-heading`}
+                className="text-3xl md:text-4xl font-semibold mb-4"
+                style={{ textShadow: '0 2px 20px rgba(0, 0, 0, 0.5)' }}
+              >
+                {step.title}
+              </h3>
+
+              {/* Description */}
+              <p
+                className="text-lg md:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto"
+                style={{ textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)' }}
+              >
+                {step.description}
               </p>
             </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {steps.map((step, index) => (
-                <motion.div
-                  key={step.number}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{
-                    duration: 0.6,
-                    ease: [0.25, 1, 0.5, 1],
-                    delay: index * 0.1
-                  }}
-                  className="glass rounded-2xl p-8 hover:glow-accent transition-all duration-300"
-                >
-                  {/* Step video animation */}
-                  <div className="flex justify-center mb-6">
-                    <StepVideo src={step.video} size={160} className="opacity-90" />
-                  </div>
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent">
-                      {step.icon}
-                    </div>
-                    <div className="text-4xl font-bold text-accent/20 font-mono">
-                      {step.number}
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
-                  <p className="text-text-secondary leading-relaxed">{step.description}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+          </section>
+        ))}
 
         {/* Final CTA Section */}
         <section className="py-20 px-4 text-center relative" aria-labelledby="cta-heading">
