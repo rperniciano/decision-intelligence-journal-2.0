@@ -173,75 +173,101 @@ function LandingPage() {
         </section>
 
         {/* How It Works - Step Sections */}
-        {steps.map((step) => (
-          <section
-            key={step.number}
-            className="min-h-[70vh] md:min-h-[80vh] relative flex items-center justify-center overflow-hidden"
-            aria-labelledby={`step-${step.number}-heading`}
-          >
-            {/* Video Background */}
-            <VideoBackground
-              src={step.video}
-              opacity={0.5}
-              fallback={
-                <div className="absolute inset-0 bg-gradient-to-br from-bg-deep via-bg-deep to-[#1a1a2e]" />
-              }
-            />
-
-            {/* Radial gradient overlay for text readability */}
-            <div
-              className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(10,10,15,0.8)_0%,_rgba(10,10,15,0.5)_50%,_rgba(10,10,15,0.3)_100%)]"
-              aria-hidden="true"
-            />
-
-            {/* Content */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-20%" }}
-              transition={{
-                duration: 0.6,
-                ease: [0.25, 1, 0.5, 1],
-                delay: 0.2
-              }}
-              className="relative z-10 text-center px-6 py-12 md:px-8 max-w-2xl mx-auto"
+        {steps.map((step, index) => (
+          <div key={step.number}>
+            <section
+              className="min-h-[70vh] md:min-h-[80vh] relative flex items-center justify-center overflow-hidden"
+              aria-labelledby={`step-${step.number}-heading`}
             >
-              {/* Large step number */}
-              <div
-                className="text-7xl md:text-9xl font-bold text-accent/10 font-mono mb-4 select-none"
-                aria-hidden="true"
-                style={{ textShadow: '0 0 60px rgba(0, 212, 170, 0.2)' }}
-              >
-                {step.number}
-              </div>
+              {/* Video Background */}
+              <VideoBackground
+                src={step.video}
+                opacity={0.5}
+                fallback={
+                  <div className="absolute inset-0 bg-gradient-to-br from-bg-deep via-bg-deep to-[#1a1a2e]" />
+                }
+              />
 
-              {/* Icon */}
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent backdrop-blur-sm">
-                  <div className="w-10 h-10 flex items-center justify-center">
-                    {step.icon}
+              {/* Radial gradient overlay for text readability */}
+              <div
+                className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(10,10,15,0.8)_0%,_rgba(10,10,15,0.5)_50%,_rgba(10,10,15,0.3)_100%)]"
+                aria-hidden="true"
+              />
+
+              {/* Content */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-20%" }}
+                transition={{
+                  duration: 0.6,
+                  ease: [0.25, 1, 0.5, 1],
+                  delay: 0.2
+                }}
+                className="relative z-10 text-center px-6 py-12 md:px-8 max-w-2xl mx-auto"
+              >
+                {/* Large step number */}
+                <div
+                  className="text-7xl md:text-9xl font-bold text-accent/10 font-mono mb-4 select-none"
+                  aria-hidden="true"
+                  style={{ textShadow: '0 0 60px rgba(0, 212, 170, 0.2)' }}
+                >
+                  {step.number}
+                </div>
+
+                {/* Icon */}
+                <div className="flex justify-center mb-6">
+                  <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent backdrop-blur-sm">
+                    <div className="w-10 h-10 flex items-center justify-center">
+                      {step.icon}
+                    </div>
                   </div>
                 </div>
+
+                {/* Title */}
+                <h3
+                  id={`step-${step.number}-heading`}
+                  className="text-3xl md:text-4xl font-semibold mb-4"
+                  style={{ textShadow: '0 2px 20px rgba(0, 0, 0, 0.5)' }}
+                >
+                  {step.title}
+                </h3>
+
+                {/* Description */}
+                <p
+                  className="text-lg md:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto"
+                  style={{ textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)' }}
+                >
+                  {step.description}
+                </p>
+              </motion.div>
+            </section>
+
+            {/* Animated arrow between steps */}
+            {index < steps.length - 1 && (
+              <div className="py-8 flex justify-center bg-bg-deep">
+                <motion.div
+                  animate={{ y: [0, 12, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  aria-hidden="true"
+                >
+                  <svg
+                    className="w-8 h-8 text-white/80"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    />
+                  </svg>
+                </motion.div>
               </div>
-
-              {/* Title */}
-              <h3
-                id={`step-${step.number}-heading`}
-                className="text-3xl md:text-4xl font-semibold mb-4"
-                style={{ textShadow: '0 2px 20px rgba(0, 0, 0, 0.5)' }}
-              >
-                {step.title}
-              </h3>
-
-              {/* Description */}
-              <p
-                className="text-lg md:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto"
-                style={{ textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)' }}
-              >
-                {step.description}
-              </p>
-            </motion.div>
-          </section>
+            )}
+          </div>
         ))}
 
         {/* Final CTA Section */}
