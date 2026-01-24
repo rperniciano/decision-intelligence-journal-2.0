@@ -6,6 +6,8 @@ import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SkipLink } from './components/SkipLink';
+import { VideoBackground, StepVideo } from './components/VideoBackground';
+import { MouseSpotlight } from './components/MouseSpotlight';
 
 // Light pages - loaded immediately (no lazy loading for these)
 import { LoginPage } from './pages/LoginPage';
@@ -24,7 +26,7 @@ const EditDecisionPage = lazy(() => import('./pages/EditDecisionPage').then(m =>
 const CreateDecisionPage = lazy(() => import('./pages/CreateDecisionPage').then(m => ({ default: m.CreateDecisionPage })));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
-const PatternDetailPage = lazy(() => import('./pages/PatternDetailPage').then(m => ({ default: m.PatternDetailPage })));
+const PatternDetailPage = lazy(() => import('./pages/PatternDetailPage'));
 const ExtractionReviewPage = lazy(() => import('./pages/ExtractionReviewPage').then(m => ({ default: m.ExtractionReviewPage })));
 
 // Landing Page Component
@@ -34,6 +36,7 @@ function LandingPage() {
       number: "01",
       title: "Speak",
       description: "Record your decision naturally. Just talk through what you're thinking.",
+      video: "step-speak",
       icon: (
         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -44,6 +47,7 @@ function LandingPage() {
       number: "02",
       title: "AI Extracts",
       description: "Our AI identifies options, pros/cons, and emotional context from your words.",
+      video: "step-ai-extracts",
       icon: (
         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -54,6 +58,7 @@ function LandingPage() {
       number: "03",
       title: "Discover Patterns",
       description: "Track outcomes over time and reveal insights about your decision-making.",
+      video: "step-patterns",
       icon: (
         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
@@ -68,9 +73,27 @@ function LandingPage() {
       <main id="main-content" role="main" aria-label="Welcome to Decisions">
         {/* Hero Section */}
         <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
-          {/* Animated gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-bg-deep via-bg-deep to-[#1a1a2e] opacity-50" aria-hidden="true" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-accent/5 via-transparent to-accent/5 animate-pulse" aria-hidden="true" style={{ animationDuration: '8s' }} />
+          {/* Video background */}
+          <VideoBackground
+            src="hero-animation"
+            opacity={0.6}
+            fallback={
+              <>
+                <div className="absolute inset-0 bg-gradient-to-br from-bg-deep via-bg-deep to-[#1a1a2e] opacity-50" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-accent/5 via-transparent to-accent/5 animate-pulse" style={{ animationDuration: '8s' }} />
+              </>
+            }
+          />
+          {/* Gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-br from-bg-deep/70 via-bg-deep/50 to-transparent" aria-hidden="true" />
+
+          {/* Interactive mouse spotlight effect */}
+          <MouseSpotlight
+            size={700}
+            color="rgba(0, 212, 170, 0.12)"
+            intensity={1}
+            smoothing={0.1}
+          />
 
           <div className="relative z-10 text-center px-4">
             <motion.div
@@ -163,11 +186,15 @@ function LandingPage() {
                   }}
                   className="glass rounded-2xl p-8 hover:glow-accent transition-all duration-300"
                 >
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                  {/* Step video animation */}
+                  <div className="flex justify-center mb-6">
+                    <StepVideo src={step.video} size={160} className="opacity-90" />
+                  </div>
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent">
                       {step.icon}
                     </div>
-                    <div className="text-5xl font-bold text-accent/20 font-mono">
+                    <div className="text-4xl font-bold text-accent/20 font-mono">
                       {step.number}
                     </div>
                   </div>
