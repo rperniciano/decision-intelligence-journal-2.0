@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from '../components/Modal';
@@ -8,11 +8,16 @@ import { SkipLink } from '../components/SkipLink';
 import { useToast } from '../contexts/ToastContext';
 
 // Type definitions
+interface ProConItem {
+  id?: string;
+  content: string;
+}
+
 interface DecisionOption {
   id: string;
   text: string;
-  pros: string[];
-  cons: string[];
+  pros: (string | ProConItem)[];
+  cons: (string | ProConItem)[];
   isChosen?: boolean;
 }
 
@@ -147,7 +152,6 @@ interface Reminder {
 export function DecisionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const { showSuccess, showError } = useToast(); // Feature #221: Add toast for delete confirmation
   const [decision, setDecision] = useState<Decision | null>(null);
   const [loading, setLoading] = useState(true);
@@ -196,7 +200,7 @@ export function DecisionDetailPage() {
   // Feature #188: Voice reflection state
   const [isRecordingReflection, setIsRecordingReflection] = useState(false);
   const [reflectionRecordingTime, setReflectionRecordingTime] = useState(0);
-  const [reflectionAudioBlob, setReflectionAudioBlob] = useState<Blob | null>(null);
+  const [, setReflectionAudioBlob] = useState<Blob | null>(null);
   const [reflectionTranscript, setReflectionTranscript] = useState<string>('');
   const [isProcessingReflection, setIsProcessingReflection] = useState(false);
   const [reflectionInsights, setReflectionInsights] = useState<string>('');
@@ -596,7 +600,7 @@ export function DecisionDetailPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
 
         // Update reminder in list
         setReminders(prev => prev.map(r =>
@@ -717,8 +721,8 @@ export function DecisionDetailPage() {
       // Show success message
       showSuccess('Decision abandoned');
 
-      // Refresh decision data
-      fetchDecision();
+      // Refresh decision data by navigating to force reload
+      navigate(0);
 
       // Close modal
       setShowAbandonModal(false);
@@ -1104,7 +1108,7 @@ export function DecisionDetailPage() {
             {/* Display multiple outcomes if available */}
             {outcomes.length > 0 ? (
               <div className="space-y-3">
-                {outcomes.map((outcome, index) => (
+                {outcomes.map((outcome) => (
                   <div key={outcome.id} className="glass p-4 rounded-xl rim-light-accent">
                     <div className="flex items-center gap-2 mb-2">
                       {/* Check-in number badge */}

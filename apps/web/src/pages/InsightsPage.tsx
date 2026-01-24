@@ -393,7 +393,7 @@ interface InsightsData {
 
 export function InsightsPage() {
   const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Feature #268: Add AbortController to prevent race conditions during rapid navigation
   useEffect(() => {

@@ -10,7 +10,9 @@
     "test": "turbo test",
     "clean": "turbo clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "videos:studio": "pnpm --filter @decisions/videos studio",
+    "videos:render": "pnpm --filter @decisions/videos render:all"
   },
   "devDependencies": {
     "pg": "^8.17.1",
