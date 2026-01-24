@@ -1,9 +1,0 @@
-const Database = require('better-sqlite3');
-const db = new Database('features.db');
-
-const feature = db.prepare('SELECT * FROM features WHERE id = 14').get();
-
-console.log('Feature #14:');
-console.log(JSON.stringify(feature, null, 2));
-
-db.close();
