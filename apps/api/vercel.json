@@ -1,18 +1,18 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @decisions/shared build",
-  "installCommand": "echo 'Install handled in buildCommand'",
-  "functions": {
-    "api/index.ts": {
-      "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "src/**"
+  "builds": [
+    {
+      "src": "api.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["src/**/*.ts", "src/**/*.js"]
+      }
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/index.ts"
+      "dest": "/api.ts"
     }
   ]
 }

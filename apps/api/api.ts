@@ -18,7 +18,7 @@ async function getApp() {
     }
 
     // Dynamic import with .js extension for ESM compatibility
-    const { buildApp } = await import('../src/app.js');
+    const { buildApp } = await import('./src/app.js');
     app = await buildApp({ logger: true });
     await app.ready();
   }
