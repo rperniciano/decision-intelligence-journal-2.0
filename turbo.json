@@ -1,5 +1,15 @@
 {
   "$schema": "https://turborepo.org/schema.json",
+  "globalEnv": [
+    "NODE_ENV",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "ASSEMBLYAI_API_KEY",
+    "OPENAI_API_KEY",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY"
+  ],
   "tasks": {
     "dev": {
       "cache": false,
