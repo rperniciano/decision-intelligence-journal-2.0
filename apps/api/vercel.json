@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @decisions/shared build && pnpm --filter @decisions/api build",
+  "installCommand": "echo 'Install handled in buildCommand'",
+  "outputDirectory": ".",
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ]
+}

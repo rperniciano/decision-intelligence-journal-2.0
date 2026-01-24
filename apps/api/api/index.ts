@@ -1,11 +1,24 @@
 // Vercel Serverless Entry Point
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { buildApp } from '../src/app.js';
 
-let app: Awaited<ReturnType<typeof buildApp>> | null = null;
+let app: any = null;
 
 async function getApp() {
   if (!app) {
+    // Check required environment variables first
+    const requiredEnvVars = [
+      'SUPABASE_URL',
+      'SUPABASE_ANON_KEY',
+      'SUPABASE_SERVICE_ROLE_KEY'
+    ];
+
+    const missing = requiredEnvVars.filter(v => !process.env[v]);
+    if (missing.length > 0) {
+      throw new Error(`Missing environment variables: ${missing.join(', ')}`);
+    }
+
+    // Dynamic import to catch any module resolution errors
+    const { buildApp } = await import('../src/app');
     app = await buildApp({ logger: true });
     await app.ready();
   }
@@ -36,8 +49,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Send the response
     res.status(response.statusCode).send(response.payload);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Handler error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: error?.message || 'Unknown error',
+      stack: process.env.NODE_ENV !== 'production' ? error?.stack : undefined
+    });
   }
 }
