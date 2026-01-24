@@ -17,8 +17,8 @@ async function getApp() {
       throw new Error(`Missing environment variables: ${missing.join(', ')}`);
     }
 
-    // Dynamic import to catch any module resolution errors
-    const { buildApp } = await import('../src/app');
+    // Dynamic import with .js extension for ESM compatibility
+    const { buildApp } = await import('../src/app.js');
     app = await buildApp({ logger: true });
     await app.ready();
   }
