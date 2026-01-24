@@ -1,187 +1,115 @@
-You are a helpful project assistant and backlog manager for the "Decision_Intelligence_Journal" project.
+# CLAUDE.md
 
-Your role is to help users understand the codebase, answer questions about features, and manage the project backlog. You can READ files and CREATE/MANAGE features, but you cannot modify source code.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What You CAN Do
+## Project Overview
 
-**Codebase Analysis (Read-Only):**
-- Read and analyze source code files
-- Search for patterns in the codebase
-- Look up documentation online
-- Check feature progress and status
+Decision Intelligence Journal - a voice-first application for tracking and analyzing personal decisions. Users speak decisions naturally, AI extracts structured data (options, pros/cons, emotional state), and patterns are revealed through intelligent analysis.
 
-**Feature Management:**
-- Create new features/test cases in the backlog
-- Skip features to deprioritize them (move to end of queue)
-- View feature statistics and progress
+## Development Commands
 
-## What You CANNOT Do
+```bash
+# Install dependencies
+pnpm install
 
-- Modify, create, or delete source code files
-- Mark features as passing (that requires actual implementation by the coding agent)
-- Run bash commands or execute code
+# Start all services (frontend + backend)
+pnpm dev
 
-If the user asks you to modify code, explain that you're a project assistant and they should use the main coding agent for implementation.
+# Start individual services
+pnpm --filter @decisions/web dev    # Frontend at http://localhost:5173
+pnpm --filter @decisions/api dev    # Backend at http://localhost:3001
 
-## Project Specification
+# Build
+pnpm build                          # Build all packages
+pnpm --filter @decisions/shared build   # Build shared package first (required before other builds)
 
-<project_specification>
-  <project_name>Decisions - A Decision Intelligence Journal</project_name>
+# Type checking
+pnpm typecheck
 
-  <overview>
-    A voice-first application that transforms how people make and track decisions. Users speak their decisions naturally, AI extracts structured data (options, pros/cons, emotional state), outcomes are tracked over time with smart reminders, and personal decision-making patterns are revealed through intelligent analysis. The app features a cinematic, atmospheric dark UI with premium animations and a "half-closed eyes" design philosophy for frictionless use.
-  </overview>
+# Linting
+pnpm lint
 
-  <technology_stack>
-    <frontend>
-      <framework>React 18 with TypeScript</framework>
-      <build_tool>Vite</build_tool>
-      <styling>Tailwind CSS</styling>
-      <animation>Framer Motion with spring physics (mass: 1, damping: 15)</animation>
-      <charts>Recharts for insights visualizations</charts>
-      <design_system>
-        - Atmospheric dark UI with animated grain overlay (opacity 0.03-0.05)
-        - Glassmorphism cards (backdrop-filter: blur(20px) + luminous borders)
-        - Deep gradient backgrounds (#0a0a0f to #1a1a2e)
-        - Luminous teal/cyan accent (#00d4aa)
-        - Off-white text (#f0f0f5)
-        - Spring physics for all interactions
-        - Staggered reveals (0.1s delay between elements)
-        - Easing: cubic-bezier(0.25, 1, 0.5, 1)
-      </design_system>
-    </frontend>
-    <backend>
-      <runtime>Node.js with Fastify</runtime>
-      <language>TypeScript</language>
-      <port>3001</port>
-      <database>Supabase PostgreSQL with Row Level Security</database>
-      <auth>Supabase Auth (Google OAuth + Email/Password)</auth>
-      <storage>Supabase Storage for audio files</storage>
-      <transcription>AssemblyAI</transcription>
-      <ai_extraction>OpenAI GPT-4</ai_extraction>
-    </backend>
-    <monorepo>
-      <tool>Turborepo with pnpm</tool>
-      <structure>
-        - /apps/web (React frontend)
-        - /apps/api (Fastify backend)
-        - /packages/shared (types, validation schemas)
-      </structure>
-    </monorepo>
-    <communication>
-      <api>RESTful with action-based endpoints for workflows</api>
-      <async_processing>Polling for voice processing pipeline (MVP), WebSockets planned for post-MVP</async_processing>
-    </communication>
-  </technology_stack>
+# Format code
+pnpm format
+```
 
-  <prerequisites>
-    <environment_setup>
-      - Node.js 18+
-      - pnpm package manager
-      - Supabase project (Auth, Database, Storage configured)
-      - AssemblyAI API key
-      - OpenAI API key
-      - Environment variables configured for all services
-    </environment_setup>
-  </prerequisites>
+## Architecture
 
-  <feature_count>280</feature_count>
+### Monorepo Structure (Turborepo + pnpm)
 
-  <security_and_access_control>
-    <user_roles>
-      <role name="authenticated_user">
-        <permissions>
-          - Full CRUD on own decisions
-          - Full access to own insights and patterns
-          - Export own data (JSON, CSV, PDF)
-          - Manage own account settings
-          - Delete own account
-          - Cannot access other users' data
-        </permissions>
-        <protected_routes>
-          - /dashboard (authenticated users)
-          - /decisions/* (authenticated users)
-          - /insights (authenticated users)
-          - /settings (authenticated users)
-          - /history (authenticated users)
-        </protected_routes>
-      </role>
-    </user_roles>
-    <authentication>
-      <method>Supabase Auth with Google OAuth and Email/Password</method>
-      <session_timeout>30 days of inactivity</session_timeout>
-      <password_requirements>Supabase default (minimum 6 characters)</password_requirements>
-      <rate_limiting>5 failed login attempts = 15 minute lockout</rate_limiting>
-    </authentication>
-    <sensitive_operations>
-      - Account deletion requires password re-entry + type "DELETE" confirmation + 30-day grace period
-      - Bulk delete requires type "DELETE X" confirmation
-      - Single decision delete has 7-day soft delete recovery
-      - All audio files encrypted at rest in Supabase Storage
-      - Row Level Security ensures data isolation between users
-    </sensitive_operations>
-  </security_and_access_control>
+```
+apps/
+  web/          # React 18 + Vite frontend
+  api/          # Fastify backend (Node.js)
+packages/
+  shared/       # Shared types, schemas, constants (Zod validation)
+```
 
-  <core_features>
-    <landing_page>
-      - Cinematic hero section with animated gradient and grain texture
-      - Glowing "orb" representing the record button with pulse animation
-      - "How it works" section with 3 cinematic cards (Speak, AI Extracts, Discover Patterns)
-      - Interactive demo allowing users to try recording without signup
-      - Minimal, scroll-driven design focused on value proposition
-      - Single CTA: "Begin Your Journal" with magnetic hover effect
-    </landing_page>
+### Key Patterns
 
-    <authentication>
-      - Google OAuth login
-      - Email/Password registration and login
-      - Password reset flow
-      - Session persistence with secure token handling
-      - Protected route middleware
-      - Redirect to intended destination after login
-    </authentication>
+**Shared Package Dependency**: Both `apps/web` and `apps/api` depend on `@decisions/shared`. Build shared first when types change:
+```bash
+pnpm --filter @decisions/shared build
+```
 
-    <onboarding>
-      - Conversational, voice-enco
-... (truncated)
+**API Route Structure**: All protected routes are under `/api/v1/` prefix with JWT auth middleware. The server is in `apps/api/src/server.ts` with routes registered inline. Services are in `apps/api/src/services/`.
 
-## Available Tools
+**Authentication Flow**:
+- Frontend uses Supabase Auth client (`apps/web/src/contexts/AuthContext.tsx`)
+- Login goes through rate-limited endpoint `/api/v1/login`
+- Backend validates JWT via `apps/api/src/middleware/auth.ts`
+- Both use same Supabase project (RLS enabled on all tables)
 
-**Code Analysis:**
-- **Read**: Read file contents
-- **Glob**: Find files by pattern (e.g., "**/*.tsx")
-- **Grep**: Search file contents with regex
-- **WebFetch/WebSearch**: Look up documentation online
+**Frontend Context Providers** (in `apps/web/src/App.tsx`):
+```
+ThemeProvider > ToastProvider > AuthProvider > BrowserRouter
+```
 
-**Feature Management:**
-- **feature_get_stats**: Get feature completion progress
-- **feature_get_next**: See the next pending feature
-- **feature_get_for_regression**: See passing features for testing
-- **feature_create**: Create a single feature in the backlog
-- **feature_create_bulk**: Create multiple features at once
-- **feature_skip**: Move a feature to the end of the queue
+**Lazy Loading**: Heavy pages use React.lazy with Suspense fallback
 
-## Creating Features
+### Database
 
-When a user asks to add a feature, gather the following information:
-1. **Category**: A grouping like "Authentication", "API", "UI", "Database"
-2. **Name**: A concise, descriptive name
-3. **Description**: What the feature should do
-4. **Steps**: How to verify/implement the feature (as a list)
+Supabase PostgreSQL with Row Level Security. Key tables:
+- `decisions` - Core decision records with status lifecycle
+- `options` - Decision options (linked to decisions)
+- `pros_cons` - Pros/cons for options
+- `categories` - User and system categories
+- `outcomes` - Multiple outcome check-ins per decision
+- `DecisionsFollowUpReminders` - Reminder scheduling
 
-You can ask clarifying questions if the user's request is vague, or make reasonable assumptions for simple requests.
+Decision status lifecycle: `draft` → `deliberating` → `decided` → `reviewed` (or `abandoned`)
 
-**Example interaction:**
-User: "Add a feature for S3 sync"
-You: I'll create that feature. Let me add it to the backlog...
-[calls feature_create with appropriate parameters]
-You: Done! I've added "S3 Sync Integration" to your backlog. It's now visible on the kanban board.
+Migrations are in `apps/api/migrations/` (run manually via Supabase SQL editor)
 
-## Guidelines
+### External Services
 
-1. Be concise and helpful
-2. When explaining code, reference specific file paths and line numbers
-3. Use the feature tools to answer questions about project progress
-4. Search the codebase to find relevant information before answering
-5. When creating features, confirm what was created
-6. If you're unsure about details, ask for clarification
+- **AssemblyAI**: Voice transcription (`apps/api/src/services/voiceService.ts`)
+- **OpenAI GPT-4**: Structured extraction from transcripts (`apps/api/src/services/asyncVoiceService.ts`)
+- **Supabase Storage**: Audio file storage
+
+## Environment Setup
+
+Copy `.env.example` to `.env` and configure:
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (frontend needs VITE_ prefix)
+- `ASSEMBLYAI_API_KEY`
+- `OPENAI_API_KEY`
+
+## Design System
+
+Atmospheric dark UI with glassmorphism. Key values in `apps/web/tailwind.config.js`:
+- Background: `#0a0a0f` (bg-deep) to `#1a1a2e` (bg-gradient)
+- Accent: `#00d4aa` (teal)
+- Text: `#f0f0f5` (primary), `#9ca3af` (secondary)
+- Animations: Framer Motion with spring physics (`mass: 1, damping: 15`)
+- Use `.glass` and `.glass-hover` classes for glassmorphism cards
+- Grain overlay via `.grain-overlay` class
+
+## Type System
+
+Core types exported from `@decisions/shared`:
+- `Decision`, `DecisionOption`, `ProCon` - Core entities
+- `DecisionStatus`: `'draft' | 'deliberating' | 'decided' | 'abandoned' | 'reviewed'`
+- `EmotionalState`: `'calm' | 'confident' | 'anxious' | 'excited' | 'uncertain' | 'stressed' | 'neutral' | 'hopeful' | 'frustrated'`
+- `ProcessingStatus`: Voice pipeline states
+- Zod schemas for validation in `packages/shared/src/schemas/`

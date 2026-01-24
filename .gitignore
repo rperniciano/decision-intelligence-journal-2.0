@@ -58,3 +58,8 @@ uploads/
 *.wav
 *.webm
 *.ogg
+
+.gemini
+.claude
+.agent
+.agents
