@@ -8,7 +8,6 @@ import {
   getPendingRecordingsCount,
   isOnline,
   onNetworkStatusChange,
-  type PendingRecording,
 } from '../lib/indexedDB';
 
 export function RecordPage() {
@@ -676,8 +675,8 @@ export function RecordPage() {
                       transition={{ duration: 0.3 }}
                       role="progressbar"
                       aria-valuenow={uploadProgress}
-                      aria-valuemin="0"
-                      aria-valuemax="100"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
                     />
                   </div>
                 </div>

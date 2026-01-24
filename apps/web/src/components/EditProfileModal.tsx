@@ -13,7 +13,7 @@ interface EditProfileModalProps {
 
 export function EditProfileModal({ isOpen, onClose, currentName, onSuccess }: EditProfileModalProps) {
   const { session } = useAuth();
-  const { showSuccess, showError } = useToast();
+  const { showSuccess } = useToast();
   const [name, setName] = useState(currentName);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

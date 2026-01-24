@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @decisions/shared build && pnpm --filter @decisions/web build",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'Install handled in buildCommand'",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

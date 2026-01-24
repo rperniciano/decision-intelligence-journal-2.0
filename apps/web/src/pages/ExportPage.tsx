@@ -284,7 +284,7 @@ export function ExportPage() {
             abandoned: [200, 100, 100],
           };
           const statusColor = statusColors[decision.status] || [100, 100, 100];
-          doc.setTextColor(...statusColor);
+          doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
           doc.text(`Status: ${decision.status || 'N/A'}`, margin, yPosition);
           yPosition += 6;
 

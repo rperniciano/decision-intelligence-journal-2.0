@@ -506,7 +506,7 @@ export function HistoryPage() {
   const [customToDate, setCustomToDate] = useState(toDateFromUrl); // Feature #200: Custom range end date state
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedDecisions, setSelectedDecisions] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
@@ -519,8 +519,8 @@ export function HistoryPage() {
 
   // Feature #267: Cursor-based pagination state
   const [pageCursors, setPageCursors] = useState<Map<number, string>>(new Map()); // page -> cursor
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
+  const [, setNextCursor] = useState<string | null>(null);
+  const [, setHasMore] = useState(false);
 
   // Update activeFilter, selectedCategory, sortBy, activeView, timeFilter, selectedOutcome, and selectedEmotion when URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -1069,7 +1069,7 @@ export function HistoryPage() {
         throw new Error('Failed to restore decision');
       }
 
-      const result = await response.json();
+      await response.json();
 
       // Remove restored decision from trash list
       setDecisions(prev => prev.filter(d => d.id !== decisionId));

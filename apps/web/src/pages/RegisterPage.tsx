@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { SkipLink } from '../components/SkipLink';
@@ -21,7 +21,6 @@ export function RegisterPage() {
   const isSubmittingRef = useRef(false);
 
   const { signUpWithEmail, signInWithGoogle } = useAuth();
-  const navigate = useNavigate();
 
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();

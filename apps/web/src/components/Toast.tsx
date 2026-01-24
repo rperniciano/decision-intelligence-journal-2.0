@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect } from 'react';
 
 interface ToastProps {
@@ -9,7 +9,7 @@ interface ToastProps {
   index?: number;
 }
 
-export function Toast({ message, type = 'success', onClose, duration = 3000, index = 0 }: ToastProps) {
+export function Toast({ message, type = 'success', onClose, duration = 3000 }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);

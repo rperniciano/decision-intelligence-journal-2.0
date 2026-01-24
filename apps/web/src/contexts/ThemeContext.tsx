@@ -13,7 +13,7 @@ const THEME_STORAGE_KEY = 'decision-journal-theme';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeVariant>('dark');
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [, setIsInitialized] = useState(false);
 
   // Load theme from localStorage on mount
   useEffect(() => {
